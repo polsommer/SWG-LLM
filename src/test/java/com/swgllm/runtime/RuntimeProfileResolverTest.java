@@ -10,21 +10,54 @@ import org.junit.jupiter.api.Test;
 class RuntimeProfileResolverTest {
 
     @Test
-    void shouldResolveCpuProfile() {
-        AppConfig.RuntimeConfig config = new AppConfig.RuntimeConfig();
+    void requestedIntelIgpuShouldRemainActiveWhenCapabilityAvailable() {
+        RuntimeProfileResolver resolver = new RuntimeProfileResolver(new IntelGpuCapabilityProbe(new StubInspector(
+                "ID=ubuntu\nVERSION_ID=\"22.04\"\n",
+                true,
+                true,
+                true,
+                false)));
 
-        AppConfig.RuntimeProfile cpu = new AppConfig.RuntimeProfile();
-        cpu.setModel("phi-q4");
-        cpu.setBackend("cpu");
-        cpu.setContextWindowTokens(2048);
-        cpu.setRetrievalChunks(4);
+        RuntimeProfileResolver.ResolvedProfile resolved = resolver.resolve(config(), "intel-igpu");
 
-        config.setProfiles(Map.of("cpu-low-memory", cpu));
+        assertEquals("intel-igpu", resolved.requestedProfile());
+        assertEquals("intel-igpu", resolved.profileName());
+        assertEquals("intel-igpu", resolved.backend());
+        assertEquals("", resolved.fallbackCause());
+    }
 
-        RuntimeProfileResolver.ResolvedProfile resolved = new RuntimeProfileResolver().resolve(config, "cpu-low-memory");
+    @Test
+    void requestedIntelIgpuShouldFallbackToCpuWhenCapabilityUnavailable() {
+        RuntimeProfileResolver resolver = new RuntimeProfileResolver(new IntelGpuCapabilityProbe(new StubInspector(
+                "ID=ubuntu\nVERSION_ID=\"22.04\"\n",
+                false,
+                true,
+                true,
+                false)));
 
+        RuntimeProfileResolver.ResolvedProfile resolved = resolver.resolve(config(), "intel-igpu");
+
+        assertEquals("intel-igpu", resolved.requestedProfile());
         assertEquals("cpu-low-memory", resolved.profileName());
         assertEquals("cpu", resolved.backend());
+        assertEquals("intelDriNode: Missing /dev/dri render node", resolved.fallbackCause());
+    }
+
+    @Test
+    void shouldResolveCpuProfileWithoutChanges() {
+        RuntimeProfileResolver resolver = new RuntimeProfileResolver(new IntelGpuCapabilityProbe(new StubInspector(
+                "",
+                false,
+                false,
+                false,
+                false)));
+
+        RuntimeProfileResolver.ResolvedProfile resolved = resolver.resolve(config(), "cpu-low-memory");
+
+        assertEquals("cpu-low-memory", resolved.requestedProfile());
+        assertEquals("cpu-low-memory", resolved.profileName());
+        assertEquals("cpu", resolved.backend());
+        assertEquals("", resolved.fallbackCause());
         assertEquals(4, resolved.retrievalChunks());
     }
 
@@ -34,5 +67,60 @@ class RuntimeProfileResolverTest {
         config.setProfiles(Map.of());
 
         assertThrows(IllegalArgumentException.class, () -> new RuntimeProfileResolver().resolve(config, "missing"));
+    }
+
+    private static AppConfig.RuntimeConfig config() {
+        AppConfig.RuntimeConfig config = new AppConfig.RuntimeConfig();
+
+        AppConfig.RuntimeProfile cpu = new AppConfig.RuntimeProfile();
+        cpu.setModel("phi-q4");
+        cpu.setBackend("cpu");
+        cpu.setContextWindowTokens(2048);
+        cpu.setRetrievalChunks(4);
+
+        AppConfig.RuntimeProfile igpu = new AppConfig.RuntimeProfile();
+        igpu.setModel("phi-q4");
+        igpu.setBackend("openvino-onednn-igpu");
+        igpu.setContextWindowTokens(3072);
+        igpu.setRetrievalChunks(5);
+
+        config.setProfiles(Map.of("cpu-low-memory", cpu, "intel-igpu", igpu));
+        return config;
+    }
+
+    private record StubInspector(
+            String osRelease,
+            boolean driExists,
+            boolean runtimePresent,
+            boolean mediaDriverPresent,
+            boolean oneApiEnv) implements IntelGpuCapabilityProbe.SystemInspector {
+
+        @Override
+        public String readOsRelease() {
+            return osRelease;
+        }
+
+        @Override
+        public boolean fileExists(String path) {
+            return switch (path) {
+                case "/dev/dri/renderD128", "/dev/dri/card0" -> driExists;
+                case "/usr/lib/x86_64-linux-gnu/dri/iHD_drv_video.so" -> mediaDriverPresent;
+                default -> false;
+            };
+        }
+
+        @Override
+        public boolean commandExists(String command) {
+            return switch (command) {
+                case "sycl-ls", "clinfo" -> runtimePresent;
+                case "vainfo" -> mediaDriverPresent;
+                default -> false;
+            };
+        }
+
+        @Override
+        public boolean envEnabled(String key) {
+            return oneApiEnv && "ONEAPI_ROOT".equals(key);
+        }
     }
 }

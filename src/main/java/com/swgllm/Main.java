@@ -37,6 +37,7 @@ import com.swgllm.inference.InferenceEngine;
 import com.swgllm.inference.IntelIgpuInferenceEngine;
 import com.swgllm.pipeline.OfflineImprovementPipeline;
 import com.swgllm.runtime.AppConfig;
+import com.swgllm.runtime.IntelGpuCapabilityProbe;
 import com.swgllm.runtime.RuntimeProfileResolver;
 import com.swgllm.versioning.ArtifactVersions;
 import com.swgllm.versioning.RolloutState;
@@ -116,6 +117,7 @@ public class Main implements Callable<Integer> {
 
     private final OkHttpClient httpClient = new OkHttpClient();
     private final HashingEmbeddingService embeddingService = new HashingEmbeddingService(384);
+    private final IntelGpuCapabilityProbe capabilityProbe = new IntelGpuCapabilityProbe();
     private int inferenceTimeoutMs = 30_000;
 
     enum Mode {
@@ -140,18 +142,20 @@ public class Main implements Callable<Integer> {
         }
 
         AppConfig config = loadConfig(Path.of(configPath));
-        RuntimeProfileResolver.ResolvedProfile resolvedProfile = new RuntimeProfileResolver()
+        RuntimeProfileResolver.ResolvedProfile resolvedProfile = new RuntimeProfileResolver(capabilityProbe)
                 .resolve(config.getRuntime(), runtimeProfile);
         inferenceTimeoutMs = config.getRuntime().getTimeoutMs();
 
         log.info("Starting SWG-LLM in {} mode", mode);
         log.info("Using config file: {}", configPath);
-        log.info("Runtime profile={} model={} backend={} contextWindowTokens={} retrievalChunks={}",
+        log.info("Runtime requestedProfile={} activeProfile={} model={} backend={} contextWindowTokens={} retrievalChunks={} fallbackCause={}",
+                resolvedProfile.requestedProfile(),
                 resolvedProfile.profileName(),
                 resolvedProfile.model(),
                 resolvedProfile.backend(),
                 resolvedProfile.contextWindowTokens(),
-                resolvedProfile.retrievalChunks());
+                resolvedProfile.retrievalChunks(),
+                resolvedProfile.fallbackCause().isBlank() ? "none" : resolvedProfile.fallbackCause());
         log.debug("HTTP client configured: {}", httpClient.connectionPool());
 
         VersionRolloutManager rolloutManager = new VersionRolloutManager();
@@ -163,7 +167,7 @@ public class Main implements Callable<Integer> {
                 rolloutState.currentCanary().modelVersion());
 
         if (mode == Mode.benchmark) {
-            runBenchmark();
+            runBenchmark(resolvedProfile);
         }
         if (mode == Mode.ingest) {
             IngestionService ingestionService = new IngestionService(embeddingService);
@@ -291,8 +295,9 @@ public class Main implements Callable<Integer> {
             double tokensPerSecond = tokenCount * 1_000_000_000d / Math.max(1L, elapsedNs);
             long usedMemMb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
 
-            log.info("chat.telemetry backend={} tokens={} tokensPerSec={} firstTokenLatencyMs={} retrievalMs={} memoryUsedMb={}",
+            log.info("chat.telemetry backend={} fallbackCause={} tokens={} tokensPerSec={} firstTokenLatencyMs={} retrievalMs={} memoryUsedMb={}",
                     profile.backend(),
+                    profile.fallbackCause().isBlank() ? "none" : profile.fallbackCause(),
                     tokenCount,
                     String.format(Locale.ROOT, "%.2f", tokensPerSecond),
                     firstTokenLatencyMs,
@@ -452,7 +457,15 @@ public class Main implements Callable<Integer> {
                 .sum();
     }
 
-    private void runBenchmark() {
+    private void runBenchmark(RuntimeProfileResolver.ResolvedProfile profile) {
+        if ("intel-igpu".equals(profile.requestedProfile())) {
+            IntelGpuCapabilityProbe.CapabilityReport report = capabilityProbe.probeUbuntu2204();
+            log.info("intel-igpu capability report available={} reason={} checks={}",
+                    report.available(),
+                    report.reason().isBlank() ? "none" : report.reason(),
+                    report.checks());
+        }
+
         long start = System.nanoTime();
         for (int i = 0; i < 1_000_000; i++) {
             Math.sqrt(i);
