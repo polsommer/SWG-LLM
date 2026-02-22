@@ -42,6 +42,9 @@ public class FeedbackCaptureService {
         if (!Files.exists(feedbackLogPath)) {
             return new ArrayList<>();
         }
+        if (Files.size(feedbackLogPath) == 0L) {
+            return new ArrayList<>();
+        }
         return objectMapper.readValue(feedbackLogPath.toFile(), new TypeReference<List<FeedbackRecord>>() {
         });
     }
