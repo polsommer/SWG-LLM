@@ -5,9 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class VersionRolloutManager {
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .build();
 
     public RolloutState load(Path registryPath) throws IOException {
         if (!Files.exists(registryPath) || Files.size(registryPath) == 0L) {

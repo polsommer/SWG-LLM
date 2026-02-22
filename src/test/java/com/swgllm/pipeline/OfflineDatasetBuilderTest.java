@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.swgllm.feedback.FeedbackCaptureService;
 import com.swgllm.feedback.FeedbackRating;
 
@@ -34,7 +35,7 @@ class OfflineDatasetBuilderTest {
         assertNotNull(examples.getFirst().provenance());
         assertNotNull(examples.getFirst().provenance().feedbackRequestId());
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonMapper.builder().findAndAddModules().build();
         TrainingExample[] persisted = mapper.readValue(datasetPath.toFile(), TrainingExample[].class);
         assertEquals(1, persisted.length);
         assertEquals("feedback_capture", persisted[0].provenance().source());
