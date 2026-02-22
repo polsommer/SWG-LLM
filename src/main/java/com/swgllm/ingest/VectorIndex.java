@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface VectorIndex {
-    void upsert(DocumentChunk chunk, float[] embedding);
+    void upsert(DocumentChunk chunk, float[] embedding, String embeddingVersion);
 
     void removeBySourcePath(String sourcePath);
 

@@ -26,6 +26,10 @@ public class IngestionService {
     public IngestionReport ingest(Path repoPath, Path indexPath, Path statePath) throws IOException {
         LocalJsonVectorIndex index = LocalJsonVectorIndex.load(indexPath);
         Map<String, String> previousState = stateStore.load(statePath);
+        if (index.requiresReembedding(embeddingService.version())) {
+            previousState = new java.util.HashMap<>();
+            index.clear();
+        }
         Map<String, String> newState = new java.util.HashMap<>();
 
         String commitHash = gitMetadataReader.commitHash(repoPath);
@@ -57,7 +61,7 @@ public class IngestionService {
             ParsedArtifact relativeArtifact = new ParsedArtifact(Path.of(relative), artifact.content(), artifact.symbols());
             List<DocumentChunk> chunks = chunker.chunk(relativeArtifact, commitHash, versionTag);
             for (DocumentChunk chunk : chunks) {
-                index.upsert(chunk, embeddingService.embed(chunk.text()));
+                index.upsert(chunk, embeddingService.embed(chunk.text()), embeddingService.version());
             }
             processed++;
         }
@@ -90,10 +94,14 @@ public class IngestionService {
     private List<ArtifactParser> defaultParsers() {
         List<ArtifactParser> all = new ArrayList<>();
         all.add(new RegexArtifactParser(List.of(".java"), Pattern.compile("(?:class|interface|enum|record|void|public|private|protected)\\s+([A-Za-z_][A-Za-z0-9_]*)")));
+        all.add(new RegexArtifactParser(List.of(".kt", ".kts"), Pattern.compile("(?:class|object|interface|fun|val|var)\\s+([A-Za-z_][A-Za-z0-9_]*)")));
+        all.add(new RegexArtifactParser(List.of(".cpp", ".cc", ".hpp", ".h"), Pattern.compile("(?:class|struct|enum|namespace|void|int|float|double|bool|string)\\s+([A-Za-z_][A-Za-z0-9_]*)")));
+        all.add(new RegexArtifactParser(List.of(".lua"), Pattern.compile("(?:function|local\\s+function|table\\.insert)\\s+([A-Za-z_][A-Za-z0-9_:.-]*)")));
         all.add(new RegexArtifactParser(List.of(".md", ".markdown"), Pattern.compile("^#+\\s+(.+)$", Pattern.MULTILINE)));
         all.add(new RegexArtifactParser(List.of(".yml", ".yaml", ".properties", ".conf", ".json", ".xml", ".gradle", ".kts"), Pattern.compile("^\\s*([A-Za-z0-9_.-]+)\\s*[:=]", Pattern.MULTILINE)));
         all.add(new RegexArtifactParser(List.of(".sql"), Pattern.compile("(?i)\\b(?:create\\s+(?:table|view|function)|alter\\s+table|insert\\s+into)\\s+([A-Za-z_][A-Za-z0-9_.]*)")));
         all.add(new RegexArtifactParser(List.of(".sh", ".bash", ".zsh", ".ps1", ".bat"), Pattern.compile("(?m)^\\s*(?:function\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?:\\(|\\{)")));
+        all.add(new RegexArtifactParser(List.of(".iff", ".tre", ".tab", ".stf"), Pattern.compile("(?m)^\\s*([A-Za-z_][A-Za-z0-9_.-]+)\\s*(?:=|:)")));
         return all;
     }
 }

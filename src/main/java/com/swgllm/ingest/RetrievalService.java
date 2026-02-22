@@ -20,7 +20,7 @@ public class RetrievalService {
         LocalJsonVectorIndex index = LocalJsonVectorIndex.load(indexPath);
         float[] queryEmbedding = embeddingService.embed(query);
 
-        List<SearchResult> semantic = index.search(queryEmbedding, Math.max(topK * 3, topK));
+        List<SearchResult> semantic = index.search(queryEmbedding, Math.max(topK * 4, topK));
 
         Set<String> queryTerms = Arrays.stream(query.toLowerCase(Locale.ROOT).split("\\W+"))
                 .filter(token -> !token.isBlank())
@@ -29,7 +29,7 @@ public class RetrievalService {
         return semantic.stream()
                 .map(result -> {
                     float lexical = lexicalScore(queryTerms, result.chunk().text());
-                    float rerank = (result.score() * 0.7f) + (lexical * 0.3f);
+                    float rerank = (result.rerankScore() * 0.75f) + (lexical * 0.25f);
                     return new SearchResult(result.chunk(), result.score(), rerank, citationSnippet(result.chunk()));
                 })
                 .sorted(Comparator.comparing(SearchResult::rerankScore).reversed())

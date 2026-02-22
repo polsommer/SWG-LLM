@@ -26,7 +26,8 @@ import com.swgllm.feedback.FeedbackRating;
 import com.swgllm.feedback.FeedbackRecord;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
-import com.swgllm.ingest.HashingEmbeddingService;
+import com.swgllm.ingest.EmbeddingService;
+import com.swgllm.ingest.EmbeddingServices;
 import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
 import com.swgllm.ingest.RetrievalService;
@@ -116,7 +117,7 @@ public class Main implements Callable<Integer> {
     boolean approvedForTraining;
 
     private final OkHttpClient httpClient = new OkHttpClient();
-    private final HashingEmbeddingService embeddingService = new HashingEmbeddingService(384);
+    private final EmbeddingService embeddingService = EmbeddingServices.fromEnvironment(httpClient);
     private final IntelGpuCapabilityProbe capabilityProbe = new IntelGpuCapabilityProbe();
     private int inferenceTimeoutMs = 30_000;
 
