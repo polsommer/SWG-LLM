@@ -21,10 +21,12 @@ class InferenceIntegrationTest {
     void shouldSelectIntelIgpuEngineWhenBackendIsIntel() {
         RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
                 "intel-igpu",
+                "intel-igpu",
                 "test-model",
                 "intel-igpu",
                 1024,
-                3);
+                3,
+                "");
 
         InferenceEngine engine = Main.selectInferenceEngine(profile);
 
@@ -35,10 +37,12 @@ class InferenceIntegrationTest {
     void shouldSelectCpuEngineWhenBackendIsCpu() {
         RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
                 "cpu-low-memory",
+                "cpu-low-memory",
                 "test-model",
                 "cpu",
                 1024,
-                3);
+                3,
+                "");
 
         InferenceEngine engine = Main.selectInferenceEngine(profile);
 
@@ -49,10 +53,12 @@ class InferenceIntegrationTest {
     void shouldBuildPromptWithSystemHistoryAndSnippets() {
         RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
                 "cpu-low-memory",
+                "cpu-low-memory",
                 "model-a",
                 "cpu",
                 2048,
-                4);
+                4,
+                "");
         List<String> conversation = List.of(
                 "user: hi",
                 "assistant: hello");

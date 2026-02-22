@@ -8,11 +8,22 @@ import org.slf4j.LoggerFactory;
 
 public class RuntimeProfileResolver {
     private static final Logger log = LoggerFactory.getLogger(RuntimeProfileResolver.class);
+    private final IntelGpuCapabilityProbe capabilityProbe;
+
+    public RuntimeProfileResolver() {
+        this(new IntelGpuCapabilityProbe());
+    }
+
+    public RuntimeProfileResolver(IntelGpuCapabilityProbe capabilityProbe) {
+        this.capabilityProbe = capabilityProbe;
+    }
 
     public ResolvedProfile resolve(AppConfig.RuntimeConfig runtimeConfig, String requestedProfile) {
         String profileName = requestedProfile == null || requestedProfile.isBlank()
                 ? runtimeConfig.getDefaultProfile()
                 : requestedProfile;
+        String requested = profileName;
+
         Map<String, AppConfig.RuntimeProfile> profiles = runtimeConfig.getProfiles();
         AppConfig.RuntimeProfile profile = profiles.get(profileName);
         if (profile == null) {
@@ -20,14 +31,20 @@ public class RuntimeProfileResolver {
         }
 
         String backend = normalizeBackend(profile.getBackend());
-        if ("intel-igpu".equals(profileName) && !isIntelIgpuAvailable()) {
-            log.warn("intel-igpu profile requested but iGPU acceleration unavailable; falling back to cpu-low-memory profile");
-            profileName = "cpu-low-memory";
-            profile = profiles.get(profileName);
-            if (profile == null) {
-                throw new IllegalArgumentException("Fallback profile cpu-low-memory is not configured");
+        String fallbackCause = "";
+
+        if ("intel-igpu".equals(profileName)) {
+            IntelGpuCapabilityProbe.CapabilityReport report = capabilityProbe.probeUbuntu2204();
+            if (!report.available()) {
+                fallbackCause = report.reason();
+                log.warn("intel-igpu profile requested but iGPU acceleration unavailable: {}; falling back to cpu-low-memory profile", fallbackCause);
+                profileName = "cpu-low-memory";
+                profile = profiles.get(profileName);
+                if (profile == null) {
+                    throw new IllegalArgumentException("Fallback profile cpu-low-memory is not configured");
+                }
+                backend = normalizeBackend(profile.getBackend());
             }
-            backend = normalizeBackend(profile.getBackend());
         }
 
         int retrievalChunks = profile.getRetrievalChunks() > 0
@@ -38,20 +55,13 @@ public class RuntimeProfileResolver {
                 : runtimeConfig.getDefaultContextWindowTokens();
 
         return new ResolvedProfile(
+                requested,
                 profileName,
                 profile.getModel(),
                 backend,
                 contextWindowTokens,
-                retrievalChunks);
-    }
-
-    static boolean isIntelIgpuAvailable() {
-        String property = System.getProperty("swgllm.intelIgpuAvailable", "false");
-        if ("true".equalsIgnoreCase(property)) {
-            return true;
-        }
-        String env = System.getenv("SWGLLM_INTEL_IGPU_AVAILABLE");
-        return "1".equals(env) || "true".equalsIgnoreCase(env);
+                retrievalChunks,
+                fallbackCause);
     }
 
     private static String normalizeBackend(String backend) {
@@ -66,10 +76,12 @@ public class RuntimeProfileResolver {
     }
 
     public record ResolvedProfile(
+            String requestedProfile,
             String profileName,
             String model,
             String backend,
             int contextWindowTokens,
-            int retrievalChunks) {
+            int retrievalChunks,
+            String fallbackCause) {
     }
 }
