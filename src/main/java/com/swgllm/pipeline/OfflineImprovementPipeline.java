@@ -36,7 +36,7 @@ public class OfflineImprovementPipeline {
             GovernanceMetrics metrics,
             GovernancePolicy policy) throws IOException {
         List<TrainingExample> dataset = datasetBuilder.buildFromApprovedFeedback(feedbackPath, datasetOutputPath);
-        Path adapterArtifact = adapterUpdateJob.runPeriodicUpdate(dataset, adapterDir);
+        AdapterArtifact adapterArtifact = adapterUpdateJob.runPeriodicUpdate(dataset, adapterDir);
 
         RolloutState canaryState = rolloutManager.canaryRollout(versionRegistryPath, candidate);
         GovernanceEvaluation evaluation = regressionSuite.evaluate(metrics, policy);
@@ -50,7 +50,7 @@ public class OfflineImprovementPipeline {
 
     public record PipelineResult(
             int trainingExamples,
-            Path adapterArtifact,
+            AdapterArtifact adapterArtifact,
             GovernanceEvaluation governanceEvaluation,
             RolloutState rolloutState) {
     }

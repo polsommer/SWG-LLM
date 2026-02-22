@@ -23,7 +23,12 @@ public class OfflineDatasetBuilder {
                 .map(record -> new TrainingExample(
                         record.anonymizedPrompt(),
                         record.anonymizedResponse(),
-                        record.correctedAnswer()))
+                        record.correctedAnswer(),
+                        new TrainingExample.TrainingProvenance(
+                                record.requestId(),
+                                record.rating().name(),
+                                record.createdAt(),
+                                "feedback_capture")))
                 .toList();
 
         if (outputDatasetPath.getParent() != null) {
