@@ -22,7 +22,7 @@ public class AdapterUpdateJob {
     private final AdapterTrainer adapterTrainer;
     private final TrainingHyperparameters hyperparameters;
     private final int minDatasetSize;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     public AdapterUpdateJob() {
         this(new JavaNativeAdapterTrainer(), TrainingHyperparameters.defaults(), 3);
