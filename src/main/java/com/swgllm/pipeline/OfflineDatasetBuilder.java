@@ -6,12 +6,15 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.swgllm.feedback.FeedbackCaptureService;
 import com.swgllm.feedback.FeedbackRecord;
 
 public class OfflineDatasetBuilder {
     private final FeedbackCaptureService feedbackCaptureService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .build();
 
     public OfflineDatasetBuilder(FeedbackCaptureService feedbackCaptureService) {
         this.feedbackCaptureService = feedbackCaptureService;
