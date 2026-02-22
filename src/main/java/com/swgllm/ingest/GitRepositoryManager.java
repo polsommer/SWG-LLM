@@ -6,9 +6,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.HexFormat;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GitRepositoryManager {
+    private static final Logger log = LoggerFactory.getLogger(GitRepositoryManager.class);
+
+    private final GitCommandRunner gitCommandRunner;
+
+    public GitRepositoryManager() {
+        this(new GitCommandRunner(Duration.ofSeconds(60)));
+    }
+
+    GitRepositoryManager(GitCommandRunner gitCommandRunner) {
+        this.gitCommandRunner = gitCommandRunner;
+    }
 
     public Path prepareRepository(String repoUrl, Path repoCacheDir) throws IOException, InterruptedException {
         if (repoUrl == null || repoUrl.isBlank()) {
@@ -19,21 +34,21 @@ public class GitRepositoryManager {
         Path checkoutPath = repoCacheDir.resolve(repositoryDirectoryName(repoUrl));
 
         if (!Files.isDirectory(checkoutPath.resolve(".git"))) {
-            runCommand("git", "clone", repoUrl, checkoutPath.toString());
+            runCommand(null, "git", "clone", repoUrl, checkoutPath.toString());
             return checkoutPath;
         }
 
-        runCommand("git", "-C", checkoutPath.toString(), "fetch", "--prune", "origin");
+        runCommand(null, "git", "-C", checkoutPath.toString(), "fetch", "--prune", "origin");
         String defaultBranch = resolveDefaultBranch(checkoutPath);
-        runCommand("git", "-C", checkoutPath.toString(), "checkout", defaultBranch);
-        runCommand("git", "-C", checkoutPath.toString(), "reset", "--hard", "origin/" + defaultBranch);
-        runCommand("git", "-C", checkoutPath.toString(), "clean", "-fd");
+        runCommand(null, "git", "-C", checkoutPath.toString(), "checkout", defaultBranch);
+        runCommand(null, "git", "-C", checkoutPath.toString(), "reset", "--hard", "origin/" + defaultBranch);
+        runCommand(null, "git", "-C", checkoutPath.toString(), "clean", "-fd");
 
         return checkoutPath;
     }
 
     String resolveDefaultBranch(Path checkoutPath) throws IOException, InterruptedException {
-        String ref = runCommand("git", "-C", checkoutPath.toString(), "symbolic-ref", "refs/remotes/origin/HEAD").trim();
+        String ref = runCommand(null, "git", "-C", checkoutPath.toString(), "symbolic-ref", "refs/remotes/origin/HEAD").trim();
         int slash = ref.lastIndexOf('/');
         return slash >= 0 ? ref.substring(slash + 1) : ref;
     }
@@ -65,18 +80,17 @@ public class GitRepositoryManager {
         }
     }
 
-    private String runCommand(String... command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start();
-        String output;
-        try (java.io.InputStream inputStream = process.getInputStream()) {
-            output = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    private String runCommand(Path workingDirectory, String... command) throws IOException, InterruptedException {
+        GitCommandResult result = gitCommandRunner.run(workingDirectory, command);
+        if (result.interrupted()) {
+            throw new InterruptedException("Command interrupted: " + String.join(" ", command));
         }
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new IOException("Command failed (" + String.join(" ", command) + "):\n" + output.trim());
+        if (!result.isSuccess()) {
+            log.error("git command failed command='{}' exitCode={} timedOut={} stderr={}",
+                    String.join(" ", command), result.exitCode(), result.timedOut(), result.stderr());
+            throw new IOException("Command failed (" + String.join(" ", command) + ") exitCode=" + result.exitCode()
+                    + " timedOut=" + result.timedOut() + " stderr=" + result.stderr());
         }
-        return output;
+        return result.stdout();
     }
 }
