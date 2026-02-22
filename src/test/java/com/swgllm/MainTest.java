@@ -17,6 +17,7 @@ import com.swgllm.ingest.IngestionService;
 import picocli.CommandLine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainTest {
@@ -54,6 +55,19 @@ class MainTest {
         int exitCode = new CommandLine(main).execute("--mode", "ingest", "--repo-path", missingRepo.toString());
 
         assertEquals(Main.EXIT_USAGE_ERROR, exitCode);
+    }
+
+    @Test
+    void shouldIncludeActionableGuidanceWhenRepoPathIsInvalid() {
+        Main main = new Main();
+        Path missingRepo = tempDir.resolve("missing-repo");
+        main.repoPath = missingRepo;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, main::resolveRepositoryPathForIngestion);
+
+        assertTrue(ex.getMessage().contains("Invalid --repo-path"));
+        assertTrue(ex.getMessage().contains(missingRepo.toAbsolutePath().normalize().toString()));
+        assertTrue(ex.getMessage().contains("--repo-url"));
     }
 
     @Test

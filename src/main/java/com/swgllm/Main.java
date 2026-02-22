@@ -293,8 +293,14 @@ public class Main implements Callable<Integer> {
         }
 
         if (!Files.isDirectory(repoPath)) {
-            log.error("--repo-path does not exist or is not a directory: {}", repoPath.toAbsolutePath().normalize());
-            throw new IllegalArgumentException("Invalid --repo-path");
+            Path normalizedRepoPath = repoPath.toAbsolutePath().normalize();
+            Path workingDirectory = Path.of("").toAbsolutePath().normalize();
+            log.error("--repo-path does not exist or is not a directory: {} (cwd={})",
+                    normalizedRepoPath,
+                    workingDirectory);
+            throw new IllegalArgumentException(String.format(
+                    "Invalid --repo-path: %s. Provide an existing local directory or use --repo-url to clone a remote repository.",
+                    normalizedRepoPath));
         }
         return repoPath;
     }
