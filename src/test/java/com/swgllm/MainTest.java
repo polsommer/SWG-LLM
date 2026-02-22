@@ -68,6 +68,8 @@ class MainTest {
         assertTrue(ex.getMessage().contains("Invalid --repo-path"));
         assertTrue(ex.getMessage().contains(missingRepo.toAbsolutePath().normalize().toString()));
         assertTrue(ex.getMessage().contains("--repo-url"));
+        assertTrue(ex.getMessage().contains("Current working directory is"));
+        assertTrue(ex.getMessage().contains("--repo-path ."));
     }
 
     @Test
