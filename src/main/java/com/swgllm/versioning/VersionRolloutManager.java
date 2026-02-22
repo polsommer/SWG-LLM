@@ -10,7 +10,7 @@ public class VersionRolloutManager {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public RolloutState load(Path registryPath) throws IOException {
-        if (!Files.exists(registryPath)) {
+        if (!Files.exists(registryPath) || Files.size(registryPath) == 0L) {
             RolloutState initial = RolloutState.initial();
             save(registryPath, initial);
             return initial;
