@@ -59,6 +59,10 @@ import picocli.CommandLine.Parameters;
         description = "Starter CLI for SWG-LLM runtime integration.")
 public class Main implements Callable<Integer> {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
+    static final int EXIT_USAGE_ERROR = 2;
+    static final int EXIT_DOWNLOAD_FAILURE = 3;
+    static final int EXIT_INGEST_FAILURE = 4;
+    static final int EXIT_IMPROVE_FAILURE = 5;
 
     @Option(names = { "-c", "--config" }, description = "Path to YAML config file", defaultValue = "src/main/resources/application.yml")
     String configPath;
@@ -89,6 +93,9 @@ public class Main implements Callable<Integer> {
 
     @Option(names = "--state-path", description = "Path for incremental ingestion state", defaultValue = ".swgllm/index-state.json")
     Path statePath;
+
+    @Option(names = "--run-improve-after-ingest", description = "Run offline improvement pipeline after successful ingestion", defaultValue = "false")
+    boolean runImproveAfterIngest;
 
     @Option(names = "--version-registry-path", description = "Path for model/retriever/prompt version registry", defaultValue = ".swgllm/version-registry.json")
     Path versionRegistryPath;
@@ -188,24 +195,49 @@ public class Main implements Callable<Integer> {
         }
         if (mode == Mode.ingest) {
             Path resolvedRepoPath;
+            long downloadStart = System.nanoTime();
             try {
                 resolvedRepoPath = resolveRepositoryPathForIngestion();
+                log.info("stage=download status=ok repo={} elapsedMs={}",
+                        resolvedRepoPath.toAbsolutePath().normalize(),
+                        elapsedMs(downloadStart));
             } catch (IllegalArgumentException e) {
-                return 2;
+                log.error("stage=download status=failed reason={}", e.getMessage());
+                return EXIT_USAGE_ERROR;
+            } catch (IOException | InterruptedException e) {
+                log.error("stage=download status=failed reason={}", e.getMessage(), e);
+                return EXIT_DOWNLOAD_FAILURE;
             }
-            IngestionService ingestionService = new IngestionService(embeddingService);
-            IngestionReport report = ingestionService.ingest(resolvedRepoPath, indexPath, statePath);
-            log.info("Indexed repo: processed={}, skipped={}, total={}, commit={}, tag={}",
+            long ingestStart = System.nanoTime();
+            IngestionReport report;
+            try {
+                report = createIngestionService().ingest(resolvedRepoPath, indexPath, statePath);
+            } catch (RuntimeException | IOException e) {
+                log.error("stage=index status=failed repo={} reason={}",
+                        resolvedRepoPath.toAbsolutePath().normalize(),
+                        e.getMessage(),
+                        e);
+                return EXIT_INGEST_FAILURE;
+            }
+            log.info("stage=index status=ok processed={} skipped={} total={} commit={} tag={} elapsedMs={}",
                     report.processedFiles(),
                     report.skippedFiles(),
                     report.totalFiles(),
                     report.commitHash(),
-                    report.versionTag());
+                    report.versionTag(),
+                    elapsedMs(ingestStart));
+
+            if (runImproveAfterIngest) {
+                int improvementExit = runImproveStageWithLogging();
+                if (improvementExit != 0) {
+                    return improvementExit;
+                }
+            }
         }
         if (mode == Mode.retrieve) {
             if (query == null || query.isBlank()) {
                 log.error("--query is required in retrieve mode");
-                return 2;
+                return EXIT_USAGE_ERROR;
             }
             RetrievalService retrievalService = new RetrievalService(embeddingService);
             List<SearchResult> results = retrievalService.retrieve(indexPath, query, topK);
@@ -225,7 +257,7 @@ public class Main implements Callable<Integer> {
         if (mode == Mode.feedback) {
             if (rating == null || prompt == null || response == null) {
                 log.error("--rating, --prompt, and --response are required in feedback mode");
-                return 2;
+                return EXIT_USAGE_ERROR;
             }
             FeedbackCaptureService feedbackCaptureService = new FeedbackCaptureService();
             FeedbackRecord record = feedbackCaptureService.capture(
@@ -241,7 +273,10 @@ public class Main implements Callable<Integer> {
                     record.approvedForTraining());
         }
         if (mode == Mode.improve) {
-            runImprovementPipeline();
+            int improvementExit = runImproveStageWithLogging();
+            if (improvementExit != 0) {
+                return improvementExit;
+            }
         }
 
         return 0;
@@ -514,7 +549,7 @@ public class Main implements Callable<Integer> {
         log.info("Benchmark completed in {} ms", elapsedMs);
     }
 
-    private void runImprovementPipeline() throws IOException {
+    void runImprovementPipeline() throws IOException {
         OfflineImprovementPipeline pipeline = new OfflineImprovementPipeline();
         ArtifactVersions candidate = new ArtifactVersions(
                 SemanticVersion.parse("0.2.0"),
@@ -538,6 +573,26 @@ public class Main implements Callable<Integer> {
         } catch (IllegalArgumentException e) {
             log.info("Improvement pipeline skipped: {}", e.getMessage());
         }
+    }
+
+    private int runImproveStageWithLogging() {
+        long improveStart = System.nanoTime();
+        try {
+            runImprovementPipeline();
+            log.info("stage=learn status=ok elapsedMs={}", elapsedMs(improveStart));
+            return 0;
+        } catch (IOException | RuntimeException e) {
+            log.error("stage=learn status=failed reason={}", e.getMessage(), e);
+            return EXIT_IMPROVE_FAILURE;
+        }
+    }
+
+    private static long elapsedMs(long startNs) {
+        return (System.nanoTime() - startNs) / 1_000_000;
+    }
+
+    IngestionService createIngestionService() {
+        return new IngestionService(embeddingService);
     }
 
 }
