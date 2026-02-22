@@ -2,5 +2,18 @@ app:
   name: swg-llm
   mode: interactive
 runtime:
-  baseUrl: https://api.example.com
   timeoutMs: 30000
+  defaultProfile: cpu-low-memory
+  defaultContextWindowTokens: 2048
+  defaultRetrievalChunks: 4
+  profiles:
+    cpu-low-memory:
+      model: phi-3-mini-4k-instruct-q4
+      backend: cpu
+      contextWindowTokens: 2048
+      retrievalChunks: 4
+    intel-igpu:
+      model: phi-3-mini-4k-instruct-q4
+      backend: openvino-onednn-igpu
+      contextWindowTokens: 3072
+      retrievalChunks: 5
