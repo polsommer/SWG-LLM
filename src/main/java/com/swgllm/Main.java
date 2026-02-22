@@ -323,7 +323,7 @@ public class Main implements Callable<Integer> {
         try {
             FeedbackRecord feedback = feedbackCaptureService.capture(
                     feedbackPath,
-                    FeedbackRating.up,
+                    FeedbackRating.THUMBS_UP,
                     promptInput,
                     response,
                     corrected,
