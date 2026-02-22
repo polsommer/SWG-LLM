@@ -59,6 +59,9 @@ public class Main implements Callable<Integer> {
     @Option(names = "--runtime-profile", description = "Runtime profile from config (cpu-low-memory, intel-igpu)")
     String runtimeProfile;
 
+    @Option(names = "--enable-auto-learn", description = "Capture chat turns as positive feedback for the offline learning pipeline", defaultValue = "true")
+    boolean enableAutoLearn;
+
     @Option(names = "--repo-path", description = "Path to a local clone of swg-main", defaultValue = "../swg-main")
     Path repoPath;
 
@@ -199,25 +202,7 @@ public class Main implements Callable<Integer> {
                     record.approvedForTraining());
         }
         if (mode == Mode.improve) {
-            OfflineImprovementPipeline pipeline = new OfflineImprovementPipeline();
-            ArtifactVersions candidate = new ArtifactVersions(
-                    SemanticVersion.parse("0.2.0"),
-                    SemanticVersion.parse("0.2.0"),
-                    SemanticVersion.parse("0.2.0"));
-            GovernanceMetrics metrics = new GovernanceMetrics(0.04, 0.01, 0.91);
-            GovernancePolicy policy = new GovernancePolicy(0.05, 0.02, 0.90);
-            OfflineImprovementPipeline.PipelineResult result = pipeline.run(
-                    feedbackPath,
-                    datasetPath,
-                    adapterDir,
-                    versionRegistryPath,
-                    candidate,
-                    metrics,
-                    policy);
-            log.info("Improvement pipeline completed examples={} adapter={} governancePassed={}",
-                    result.trainingExamples(),
-                    result.adapterArtifact(),
-                    result.governanceEvaluation().passed());
+            runImprovementPipeline();
         }
 
         return 0;
@@ -249,7 +234,7 @@ public class Main implements Callable<Integer> {
                 continue;
             }
             if ("/help".equals(promptInput)) {
-                System.out.println("Commands: /help, /reset, /context, /source, /exit. End multiline with '.'");
+                System.out.println("Commands: /help, /reset, /context, /source, /improve, /exit. End multiline with '.'");
                 continue;
             }
             if ("/reset".equals(promptInput)) {
@@ -272,6 +257,10 @@ public class Main implements Callable<Integer> {
                         System.out.printf("[%d] %s%n", i + 1, lastSources.get(i).citationSnippet());
                     }
                 }
+                continue;
+            }
+            if ("/improve".equals(promptInput)) {
+                runImprovementPipeline();
                 continue;
             }
 
@@ -300,6 +289,31 @@ public class Main implements Callable<Integer> {
             conversation.add("user: " + promptInput);
             conversation.add("assistant: " + response);
             trimConversation(conversation, profile.contextWindowTokens());
+            captureAutoFeedback(promptInput, response, lastSources);
+        }
+    }
+
+    private void captureAutoFeedback(String promptInput, String response, List<SearchResult> lastSources) {
+        if (!enableAutoLearn) {
+            return;
+        }
+        FeedbackCaptureService feedbackCaptureService = new FeedbackCaptureService();
+        String corrected = lastSources.isEmpty()
+                ? response
+                : lastSources.get(0).citationSnippet();
+        try {
+            FeedbackRecord feedback = feedbackCaptureService.capture(
+                    feedbackPath,
+                    FeedbackRating.up,
+                    promptInput,
+                    response,
+                    corrected,
+                    true);
+            log.debug("Auto-feedback captured requestId={} approvedForTraining={}",
+                    feedback.requestId(),
+                    feedback.approvedForTraining());
+        } catch (IOException e) {
+            log.warn("Unable to persist auto-feedback to {}", feedbackPath, e);
         }
     }
 
@@ -369,4 +383,27 @@ public class Main implements Callable<Integer> {
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         log.info("Benchmark completed in {} ms", elapsedMs);
     }
+
+    private void runImprovementPipeline() {
+        OfflineImprovementPipeline pipeline = new OfflineImprovementPipeline();
+        ArtifactVersions candidate = new ArtifactVersions(
+                SemanticVersion.parse("0.2.0"),
+                SemanticVersion.parse("0.2.0"),
+                SemanticVersion.parse("0.2.0"));
+        GovernanceMetrics metrics = new GovernanceMetrics(0.04, 0.01, 0.91);
+        GovernancePolicy policy = new GovernancePolicy(0.05, 0.02, 0.90);
+        OfflineImprovementPipeline.PipelineResult result = pipeline.run(
+                feedbackPath,
+                datasetPath,
+                adapterDir,
+                versionRegistryPath,
+                candidate,
+                metrics,
+                policy);
+        log.info("Improvement pipeline completed examples={} adapter={} governancePassed={}",
+                result.trainingExamples(),
+                result.adapterArtifact(),
+                result.governanceEvaluation().passed());
+    }
+
 }

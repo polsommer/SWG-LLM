@@ -61,3 +61,52 @@ Typical ranges for quantized local inference with bounded retrieval:
 - Intel iGPU profile (OpenVINO path): ~28-55 tokens/sec, first token ~80-180ms
 
 Actual throughput depends on model artifact, drivers, JVM settings, and retrieval index size.
+
+## SWG-focused local assistant workflow (Ubuntu 22.04, Lenovo ThinkCentre M900x)
+
+This project already ships a full Java + Gradle CLI workflow for SWG knowledge tasks.
+
+### 1) Build and verify
+
+```bash
+./gradlew clean test
+```
+
+### 2) Ingest SWG source knowledge (from your local clone)
+
+```bash
+./gradlew run --args='--mode ingest --repo-path ../swg-main'
+```
+
+### 3) Chat with retrieval grounding
+
+```bash
+./gradlew run --args='chat --runtime-profile intel-igpu --repo-path ../swg-main'
+```
+
+Inside chat:
+- ask normal prompts about SWG systems/content
+- `/source` to print cited snippets
+- `/improve` to trigger offline self-improvement pipeline immediately
+
+### 4) Continuous self-improvement loop
+
+Every chat turn now auto-captures approved feedback (enabled by default) into `.swgllm/feedback-log.json`.
+Run the pipeline any time:
+
+```bash
+./gradlew run --args='--mode improve'
+```
+
+Disable automatic chat learning capture when needed:
+
+```bash
+./gradlew run --args='chat --enable-auto-learn=false'
+```
+
+### Ubuntu 22.04 + Intel iGPU notes
+
+- Use latest Intel GPU runtime/compute drivers supported on Ubuntu 22.04.
+- Keep `intel-igpu` runtime profile selected for maximum throughput.
+- On systems where iGPU acceleration is unavailable, runtime automatically falls back to `cpu-low-memory`.
+
