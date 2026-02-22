@@ -42,4 +42,9 @@ public class HashingEmbeddingService implements EmbeddingService {
     public int dimension() {
         return dimension;
     }
+
+    @Override
+    public String version() {
+        return "hashing-v1";
+    }
 }
