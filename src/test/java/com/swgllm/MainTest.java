@@ -1,12 +1,18 @@
 package com.swgllm;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.GitRepositoryManager;
+import com.swgllm.ingest.IngestionReport;
+import com.swgllm.ingest.IngestionService;
 
 import picocli.CommandLine;
 
@@ -47,7 +53,7 @@ class MainTest {
 
         int exitCode = new CommandLine(main).execute("--mode", "ingest", "--repo-path", missingRepo.toString());
 
-        assertEquals(2, exitCode);
+        assertEquals(Main.EXIT_USAGE_ERROR, exitCode);
     }
 
     @Test
@@ -64,6 +70,61 @@ class MainTest {
         assertEquals(0, exitCode);
         assertEquals("https://example.com/repo.git", manager.recordedRepoUrl);
         assertTrue(Files.exists(manager.resolvedPath));
+    }
+
+    @Test
+    void shouldRunImproveAfterIngestWhenFlagEnabled() {
+        Path checkout = tempDir.resolve("checkout");
+        SequencingMain main = new SequencingMain(new RecordingGitRepositoryManager(checkout));
+
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "ingest",
+                "--repo-url", "https://example.com/repo.git",
+                "--run-improve-after-ingest");
+
+        assertEquals(0, exitCode);
+        assertEquals(List.of("ingest", "improve"), main.events);
+    }
+
+    @Test
+    void shouldReturnDownloadFailureExitCodeWhenRepositoryPreparationFails() {
+        GitRepositoryManager manager = new FailingGitRepositoryManager(new IOException("network down"));
+        Main main = new Main(manager);
+
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "ingest",
+                "--repo-url", "https://example.com/repo.git");
+
+        assertEquals(Main.EXIT_DOWNLOAD_FAILURE, exitCode);
+    }
+
+    @Test
+    void shouldReturnIngestFailureExitCodeWhenIngestionFails() {
+        Path checkout = tempDir.resolve("checkout");
+        SequencingMain main = new SequencingMain(new RecordingGitRepositoryManager(checkout));
+        main.failIngest = true;
+
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "ingest",
+                "--repo-url", "https://example.com/repo.git");
+
+        assertEquals(Main.EXIT_INGEST_FAILURE, exitCode);
+        assertEquals(List.of("ingest"), main.events);
+    }
+
+    @Test
+    void shouldReturnImproveFailureExitCodeWhenImproveAfterIngestFails() {
+        Path checkout = tempDir.resolve("checkout");
+        SequencingMain main = new SequencingMain(new RecordingGitRepositoryManager(checkout));
+        main.failImprove = true;
+
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "ingest",
+                "--repo-url", "https://example.com/repo.git",
+                "--run-improve-after-ingest");
+
+        assertEquals(Main.EXIT_IMPROVE_FAILURE, exitCode);
+        assertEquals(List.of("ingest", "improve"), main.events);
     }
 
     static class RecordingGitRepositoryManager extends GitRepositoryManager {
@@ -85,6 +146,64 @@ class MainTest {
                 throw new RuntimeException(e);
             }
             return resolvedPath;
+        }
+    }
+
+    static class FailingGitRepositoryManager extends GitRepositoryManager {
+        private final IOException failure;
+
+        FailingGitRepositoryManager(IOException failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public Path prepareRepository(String repoUrl, Path repoCacheDir) throws IOException {
+            throw failure;
+        }
+    }
+
+    static class SequencingMain extends Main {
+        private final List<String> events = new ArrayList<>();
+        private boolean failIngest;
+        private boolean failImprove;
+
+        SequencingMain(GitRepositoryManager gitRepositoryManager) {
+            super(gitRepositoryManager);
+        }
+
+        @Override
+        IngestionService createIngestionService() {
+            return new IngestionService(new NoOpEmbeddingService()) {
+                @Override
+                public IngestionReport ingest(Path repoPath, Path indexPath, Path statePath) throws IOException {
+                    events.add("ingest");
+                    if (failIngest) {
+                        throw new IOException("ingest failed");
+                    }
+                    return new IngestionReport(3, 1, 4, "abc123", "v1.0.0");
+                }
+            };
+        }
+
+        @Override
+        void runImprovementPipeline() throws IOException {
+            events.add("improve");
+            if (failImprove) {
+                throw new IOException("improve failed");
+            }
+        }
+    }
+
+    static class NoOpEmbeddingService implements EmbeddingService {
+
+        @Override
+        public String version() {
+            return "test-embedding";
+        }
+
+        @Override
+        public double[] embed(String text) {
+            return new double[] { 0.0, 0.0, 0.0 };
         }
     }
 }
