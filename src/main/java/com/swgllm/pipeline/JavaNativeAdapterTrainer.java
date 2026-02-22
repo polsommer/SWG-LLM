@@ -21,7 +21,7 @@ public class JavaNativeAdapterTrainer implements AdapterTrainer {
         Files.createDirectories(runDirectory);
 
         byte[] digest = digestOfDataset(dataset, hyperparameters, datasetHash);
-        ByteBuffer payload = ByteBuffer.allocate(16 + digest.length);
+        ByteBuffer payload = ByteBuffer.allocate(20 + digest.length);
         payload.putInt(dataset.size());
         payload.putInt(hyperparameters.epochs());
         payload.putDouble(hyperparameters.learningRate());
