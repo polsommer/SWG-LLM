@@ -40,6 +40,8 @@ public class GitRepositoryManager {
 
         runCommand(null, "git", "-C", checkoutPath.toString(), "fetch", "--prune", "origin");
         String defaultBranch = resolveDefaultBranch(checkoutPath);
+        runCommand(null, "git", "-C", checkoutPath.toString(), "reset", "--hard");
+        runCommand(null, "git", "-C", checkoutPath.toString(), "clean", "-fd");
         runCommand(null, "git", "-C", checkoutPath.toString(), "checkout", defaultBranch);
         runCommand(null, "git", "-C", checkoutPath.toString(), "reset", "--hard", "origin/" + defaultBranch);
         runCommand(null, "git", "-C", checkoutPath.toString(), "clean", "-fd");
