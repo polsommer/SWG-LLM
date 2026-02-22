@@ -487,18 +487,22 @@ public class Main implements Callable<Integer> {
                 SemanticVersion.parse("0.2.0"));
         GovernanceMetrics metrics = new GovernanceMetrics(0.04, 0.01, 0.91);
         GovernancePolicy policy = new GovernancePolicy(0.05, 0.02, 0.90);
-        OfflineImprovementPipeline.PipelineResult result = pipeline.run(
-                feedbackPath,
-                datasetPath,
-                adapterDir,
-                versionRegistryPath,
-                candidate,
-                metrics,
-                policy);
-        log.info("Improvement pipeline completed examples={} adapter={} governancePassed={}",
-                result.trainingExamples(),
-                result.adapterArtifact(),
-                result.governanceEvaluation().passed());
+        try {
+            OfflineImprovementPipeline.PipelineResult result = pipeline.run(
+                    feedbackPath,
+                    datasetPath,
+                    adapterDir,
+                    versionRegistryPath,
+                    candidate,
+                    metrics,
+                    policy);
+            log.info("Improvement pipeline completed examples={} adapter={} governancePassed={}",
+                    result.trainingExamples(),
+                    result.adapterArtifact(),
+                    result.governanceEvaluation().passed());
+        } catch (IllegalArgumentException e) {
+            log.info("Improvement pipeline skipped: {}", e.getMessage());
+        }
     }
 
 }
