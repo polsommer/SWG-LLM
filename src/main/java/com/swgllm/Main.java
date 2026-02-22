@@ -28,6 +28,7 @@ import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
 import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.EmbeddingServices;
+import com.swgllm.ingest.GitRepositoryManager;
 import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
 import com.swgllm.ingest.RetrievalService;
@@ -77,6 +78,12 @@ public class Main implements Callable<Integer> {
     @Option(names = "--repo-path", description = "Path to the repository that should be ingested", defaultValue = ".")
     Path repoPath;
 
+    @Option(names = "--repo-url", description = "Remote Git repository URL to ingest")
+    String repoUrl;
+
+    @Option(names = "--repo-cache-dir", description = "Directory where remote repositories are cached", defaultValue = ".swgllm/repos")
+    Path repoCacheDir;
+
     @Option(names = "--index-path", description = "Path for local vector index JSON", defaultValue = ".swgllm/vector-index.json")
     Path indexPath;
 
@@ -119,7 +126,16 @@ public class Main implements Callable<Integer> {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final EmbeddingService embeddingService = EmbeddingServices.fromEnvironment(httpClient);
     private final IntelGpuCapabilityProbe capabilityProbe = new IntelGpuCapabilityProbe();
+    private final GitRepositoryManager gitRepositoryManager;
     private int inferenceTimeoutMs = 30_000;
+
+    public Main() {
+        this(new GitRepositoryManager());
+    }
+
+    Main(GitRepositoryManager gitRepositoryManager) {
+        this.gitRepositoryManager = gitRepositoryManager;
+    }
 
     enum Mode {
         interactive,
@@ -171,12 +187,14 @@ public class Main implements Callable<Integer> {
             runBenchmark(resolvedProfile);
         }
         if (mode == Mode.ingest) {
-            if (!Files.isDirectory(repoPath)) {
-                log.error("--repo-path does not exist or is not a directory: {}", repoPath.toAbsolutePath().normalize());
+            Path resolvedRepoPath;
+            try {
+                resolvedRepoPath = resolveRepositoryPathForIngestion();
+            } catch (IllegalArgumentException e) {
                 return 2;
             }
             IngestionService ingestionService = new IngestionService(embeddingService);
-            IngestionReport report = ingestionService.ingest(repoPath, indexPath, statePath);
+            IngestionReport report = ingestionService.ingest(resolvedRepoPath, indexPath, statePath);
             log.info("Indexed repo: processed={}, skipped={}, total={}, commit={}, tag={}",
                     report.processedFiles(),
                     report.skippedFiles(),
@@ -227,6 +245,23 @@ public class Main implements Callable<Integer> {
         }
 
         return 0;
+    }
+
+    Path resolveRepositoryPathForIngestion() throws IOException, InterruptedException {
+        boolean hasRepoUrl = repoUrl != null && !repoUrl.isBlank();
+        if (hasRepoUrl) {
+            if (repoPath != null) {
+                log.info("Both --repo-url and --repo-path provided. Prioritizing --repo-url and ignoring --repo-path={}",
+                        repoPath.toAbsolutePath().normalize());
+            }
+            return gitRepositoryManager.prepareRepository(repoUrl, repoCacheDir);
+        }
+
+        if (!Files.isDirectory(repoPath)) {
+            log.error("--repo-path does not exist or is not a directory: {}", repoPath.toAbsolutePath().normalize());
+            throw new IllegalArgumentException("Invalid --repo-path");
+        }
+        return repoPath;
     }
 
     private AppConfig loadConfig(Path config) throws IOException {

@@ -62,11 +62,14 @@ If this passes, your local install is healthy.
 
 ### 4) (Optional but recommended) Ingest your SWG code/content repo
 
-Point SWG-LLM to a local repository you want to query in chat (example: `../swg-main`):
+Point SWG-LLM to a repository you want to query in chat. You can provide a local path (example: `../swg-main`) or a remote URL:
 
 ```bash
 ./gradlew run --args='--mode ingest --repo-path ../swg-main'
+./gradlew run --args='--mode ingest --repo-url https://github.com/SWG-Source/dsrc.git'
 ```
+
+When `--repo-url` is provided, SWG-LLM clones/updates it under `.swgllm/repos` by default before ingestion.
 
 ### 5) Start chat
 
@@ -88,8 +91,9 @@ If you do not need retrieval context yet, you can also run:
 git clone https://github.com/polsommer/SWG-LLM.git
 cd SWG-LLM
 ./gradlew clean test
-./gradlew run --args='--mode ingest --repo-path ../swg-main'
-./gradlew run --args='chat --runtime-profile intel-igpu --repo-path ../swg-main'
+./gradlew run --args='--mode ingest --repo-url https://github.com/SWG-Source/dsrc.git'
+./gradlew run --args='chat --runtime-profile intel-igpu'
+./gradlew run --args='--mode retrieve --query "Where is the login flow defined?"'
 ```
 
 If `intel-igpu` is not available, SWG-LLM automatically falls back to `cpu-low-memory`.
