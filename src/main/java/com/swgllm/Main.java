@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +31,10 @@ import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
 import com.swgllm.ingest.RetrievalService;
 import com.swgllm.ingest.SearchResult;
+import com.swgllm.inference.CpuInferenceEngine;
+import com.swgllm.inference.InferenceContext;
+import com.swgllm.inference.InferenceEngine;
+import com.swgllm.inference.IntelIgpuInferenceEngine;
 import com.swgllm.pipeline.OfflineImprovementPipeline;
 import com.swgllm.runtime.AppConfig;
 import com.swgllm.runtime.RuntimeProfileResolver;
@@ -106,6 +116,7 @@ public class Main implements Callable<Integer> {
 
     private final OkHttpClient httpClient = new OkHttpClient();
     private final HashingEmbeddingService embeddingService = new HashingEmbeddingService(384);
+    private int inferenceTimeoutMs = 30_000;
 
     enum Mode {
         interactive,
@@ -131,6 +142,7 @@ public class Main implements Callable<Integer> {
         AppConfig config = loadConfig(Path.of(configPath));
         RuntimeProfileResolver.ResolvedProfile resolvedProfile = new RuntimeProfileResolver()
                 .resolve(config.getRuntime(), runtimeProfile);
+        inferenceTimeoutMs = config.getRuntime().getTimeoutMs();
 
         log.info("Starting SWG-LLM in {} mode", mode);
         log.info("Using config file: {}", configPath);
@@ -270,7 +282,8 @@ public class Main implements Callable<Integer> {
                     ? retrievalService.retrieve(indexPath, promptInput, boundedK)
                     : List.of();
             long generationStart = System.nanoTime();
-            String response = synthesizeAnswer(promptInput, lastSources, profile);
+            String fullPrompt = buildPrompt(promptInput, conversation, lastSources, profile);
+            String response = runInferenceWithTimeout(fullPrompt, conversation, lastSources, profile);
             long firstTokenLatencyMs = (System.nanoTime() - generationStart) / 1_000_000;
             streamTokens(response);
             long elapsedNs = System.nanoTime() - generationStart;
@@ -338,17 +351,81 @@ public class Main implements Callable<Integer> {
         return builder.toString().trim();
     }
 
-    private static String synthesizeAnswer(String prompt, List<SearchResult> sources, RuntimeProfileResolver.ResolvedProfile profile) {
+    static InferenceEngine selectInferenceEngine(RuntimeProfileResolver.ResolvedProfile profile) {
+        if ("intel-igpu".equals(profile.backend())) {
+            return new IntelIgpuInferenceEngine();
+        }
+        return new CpuInferenceEngine();
+    }
+
+    static String buildPrompt(
+            String userPrompt,
+            List<String> conversation,
+            List<SearchResult> sources,
+            RuntimeProfileResolver.ResolvedProfile profile) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("System instruction:\n")
+                .append("You are SWG-LLM. Answer with grounded, concise guidance using provided snippets when relevant. ")
+                .append("If snippets are missing, state that ingestion may be required.\n\n")
+                .append("Runtime profile: ")
+                .append(profile.profileName())
+                .append(" | Model: ")
+                .append(profile.model())
+                .append(" | Backend: ")
+                .append(profile.backend())
+                .append("\n\nConversation history:\n");
+
+        if (conversation.isEmpty()) {
+            builder.append("(none)\n");
+        } else {
+            for (String turn : conversation) {
+                builder.append(turn).append("\n");
+            }
+        }
+
+        builder.append("\nRetrieved snippets:\n");
         if (sources.isEmpty()) {
-            return "I could not find indexed sources yet. Run ingest mode first. Prompt received: " + prompt;
+            builder.append("(none)\n");
+        } else {
+            for (int i = 0; i < sources.size(); i++) {
+                builder.append("[")
+                        .append(i + 1)
+                        .append("] ")
+                        .append(sources.get(i).citationSnippet())
+                        .append("\n");
+            }
         }
-        StringBuilder citations = new StringBuilder();
-        for (int i = 0; i < sources.size(); i++) {
-            citations.append("[").append(i + 1).append("] ").append(sources.get(i).citationSnippet()).append(" ");
+
+        builder.append("\nCurrent user request:\n")
+                .append(userPrompt)
+                .append("\n");
+        return builder.toString();
+    }
+
+    private String runInferenceWithTimeout(
+            String fullPrompt,
+            List<String> conversation,
+            List<SearchResult> sources,
+            RuntimeProfileResolver.ResolvedProfile profile) {
+        InferenceEngine inferenceEngine = selectInferenceEngine(profile);
+        InferenceContext context = new InferenceContext(conversation, sources);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<String> future = executor.submit(() -> inferenceEngine.generate(fullPrompt, context, profile));
+            return future.get(inferenceTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            log.warn("Inference timed out after {} ms", inferenceTimeoutMs);
+            return "I could not complete generation within the configured timeout of " + inferenceTimeoutMs
+                    + "ms. Please retry with a shorter prompt.";
+        } catch (ExecutionException e) {
+            log.error("Inference failed", e.getCause());
+            return "I hit an inference error while generating the response.";
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Generation interrupted.";
+        } finally {
+            executor.shutdownNow();
         }
-        return "Using model " + profile.model() + " on " + profile.backend()
-                + ", here is a grounded response: " + sources.get(0).citationSnippet()
-                + "\nSources: " + citations;
     }
 
     private static void streamTokens(String response) throws InterruptedException {
