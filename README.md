@@ -21,6 +21,30 @@ git --version
 
 If Java is missing or too old, install JDK 21 first.
 
+### 1.1) Install Gradle (optional)
+
+You can run this project with the included Gradle Wrapper (`./gradlew`) and do **not** need a system-wide Gradle install.
+If you still want Gradle installed globally:
+
+- **macOS (Homebrew)**
+
+  ```bash
+  brew install gradle
+  ```
+
+- **Ubuntu/Debian**
+
+  ```bash
+  sudo apt update
+  sudo apt install -y gradle
+  ```
+
+Verify:
+
+```bash
+gradle -v
+```
+
 ### 2) Clone the repo
 
 ```bash
