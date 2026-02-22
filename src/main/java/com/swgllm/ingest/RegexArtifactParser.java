@@ -1,6 +1,7 @@
 package com.swgllm.ingest;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class RegexArtifactParser implements ArtifactParser {
         if (!supports(path)) {
             return Optional.empty();
         }
-        String content = Files.readString(path);
+        String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
         List<String> symbols = new ArrayList<>();
         Matcher matcher = symbolPattern.matcher(content);
         while (matcher.find()) {
