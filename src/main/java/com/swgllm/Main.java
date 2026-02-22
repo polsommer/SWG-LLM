@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -295,14 +296,44 @@ public class Main implements Callable<Integer> {
         if (!Files.isDirectory(repoPath)) {
             Path normalizedRepoPath = repoPath.toAbsolutePath().normalize();
             Path workingDirectory = Path.of("").toAbsolutePath().normalize();
+            String hint = buildRepositoryPathHint(normalizedRepoPath);
             log.error("--repo-path does not exist or is not a directory: {} (cwd={})",
                     normalizedRepoPath,
                     workingDirectory);
             throw new IllegalArgumentException(String.format(
-                    "Invalid --repo-path: %s. Provide an existing local directory or use --repo-url to clone a remote repository.",
-                    normalizedRepoPath));
+                    "Invalid --repo-path: %s. Provide an existing local directory or use --repo-url to clone a remote repository.%s",
+                    normalizedRepoPath,
+                    hint));
         }
         return repoPath;
+    }
+
+    private String buildRepositoryPathHint(Path normalizedRepoPath) {
+        Path parent = normalizedRepoPath.getParent();
+        Path requestedNamePath = normalizedRepoPath.getFileName();
+        if (parent == null || !Files.isDirectory(parent) || requestedNamePath == null) {
+            return "";
+        }
+
+        String requestedName = requestedNamePath.toString();
+        if (requestedName.isBlank()) {
+            return "";
+        }
+
+        try (Stream<Path> siblings = Files.list(parent)) {
+            List<String> closeMatches = siblings
+                    .filter(Files::isDirectory)
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.equalsIgnoreCase(requestedName))
+                    .sorted()
+                    .toList();
+            if (closeMatches.isEmpty()) {
+                return "";
+            }
+            return String.format(Locale.ROOT, " Did you mean: %s?", parent.resolve(closeMatches.get(0)).normalize());
+        } catch (IOException e) {
+            return "";
+        }
     }
 
     private AppConfig loadConfig(Path config) throws IOException {

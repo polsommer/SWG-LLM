@@ -71,6 +71,19 @@ class MainTest {
     }
 
     @Test
+    void shouldSuggestCaseInsensitiveMatchWhenRepoPathHasWrongCase() throws IOException {
+        Main main = new Main();
+        Path existingRepo = Files.createDirectories(tempDir.resolve("swg-main"));
+        Path wrongCaseRepo = existingRepo.getParent().resolve("SWG-MAIN");
+        main.repoPath = wrongCaseRepo;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, main::resolveRepositoryPathForIngestion);
+
+        assertTrue(ex.getMessage().contains("Did you mean:"));
+        assertTrue(ex.getMessage().contains(existingRepo.toAbsolutePath().normalize().toString()));
+    }
+
+    @Test
     void shouldPreferRepoUrlWhenBothRepoPathAndRepoUrlProvided() throws Exception {
         RecordingGitRepositoryManager manager = new RecordingGitRepositoryManager(tempDir.resolve("checkout"));
         Main main = new Main(manager);
