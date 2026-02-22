@@ -475,7 +475,7 @@ public class Main implements Callable<Integer> {
         log.info("Benchmark completed in {} ms", elapsedMs);
     }
 
-    private void runImprovementPipeline() {
+    private void runImprovementPipeline() throws IOException {
         OfflineImprovementPipeline pipeline = new OfflineImprovementPipeline();
         ArtifactVersions candidate = new ArtifactVersions(
                 SemanticVersion.parse("0.2.0"),
