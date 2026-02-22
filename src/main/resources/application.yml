@@ -1,0 +1,6 @@
+app:
+  name: swg-llm
+  mode: interactive
+runtime:
+  baseUrl: https://api.example.com
+  timeoutMs: 30000
