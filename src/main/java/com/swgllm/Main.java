@@ -74,7 +74,7 @@ public class Main implements Callable<Integer> {
     @Option(names = "--enable-auto-learn", description = "Capture chat turns as positive feedback for the offline learning pipeline", defaultValue = "true")
     boolean enableAutoLearn;
 
-    @Option(names = "--repo-path", description = "Path to a local clone of swg-main", defaultValue = "../swg-main")
+    @Option(names = "--repo-path", description = "Path to the repository that should be ingested", defaultValue = ".")
     Path repoPath;
 
     @Option(names = "--index-path", description = "Path for local vector index JSON", defaultValue = ".swgllm/vector-index.json")
@@ -171,6 +171,10 @@ public class Main implements Callable<Integer> {
             runBenchmark(resolvedProfile);
         }
         if (mode == Mode.ingest) {
+            if (!Files.isDirectory(repoPath)) {
+                log.error("--repo-path does not exist or is not a directory: {}", repoPath.toAbsolutePath().normalize());
+                return 2;
+            }
             IngestionService ingestionService = new IngestionService(embeddingService);
             IngestionReport report = ingestionService.ingest(repoPath, indexPath, statePath);
             log.info("Indexed repo: processed={}, skipped={}, total={}, commit={}, tag={}",
