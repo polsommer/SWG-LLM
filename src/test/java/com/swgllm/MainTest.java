@@ -202,8 +202,13 @@ class MainTest {
         }
 
         @Override
-        public double[] embed(String text) {
-            return new double[] { 0.0, 0.0, 0.0 };
+        public float[] embed(String text) {
+            return new float[] { 0.0f, 0.0f, 0.0f };
+        }
+
+        @Override
+        public int dimension() {
+            return 3;
         }
     }
 }
