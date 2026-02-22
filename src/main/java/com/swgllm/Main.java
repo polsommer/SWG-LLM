@@ -296,7 +296,7 @@ public class Main implements Callable<Integer> {
         if (!Files.isDirectory(repoPath)) {
             Path normalizedRepoPath = repoPath.toAbsolutePath().normalize();
             Path workingDirectory = Path.of("").toAbsolutePath().normalize();
-            String hint = buildRepositoryPathHint(normalizedRepoPath);
+            String hint = buildRepositoryPathHint(normalizedRepoPath, workingDirectory);
             log.error("--repo-path does not exist or is not a directory: {} (cwd={})",
                     normalizedRepoPath,
                     workingDirectory);
@@ -308,7 +308,14 @@ public class Main implements Callable<Integer> {
         return repoPath;
     }
 
-    private String buildRepositoryPathHint(Path normalizedRepoPath) {
+    private String buildRepositoryPathHint(Path normalizedRepoPath, Path workingDirectory) {
+        List<String> hints = new ArrayList<>();
+        if (Files.isDirectory(workingDirectory)) {
+            hints.add(String.format(Locale.ROOT,
+                    "Current working directory is %s. If you intended this repository, pass --repo-path .",
+                    workingDirectory));
+        }
+
         Path parent = normalizedRepoPath.getParent();
         Path requestedNamePath = normalizedRepoPath.getFileName();
         if (parent == null || !Files.isDirectory(parent) || requestedNamePath == null) {
@@ -327,13 +334,19 @@ public class Main implements Callable<Integer> {
                     .filter(name -> name.equalsIgnoreCase(requestedName))
                     .sorted()
                     .toList();
-            if (closeMatches.isEmpty()) {
-                return "";
+            if (!closeMatches.isEmpty()) {
+                hints.add(String.format(Locale.ROOT,
+                        "Did you mean: %s?",
+                        parent.resolve(closeMatches.get(0)).normalize()));
             }
-            return String.format(Locale.ROOT, " Did you mean: %s?", parent.resolve(closeMatches.get(0)).normalize());
         } catch (IOException e) {
+            // Ignore hint failures and return any previously collected hints.
+        }
+
+        if (hints.isEmpty()) {
             return "";
         }
+        return " " + String.join(" ", hints);
     }
 
     private AppConfig loadConfig(Path config) throws IOException {
