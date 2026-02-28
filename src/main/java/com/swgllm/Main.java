@@ -29,6 +29,7 @@ import com.swgllm.governance.AutomaticEvaluationRunner;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
 import com.swgllm.governance.GovernanceTestResult;
+import com.swgllm.governance.GovernanceEvaluation;
 import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.EmbeddingServices;
 import com.swgllm.ingest.GitRepositoryManager;
@@ -679,10 +680,15 @@ public class Main implements Callable<Integer> {
                     testResults,
                     evaluationRun.artifactDirectory(),
                     policy);
-            log.info("Improvement pipeline completed examples={} adapter={} governancePassed={} evalArtifacts={}",
+            GovernanceEvaluation governanceEvaluation = result.governanceEvaluation();
+            String governanceStatus = governanceEvaluation == null
+                    ? "not-run"
+                    : (governanceEvaluation.passed() ? "passed" : "failed");
+            log.info("Improvement pipeline completed examples={} adapter={} governanceStatus={} governorDecision={} evalArtifacts={}",
                     result.trainingExamples(),
                     result.adapterArtifact(),
-                    result.governanceEvaluation().passed(),
+                    governanceStatus,
+                    result.safetyDecision().reason(),
                     result.evaluationArtifactDir());
         } catch (IllegalArgumentException e) {
             log.info("Improvement pipeline skipped: {}", e.getMessage());
