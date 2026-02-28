@@ -1,5 +1,5 @@
 # Local Gradle state
 .gradle/
 
-# Exclude wrapper binary jar to satisfy PR policy constraints
+# Wrapper binary is generated locally
 gradle/wrapper/gradle-wrapper.jar
