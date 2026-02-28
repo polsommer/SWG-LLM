@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import com.swgllm.governance.AutonomySafetyGovernor;
 import com.swgllm.ingest.GitCommandResult;
 import com.swgllm.ingest.GitCommandRunner;
 import com.swgllm.runtime.AppConfig;
@@ -21,15 +22,21 @@ public class AutoPublishService {
     private final CommandExecutor commandExecutor;
     private final AutoPublishAuditLog auditLog;
     private final Clock clock;
+    private final AutonomySafetyGovernor safetyGovernor;
 
     public AutoPublishService(GitCommandRunner gitCommandRunner) {
-        this((workingDirectory, command) -> gitCommandRunner.run(workingDirectory, command), new AutoPublishAuditLog(), Clock.systemUTC());
+        this((workingDirectory, command) -> gitCommandRunner.run(workingDirectory, command), new AutoPublishAuditLog(), Clock.systemUTC(), new AutonomySafetyGovernor());
     }
 
     AutoPublishService(CommandExecutor commandExecutor, AutoPublishAuditLog auditLog, Clock clock) {
+        this(commandExecutor, auditLog, clock, new AutonomySafetyGovernor());
+    }
+
+    AutoPublishService(CommandExecutor commandExecutor, AutoPublishAuditLog auditLog, Clock clock, AutonomySafetyGovernor safetyGovernor) {
         this.commandExecutor = commandExecutor;
         this.auditLog = auditLog;
         this.clock = clock;
+        this.safetyGovernor = safetyGovernor;
     }
 
     public PublishResult publish(PublishRequest request, AppConfig.AutoPublishConfig policy) throws IOException {
@@ -41,14 +48,33 @@ public class AutoPublishService {
         String details = "Policy gate blocked publish attempt";
         String commitHash = "";
 
+        boolean cycleSuccess = false;
+        boolean governorHalted = false;
+
         try {
-            String policyViolation = policyViolation(request, policy, timestamp);
-            if (policyViolation != null) {
-                details = policyViolation;
-                return new PublishResult(false, false, false, details, "", "", request.workspaceRoot());
+            AutonomySafetyGovernor.GovernorDecision decision = safetyGovernor.evaluatePublishCycle(
+                    new AutonomySafetyGovernor.PublishCycleContext(
+                            request.governorStatePath(),
+                            request.incidentLogPath(),
+                            request.datasetDelta(),
+                            request.promptTemplateDiffSize(),
+                            request.confidenceMargin(),
+                            request.uncertainImprovement()));
+            if (decision.halted()) {
+                governorHalted = true;
+                details = "Safety governor halted publish cycle: " + decision.reason();
+                return new PublishResult(false, false, false, details, "", "", request.workspaceRoot(), decision);
             }
 
-            Path localRepo = prepareRepository(request, policy);
+            String targetBranch = decision.quarantine() ? decision.branch() : request.branch();
+
+            String policyViolation = policyViolation(request, policy, timestamp, targetBranch);
+            if (policyViolation != null) {
+                details = policyViolation;
+                return new PublishResult(false, false, false, details, "", "", request.workspaceRoot(), decision);
+            }
+
+            Path localRepo = prepareRepository(request, policy, targetBranch);
             applyArtifacts(request.generatedArtifactsDir(), localRepo);
             runValidationChecks(request.validationCommands(), localRepo);
 
@@ -57,13 +83,15 @@ public class AutoPublishService {
             if (!hasDiff) {
                 outcome = "NO_CHANGES";
                 details = "No repository changes detected after applying generated artifacts";
-                return new PublishResult(true, false, false, details, "", commitMessage, localRepo);
+                cycleSuccess = true;
+                return new PublishResult(true, false, false, details, "", commitMessage, localRepo, decision);
             }
 
             if (request.dryRun() || policy.isDryRun()) {
                 outcome = "DRY_RUN";
                 details = "Dry-run enabled: commit and push skipped";
-                return new PublishResult(true, true, false, details, "", commitMessage, localRepo);
+                cycleSuccess = true;
+                return new PublishResult(true, true, false, details, "", commitMessage, localRepo, decision);
             }
 
             createCommit(localRepo, commitMessage);
@@ -72,14 +100,16 @@ public class AutoPublishService {
             if (!request.governancePassed() || !request.evaluationPassed()) {
                 outcome = "LOCAL_COMMIT_ONLY";
                 details = "Governance/evaluation checks failed; push was blocked";
-                return new PublishResult(true, true, false, details, commitHash, commitMessage, localRepo);
+                return new PublishResult(true, true, false, details, commitHash, commitMessage, localRepo, decision);
             }
 
-            runRequired(localRepo, "git", "push", "origin", request.branch());
-            outcome = "PUSHED";
-            details = "Changes pushed successfully";
-            return new PublishResult(true, true, true, details, commitHash, commitMessage, localRepo);
+            runRequired(localRepo, "git", "push", "origin", targetBranch);
+            outcome = decision.quarantine() ? "PUSHED_QUARANTINE" : "PUSHED";
+            details = decision.quarantine() ? "Changes pushed to quarantine branch" : "Changes pushed successfully";
+            cycleSuccess = true;
+            return new PublishResult(true, true, true, details, commitHash, commitMessage, localRepo, decision);
         } finally {
+            safetyGovernor.recordOutcome(request.governorStatePath(), cycleSuccess, false);
             AutoPublishAuditEntry entry = new AutoPublishAuditEntry(
                     timestamp,
                     request.actor(),
@@ -94,18 +124,18 @@ public class AutoPublishService {
                     request.scoreDelta(),
                     Map.copyOf(request.metrics()),
                     outcome,
-                    details,
+                    governorHalted ? details + " [governor_halt=true]" : details,
                     request.commitMessage().isBlank() ? defaultCommitMessage(request) : request.commitMessage(),
                     commitHash);
             auditLog.append(request.auditLogPath(), entry);
         }
     }
 
-    private String policyViolation(PublishRequest request, AppConfig.AutoPublishConfig policy, Instant now) throws IOException {
+    private String policyViolation(PublishRequest request, AppConfig.AutoPublishConfig policy, Instant now, String targetBranch) throws IOException {
         if (!policy.isEnabled()) {
             return "autopublish is disabled";
         }
-        if (!policy.getAllowedBranches().contains(request.branch())) {
+        if (!policy.getAllowedBranches().contains(targetBranch)) {
             return "branch is not in autopublish.allowedBranches";
         }
         if (request.scoreDelta() < policy.getRequiredMinScoreDelta()) {
@@ -123,7 +153,7 @@ public class AutoPublishService {
         return null;
     }
 
-    private Path prepareRepository(PublishRequest request, AppConfig.AutoPublishConfig policy) throws IOException {
+    private Path prepareRepository(PublishRequest request, AppConfig.AutoPublishConfig policy, String targetBranch) throws IOException {
         Path workspaceRoot = request.workspaceRoot() == null ? Path.of(policy.getWorkspacePath()) : request.workspaceRoot();
         Files.createDirectories(workspaceRoot);
 
@@ -131,10 +161,10 @@ public class AutoPublishService {
         Path repoPath = workspaceRoot.resolve(repoName);
         if (Files.exists(repoPath.resolve(".git"))) {
             runRequired(repoPath, "git", "fetch", "origin");
-            runRequired(repoPath, "git", "checkout", request.branch());
-            runRequired(repoPath, "git", "pull", "--ff-only", "origin", request.branch());
+            runRequired(repoPath, "git", "checkout", targetBranch);
+            runRequired(repoPath, "git", "pull", "--ff-only", "origin", targetBranch);
         } else {
-            runRequired(workspaceRoot, "git", "clone", "--branch", request.branch(), request.targetRepoUrl(), repoName);
+            runRequired(workspaceRoot, "git", "clone", "--branch", targetBranch, request.targetRepoUrl(), repoName);
         }
         return repoPath;
     }
@@ -232,7 +262,13 @@ public class AutoPublishService {
             double scoreDelta,
             Map<String, Double> metrics,
             boolean dryRun,
-            Path auditLogPath) {
+            Path auditLogPath,
+            double confidenceMargin,
+            int datasetDelta,
+            int promptTemplateDiffSize,
+            boolean uncertainImprovement,
+            Path governorStatePath,
+            Path incidentLogPath) {
         public PublishRequest {
             targetRepoUrl = targetRepoUrl == null || targetRepoUrl.isBlank()
                     ? "https://github.com/polsommer/llm-dsrc.git"
@@ -244,6 +280,8 @@ public class AutoPublishService {
             commitMessage = commitMessage == null ? "" : commitMessage;
             metrics = metrics == null ? Map.of() : Map.copyOf(metrics);
             auditLogPath = auditLogPath == null ? Path.of(".swgllm/autopublish-audit.log") : auditLogPath;
+            governorStatePath = governorStatePath == null ? Path.of(".swgllm/governor-state.json") : governorStatePath;
+            incidentLogPath = incidentLogPath == null ? Path.of(".swgllm/governor-incidents.jsonl") : incidentLogPath;
         }
     }
 
@@ -254,6 +292,7 @@ public class AutoPublishService {
             String details,
             String commitHash,
             String commitMessage,
-            Path localRepositoryPath) {
+            Path localRepositoryPath,
+            AutonomySafetyGovernor.GovernorDecision safetyDecision) {
     }
 }
