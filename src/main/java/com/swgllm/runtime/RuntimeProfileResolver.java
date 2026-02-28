@@ -54,6 +54,16 @@ public class RuntimeProfileResolver {
                 ? profile.getContextWindowTokens()
                 : runtimeConfig.getDefaultContextWindowTokens();
 
+        double temperature = profile.getTemperature() != null
+                ? profile.getTemperature()
+                : runtimeConfig.getDefaultTemperature();
+        double topP = profile.getTopP() != null
+                ? profile.getTopP()
+                : runtimeConfig.getDefaultTopP();
+        int maxTokens = profile.getMaxTokens() != null
+                ? profile.getMaxTokens()
+                : runtimeConfig.getDefaultMaxTokens();
+
         return new ResolvedProfile(
                 requested,
                 profileName,
@@ -61,6 +71,9 @@ public class RuntimeProfileResolver {
                 backend,
                 contextWindowTokens,
                 retrievalChunks,
+                temperature,
+                topP,
+                maxTokens,
                 fallbackCause);
     }
 
@@ -82,6 +95,9 @@ public class RuntimeProfileResolver {
             String backend,
             int contextWindowTokens,
             int retrievalChunks,
+            double temperature,
+            double topP,
+            int maxTokens,
             String fallbackCause) {
     }
 }

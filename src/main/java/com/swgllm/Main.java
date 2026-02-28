@@ -624,6 +624,9 @@ public class Main implements Callable<Integer> {
                         "cpu",
                         2048,
                         3,
+                        0.0,
+                        1.0,
+                        256,
                         "");
         RetrievalService retrievalService = new RetrievalService(embeddingService);
         List<SearchResult> sources;

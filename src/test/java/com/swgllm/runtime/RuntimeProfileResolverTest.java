@@ -59,6 +59,9 @@ class RuntimeProfileResolverTest {
         assertEquals("cpu", resolved.backend());
         assertEquals("", resolved.fallbackCause());
         assertEquals(4, resolved.retrievalChunks());
+        assertEquals(0.0, resolved.temperature());
+        assertEquals(1.0, resolved.topP());
+        assertEquals(256, resolved.maxTokens());
     }
 
     @Test
@@ -83,6 +86,18 @@ class RuntimeProfileResolverTest {
         igpu.setBackend("openvino-onednn-igpu");
         igpu.setContextWindowTokens(3072);
         igpu.setRetrievalChunks(5);
+
+        config.setDefaultTemperature(0.0);
+        config.setDefaultTopP(1.0);
+        config.setDefaultMaxTokens(256);
+
+        cpu.setTemperature(0.0);
+        cpu.setTopP(1.0);
+        cpu.setMaxTokens(256);
+
+        igpu.setTemperature(0.0);
+        igpu.setTopP(1.0);
+        igpu.setMaxTokens(256);
 
         config.setProfiles(Map.of("cpu-low-memory", cpu, "intel-igpu", igpu));
         return config;
