@@ -29,7 +29,7 @@ public class OfflineDatasetBuilder {
                         record.correctedAnswer(),
                         new TrainingExample.TrainingProvenance(
                                 record.requestId(),
-                                record.rating().name(),
+                                record.rating() == null ? "UNRATED" : record.rating().name(),
                                 record.createdAt(),
                                 "feedback_capture")))
                 .toList();

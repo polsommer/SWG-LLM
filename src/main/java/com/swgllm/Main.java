@@ -89,7 +89,7 @@ public class Main implements Callable<Integer> {
     @Option(names = "--runtime-profile", description = "Runtime profile from config (cpu-low-memory, intel-igpu)")
     String runtimeProfile;
 
-    @Option(names = "--enable-auto-learn", description = "Capture chat turns as positive feedback for the offline learning pipeline", defaultValue = "true")
+    @Option(names = "--enable-auto-learn", description = "Capture chat turns as telemetry feedback (not auto-approved for offline learning)", defaultValue = "true")
     boolean enableAutoLearn;
 
     @Option(names = "--repo-path", description = "Path to the repository that should be ingested")
@@ -465,28 +465,26 @@ public class Main implements Callable<Integer> {
 
             conversation.add("user: " + promptInput);
             conversation.add("assistant: " + response);
-            captureAutoFeedback(promptInput, response, lastSources);
+            captureAutoFeedback(promptInput, response);
         }
     }
 
-    private void captureAutoFeedback(String promptInput, String response, List<SearchResult> lastSources) {
+    private void captureAutoFeedback(String promptInput, String response) {
         if (!enableAutoLearn) {
             return;
         }
         FeedbackCaptureService feedbackCaptureService = new FeedbackCaptureService();
-        String corrected = lastSources.isEmpty()
-                ? response
-                : lastSources.get(0).citationSnippet();
         try {
             FeedbackRecord feedback = feedbackCaptureService.capture(
                     feedbackPath,
-                    FeedbackRating.THUMBS_UP,
+                    null,
                     promptInput,
                     response,
-                    corrected,
-                    true);
-            log.debug("Auto-feedback captured requestId={} approvedForTraining={}",
+                    null,
+                    false);
+            log.debug("Auto-feedback captured requestId={} rating={} approvedForTraining={}",
                     feedback.requestId(),
+                    feedback.rating(),
                     feedback.approvedForTraining());
         } catch (IOException e) {
             log.warn("Unable to persist auto-feedback to {}", feedbackPath, e);
