@@ -1,6 +1,7 @@
 package com.swgllm.runtime;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class AppConfig {
     private RuntimeConfig runtime = new RuntimeConfig();
     private ContinuousModeConfig continuous = new ContinuousModeConfig();
+    private AutoPublishConfig autopublish = new AutoPublishConfig();
 
     public RuntimeConfig getRuntime() {
         return runtime;
@@ -24,6 +26,14 @@ public class AppConfig {
 
     public void setContinuous(ContinuousModeConfig continuous) {
         this.continuous = continuous == null ? new ContinuousModeConfig() : continuous;
+    }
+
+    public AutoPublishConfig getAutopublish() {
+        return autopublish;
+    }
+
+    public void setAutopublish(AutoPublishConfig autopublish) {
+        this.autopublish = autopublish == null ? new AutoPublishConfig() : autopublish;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -188,6 +198,82 @@ public class AppConfig {
 
         public void setStatePath(String statePath) {
             this.statePath = statePath;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class AutoPublishConfig {
+        private boolean enabled = false;
+        private String targetRepoUrl = "https://github.com/polsommer/llm-dsrc.git";
+        private String workspacePath = ".swgllm/autopublish/workspace";
+        private List<String> allowedBranches = List.of("main");
+        private double requiredMinScoreDelta = 0.0;
+        private int maxPushesPerDay = 3;
+        private boolean manualApprovalForHighImpactChanges = true;
+        private boolean dryRun = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getTargetRepoUrl() {
+            return targetRepoUrl;
+        }
+
+        public void setTargetRepoUrl(String targetRepoUrl) {
+            this.targetRepoUrl = targetRepoUrl;
+        }
+
+        public String getWorkspacePath() {
+            return workspacePath;
+        }
+
+        public void setWorkspacePath(String workspacePath) {
+            this.workspacePath = workspacePath;
+        }
+
+        public List<String> getAllowedBranches() {
+            return allowedBranches;
+        }
+
+        public void setAllowedBranches(List<String> allowedBranches) {
+            this.allowedBranches = allowedBranches == null ? List.of("main") : allowedBranches;
+        }
+
+        public double getRequiredMinScoreDelta() {
+            return requiredMinScoreDelta;
+        }
+
+        public void setRequiredMinScoreDelta(double requiredMinScoreDelta) {
+            this.requiredMinScoreDelta = requiredMinScoreDelta;
+        }
+
+        public int getMaxPushesPerDay() {
+            return maxPushesPerDay;
+        }
+
+        public void setMaxPushesPerDay(int maxPushesPerDay) {
+            this.maxPushesPerDay = maxPushesPerDay;
+        }
+
+        public boolean isManualApprovalForHighImpactChanges() {
+            return manualApprovalForHighImpactChanges;
+        }
+
+        public void setManualApprovalForHighImpactChanges(boolean manualApprovalForHighImpactChanges) {
+            this.manualApprovalForHighImpactChanges = manualApprovalForHighImpactChanges;
+        }
+
+        public boolean isDryRun() {
+            return dryRun;
+        }
+
+        public void setDryRun(boolean dryRun) {
+            this.dryRun = dryRun;
         }
     }
 }

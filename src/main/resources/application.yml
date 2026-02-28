@@ -26,3 +26,14 @@ continuous:
   maxRuntimeMs: 0
   idleTimeoutMs: 900000
   statePath: .swgllm/continuous-state.json
+
+autopublish:
+  enabled: false
+  targetRepoUrl: https://github.com/polsommer/llm-dsrc.git
+  workspacePath: .swgllm/autopublish/workspace
+  allowedBranches:
+    - main
+  requiredMinScoreDelta: 0.02
+  maxPushesPerDay: 3
+  manualApprovalForHighImpactChanges: true
+  dryRun: true
