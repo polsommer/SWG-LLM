@@ -41,6 +41,13 @@ class MainTest {
         Path daemonStatePath = tempDir.resolve("continuous-state.json");
         Files.writeString(configPath, """
                 runtime:
+                  defaultProfile: cpu-low-memory
+                  profiles:
+                    cpu-low-memory:
+                      model: test-model
+                      backend: cpu
+                      contextWindowTokens: 2048
+                      retrievalChunks: 4
                   timeoutMs: 30000
                 continuous:
                   ingestIntervalMs: 0
@@ -232,6 +239,13 @@ class MainTest {
         try {
             return Files.writeString(configPath, """
                     runtime:
+                      defaultProfile: cpu-low-memory
+                      profiles:
+                        cpu-low-memory:
+                          model: test-model
+                          backend: cpu
+                          contextWindowTokens: 2048
+                          retrievalChunks: 4
                       timeoutMs: 30000
                     """);
         } catch (RuntimeException e) {

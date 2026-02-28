@@ -267,7 +267,7 @@ class AutoPublishServiceTest {
         Instant now = Instant.parse("2026-01-01T02:00:00Z");
 
         auditLog.append(auditPath, new AutoPublishAuditEntry(
-                Instant.parse("2026-01-01T01:00:00Z"),
+                Instant.parse("2025-12-31T07:00:00Z"),
                 "tester",
                 "prior-local-previous-day",
                 "https://example.com/repo.git",

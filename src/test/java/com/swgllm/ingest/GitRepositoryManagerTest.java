@@ -19,13 +19,15 @@ class GitRepositoryManagerTest {
 
     @Test
     void shouldCleanBeforeCheckoutOnExistingClone() throws Exception {
-        Path checkout = tempDir.resolve("repo-dir");
+        String repoUrl = "https://example.com/org/repo.git";
+        GitRepositoryManager manager = new GitRepositoryManager();
+        Path checkout = tempDir.resolve(manager.repositoryDirectoryName(repoUrl));
         Files.createDirectories(checkout.resolve(".git"));
 
         RecordingRunner runner = new RecordingRunner(checkout);
-        GitRepositoryManager manager = new GitRepositoryManager(runner);
+        manager = new GitRepositoryManager(runner);
 
-        manager.prepareRepository("https://example.com/org/repo.git", tempDir);
+        manager.prepareRepository(repoUrl, tempDir);
 
         assertEquals(List.of(
                 "git -C " + checkout + " fetch --prune origin",
