@@ -83,7 +83,7 @@ public class Main implements Callable<Integer> {
     @Option(names = "--enable-auto-learn", description = "Capture chat turns as positive feedback for the offline learning pipeline", defaultValue = "true")
     boolean enableAutoLearn;
 
-    @Option(names = "--repo-path", description = "Path to the repository that should be ingested", defaultValue = ".")
+    @Option(names = "--repo-path", description = "Path to the repository that should be ingested")
     Path repoPath;
 
     @Option(names = "--repo-url", description = "Remote Git repository URL to ingest")
@@ -308,8 +308,10 @@ public class Main implements Callable<Integer> {
             return gitRepositoryManager.prepareRepository(repoUrl, repoCacheDir);
         }
 
-        if (!Files.isDirectory(repoPath)) {
-            Path normalizedRepoPath = repoPath.toAbsolutePath().normalize();
+        Path effectiveRepoPath = repoPath == null ? Path.of(".") : repoPath;
+
+        if (!Files.isDirectory(effectiveRepoPath)) {
+            Path normalizedRepoPath = effectiveRepoPath.toAbsolutePath().normalize();
             Path workingDirectory = Path.of("").toAbsolutePath().normalize();
             String hint = buildRepositoryPathHint(normalizedRepoPath, workingDirectory);
             log.error("--repo-path does not exist or is not a directory: {} (cwd={})",
@@ -320,7 +322,7 @@ public class Main implements Callable<Integer> {
                     normalizedRepoPath,
                     hint));
         }
-        return repoPath;
+        return effectiveRepoPath;
     }
 
     private String buildRepositoryPathHint(Path normalizedRepoPath, Path workingDirectory) {
