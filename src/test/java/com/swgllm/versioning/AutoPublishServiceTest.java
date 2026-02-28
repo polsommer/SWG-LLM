@@ -192,6 +192,71 @@ class AutoPublishServiceTest {
         assertEquals("quarantine/uncertain-improvements", entry.branch());
     }
 
+    @Test
+    void shouldCountQuarantinePushesTowardDailyPushLimit() throws Exception {
+        Path tempDir = Files.createTempDirectory("autopublish-limit");
+        Path auditPath = tempDir.resolve("audit.log");
+        AutoPublishAuditLog auditLog = new AutoPublishAuditLog();
+        Instant now = Instant.parse("2026-01-01T10:00:00Z");
+        auditLog.append(auditPath, new AutoPublishAuditEntry(
+                now.minusSeconds(300),
+                "tester",
+                "prior-quarantine",
+                "https://example.com/repo.git",
+                "quarantine/uncertain-improvements",
+                false,
+                true,
+                true,
+                false,
+                true,
+                0.2,
+                Map.of(),
+                "PUSHED_QUARANTINE",
+                "pushed to quarantine",
+                "msg",
+                "abc123"));
+
+        AutoPublishService service = new AutoPublishService(
+                (workingDirectory, command) -> new GitCommandResult(0, "", "", false, false, false),
+                auditLog,
+                Clock.fixed(now, ZoneOffset.UTC));
+
+        AppConfig.AutoPublishConfig config = new AppConfig.AutoPublishConfig();
+        config.setEnabled(true);
+        config.setAllowedBranches(List.of("main", "quarantine/uncertain-improvements"));
+        config.setMaxPushesPerDay(1);
+        config.setRequiredMinScoreDelta(0.01);
+        config.setDryRun(false);
+
+        AutoPublishService.PublishResult result = service.publish(new AutoPublishService.PublishRequest(
+                "https://example.com/repo.git",
+                tempDir,
+                null,
+                List.of(),
+                "main",
+                "tester",
+                "new-run",
+                "",
+                true,
+                true,
+                false,
+                true,
+                0.12,
+                Map.of("eval", 0.9),
+                false,
+                auditPath,
+                0.05,
+                10,
+                5,
+                false,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
+
+        assertFalse(result.policyPassed());
+        assertEquals("max pushes/day gate reached", result.details());
+        assertEquals("BLOCKED", auditLog.readAll(auditPath).getLast().outcome());
+    }
+
     private static class StubCommandExecutor implements AutoPublishService.CommandExecutor {
         private final List<String> expected;
         private final Map<String, GitCommandResult> responses = new HashMap<>();

@@ -24,7 +24,7 @@ public class AutoPublishAuditLog {
 
     public long countSuccessfulPushesSince(Path auditLogPath, Instant cutoffInclusive) throws IOException {
         return readAll(auditLogPath).stream()
-                .filter(entry -> "PUSHED".equals(entry.outcome()))
+                .filter(entry -> "PUSHED".equals(entry.outcome()) || "PUSHED_QUARANTINE".equals(entry.outcome()))
                 .filter(entry -> !entry.timestamp().isBefore(cutoffInclusive))
                 .count();
     }
