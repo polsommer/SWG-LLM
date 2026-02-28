@@ -687,6 +687,9 @@ public class Main implements Callable<Integer> {
         StringBuilder memory = new StringBuilder("Earlier context summary: ");
         int included = 0;
         for (String turn : omittedTurns) {
+            if (isAssistantTurn(turn)) {
+                continue;
+            }
             if (included >= 6) {
                 memory.append(" …");
                 break;
@@ -697,7 +700,15 @@ public class Main implements Callable<Integer> {
             memory.append(clipToWords(turn, 12));
             included++;
         }
+
+        if (included == 0 && !omittedTurns.isEmpty()) {
+            memory.append(clipToWords(omittedTurns.get(0), 12));
+        }
         return new PromptMemory(recentTurns, clipToWords(memory.toString(), 60));
+    }
+
+    private static boolean isAssistantTurn(String turn) {
+        return turn != null && turn.stripLeading().regionMatches(true, 0, "assistant:", 0, "assistant:".length());
     }
 
     private static String clipToWords(String text, int maxWords) {
