@@ -124,7 +124,7 @@ class MainTest {
     @Test
     void shouldPreferRepoUrlWhenBothRepoPathAndRepoUrlProvided() throws Exception {
         RecordingGitRepositoryManager manager = new RecordingGitRepositoryManager(tempDir.resolve("checkout"));
-        Main main = new Main(manager);
+        SequencingMain main = new SequencingMain(manager);
         Path localRepo = Files.createDirectories(tempDir.resolve("local-repo"));
 
         int exitCode = new CommandLine(main).execute(
@@ -135,6 +135,7 @@ class MainTest {
         assertEquals(0, exitCode);
         assertEquals("https://example.com/repo.git", manager.recordedRepoUrl);
         assertTrue(Files.exists(manager.resolvedPath));
+        assertEquals(List.of("ingest"), main.events);
     }
 
     @Test
