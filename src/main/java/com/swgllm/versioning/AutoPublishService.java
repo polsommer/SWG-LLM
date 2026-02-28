@@ -50,6 +50,7 @@ public class AutoPublishService {
 
         boolean cycleSuccess = false;
         boolean governorHalted = false;
+        String auditBranch = request.branch();
 
         try {
             AutonomySafetyGovernor.GovernorDecision decision = safetyGovernor.evaluatePublishCycle(
@@ -67,6 +68,7 @@ public class AutoPublishService {
             }
 
             String targetBranch = decision.quarantine() ? decision.branch() : request.branch();
+            auditBranch = targetBranch;
 
             String policyViolation = policyViolation(request, policy, timestamp, targetBranch);
             if (policyViolation != null) {
@@ -115,7 +117,7 @@ public class AutoPublishService {
                     request.actor(),
                     request.reason(),
                     request.targetRepoUrl(),
-                    request.branch(),
+                    auditBranch,
                     request.dryRun() || policy.isDryRun(),
                     request.governancePassed(),
                     request.evaluationPassed(),
