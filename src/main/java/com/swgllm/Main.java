@@ -55,6 +55,9 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParseResult;
+import picocli.CommandLine.Spec;
+import picocli.CommandLine.Model.CommandSpec;
 
 @Command(
         name = "swg-llm",
@@ -67,6 +70,9 @@ public class Main implements Callable<Integer> {
     static final int EXIT_DOWNLOAD_FAILURE = 3;
     static final int EXIT_INGEST_FAILURE = 4;
     static final int EXIT_IMPROVE_FAILURE = 5;
+
+    @Spec
+    CommandSpec commandSpec;
 
     @Option(names = { "-c", "--config" }, description = "Path to YAML config file", defaultValue = "src/main/resources/application.yml")
     String configPath;
@@ -301,7 +307,7 @@ public class Main implements Callable<Integer> {
     Path resolveRepositoryPathForIngestion() throws IOException, InterruptedException {
         boolean hasRepoUrl = repoUrl != null && !repoUrl.isBlank();
         if (hasRepoUrl) {
-            if (repoPath != null) {
+            if (wasRepoPathExplicitlyProvided()) {
                 log.info("Both --repo-url and --repo-path provided. Prioritizing --repo-url and ignoring --repo-path={}",
                         repoPath.toAbsolutePath().normalize());
             }
@@ -323,6 +329,14 @@ public class Main implements Callable<Integer> {
                     hint));
         }
         return effectiveRepoPath;
+    }
+
+    private boolean wasRepoPathExplicitlyProvided() {
+        if (commandSpec == null || commandSpec.commandLine() == null) {
+            return false;
+        }
+        ParseResult parseResult = commandSpec.commandLine().getParseResult();
+        return parseResult != null && parseResult.hasMatchedOption("--repo-path");
     }
 
     private String buildRepositoryPathHint(Path normalizedRepoPath, Path workingDirectory) {
