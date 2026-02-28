@@ -261,9 +261,6 @@ class AutoPublishServiceTest {
     @Test
     void shouldApplyDailyPushLimitUsingClockTimeZoneBoundary() throws Exception {
         Path tempDir = Files.createTempDirectory("autopublish-zone-limit");
-        Path artifactsDir = tempDir.resolve("artifacts");
-        Files.createDirectories(artifactsDir);
-        Files.writeString(artifactsDir.resolve("README.md"), "new content");
         Path auditPath = tempDir.resolve("audit.log");
         Path artifactsDir = tempDir.resolve("artifacts");
         Files.createDirectories(artifactsDir);
