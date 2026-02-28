@@ -532,25 +532,57 @@ public class Main implements Callable<Integer> {
             List<String> conversation,
             List<SearchResult> sources,
             RuntimeProfileResolver.ResolvedProfile profile) {
-        int budget = Math.max(256, profile.contextWindowTokens());
-        int reservedForResponse = Math.max(96, profile.maxTokens());
-        int availableBudget = Math.max(128, budget - reservedForResponse);
+        int budget = Math.max(64, profile.contextWindowTokens());
+        int reservedForResponse = Math.max(32, Math.min(profile.maxTokens(), budget / 2));
+        int availableBudget = Math.max(48, budget - reservedForResponse);
 
         int baseTokens = estimateTokens("System instruction: " + PromptPolicyTemplateRegistry.activeSystemPolicy())
                 + estimateTokens("Runtime profile: " + profile.profileName() + " model " + profile.model() + " backend " + profile.backend())
                 + estimateTokens("Current user request: " + userPrompt)
                 + 32;
-        int remaining = Math.max(64, availableBudget - baseTokens);
+        int remaining = Math.max(24, availableBudget - baseTokens);
 
-        int snippetBudget = Math.max(40, Math.min(remaining / 3, profile.retrievalChunks() * 60));
+        int snippetBudget = Math.max(16, Math.min(remaining / 3, profile.retrievalChunks() * 60));
         List<SearchResult> boundedSources = selectSourcesWithinBudget(sources, snippetBudget, profile.retrievalChunks());
         int usedBySnippets = boundedSources.stream()
                 .mapToInt(s -> estimateTokens(s.citationSnippet()))
                 .sum();
-        int conversationBudget = Math.max(48, remaining - usedBySnippets);
+        int conversationBudget = Math.max(20, remaining - usedBySnippets);
         PromptMemory promptMemory = summarizeConversationWithinBudget(conversation, conversationBudget);
 
-        return buildPromptWithSections(userPrompt, promptMemory.turns(), boundedSources, profile, promptMemory.summary());
+        return fitPromptWithinBudget(userPrompt, promptMemory.turns(), boundedSources, profile, promptMemory.summary(), budget);
+    }
+
+    private static String fitPromptWithinBudget(
+            String userPrompt,
+            List<String> conversation,
+            List<SearchResult> sources,
+            RuntimeProfileResolver.ResolvedProfile profile,
+            String memorySummary,
+            int budget) {
+        List<String> mutableConversation = new ArrayList<>(conversation);
+        List<SearchResult> mutableSources = new ArrayList<>(sources);
+        String mutableSummary = memorySummary;
+
+        String prompt = buildPromptWithSections(userPrompt, mutableConversation, mutableSources, profile, mutableSummary);
+        while (estimateTokens(prompt) > budget) {
+            if (!mutableConversation.isEmpty()) {
+                mutableConversation.remove(0);
+            } else if (!mutableSources.isEmpty()) {
+                SearchResult source = mutableSources.remove(mutableSources.size() - 1);
+                String shortened = clipToWords(source.citationSnippet(), 20);
+                if (!shortened.equals(source.citationSnippet())) {
+                    mutableSources.add(new SearchResult(source.chunk(), source.score(), source.rerankScore(), shortened));
+                }
+            } else if (mutableSummary != null && !mutableSummary.isBlank()) {
+                String clipped = clipToWords(mutableSummary, Math.max(6, estimateTokens(mutableSummary) - 8));
+                mutableSummary = clipped.equals(mutableSummary) ? null : clipped;
+            } else {
+                break;
+            }
+            prompt = buildPromptWithSections(userPrompt, mutableConversation, mutableSources, profile, mutableSummary);
+        }
+        return prompt;
     }
 
     private static String buildPromptWithSections(
