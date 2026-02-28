@@ -147,7 +147,9 @@ public class AutoPublishService {
             return "manual approval is required for high-impact changes";
         }
 
-        Instant startOfDay = LocalDate.now(clock).atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant startOfDay = LocalDate.now(clock)
+                .atStartOfDay(clock.getZone())
+                .toInstant();
         long pushesToday = auditLog.countSuccessfulPushesSince(request.auditLogPath(), startOfDay);
         if (pushesToday >= policy.getMaxPushesPerDay()) {
             return "max pushes/day gate reached";

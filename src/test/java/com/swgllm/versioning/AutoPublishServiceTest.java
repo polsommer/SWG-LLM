@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
@@ -255,6 +256,72 @@ class AutoPublishServiceTest {
         assertFalse(result.policyPassed());
         assertEquals("max pushes/day gate reached", result.details());
         assertEquals("BLOCKED", auditLog.readAll(auditPath).getLast().outcome());
+    }
+
+    @Test
+    void shouldApplyDailyPushLimitUsingClockTimeZoneBoundary() throws Exception {
+        Path tempDir = Files.createTempDirectory("autopublish-zone-limit");
+        Path auditPath = tempDir.resolve("audit.log");
+        AutoPublishAuditLog auditLog = new AutoPublishAuditLog();
+        ZoneId zone = ZoneId.of("America/Los_Angeles");
+        Instant now = Instant.parse("2026-01-01T02:00:00Z");
+
+        auditLog.append(auditPath, new AutoPublishAuditEntry(
+                Instant.parse("2026-01-01T01:00:00Z"),
+                "tester",
+                "prior-local-previous-day",
+                "https://example.com/repo.git",
+                "main",
+                false,
+                true,
+                true,
+                false,
+                true,
+                0.2,
+                Map.of(),
+                "PUSHED",
+                "pushed before local midnight",
+                "msg",
+                "abc123"));
+
+        AutoPublishService service = new AutoPublishService(
+                (workingDirectory, command) -> new GitCommandResult(0, "", "", false, false, false),
+                auditLog,
+                Clock.fixed(now, zone));
+
+        AppConfig.AutoPublishConfig config = new AppConfig.AutoPublishConfig();
+        config.setEnabled(true);
+        config.setAllowedBranches(List.of("main"));
+        config.setMaxPushesPerDay(1);
+        config.setRequiredMinScoreDelta(0.01);
+        config.setDryRun(true);
+
+        AutoPublishService.PublishResult result = service.publish(new AutoPublishService.PublishRequest(
+                "https://example.com/repo.git",
+                tempDir,
+                null,
+                List.of(),
+                "main",
+                "tester",
+                "new-run",
+                "",
+                true,
+                true,
+                false,
+                true,
+                0.12,
+                Map.of("eval", 0.9),
+                false,
+                auditPath,
+                0.05,
+                10,
+                5,
+                false,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
+
+        assertTrue(result.policyPassed());
+        assertEquals("DRY_RUN", auditLog.readAll(auditPath).getLast().outcome());
     }
 
     private static class StubCommandExecutor implements AutoPublishService.CommandExecutor {
