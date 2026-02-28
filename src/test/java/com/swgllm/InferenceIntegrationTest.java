@@ -13,6 +13,7 @@ import com.swgllm.inference.InferenceEngine;
 import com.swgllm.inference.IntelIgpuInferenceEngine;
 import com.swgllm.runtime.RuntimeProfileResolver;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -97,6 +98,94 @@ class InferenceIntegrationTest {
         assertTrue(prompt.contains("explicitly state uncertainty"));
         assertTrue(prompt.contains("Do not dump raw snippets verbatim unless the user explicitly asks"));
         assertTrue(prompt.contains("Current user request:\nHow does this work?"));
+    }
+
+
+    @Test
+    void shouldBuildPromptWithinContextBudget() {
+        RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
+                "cpu-low-memory",
+                "cpu-low-memory",
+                "model-a",
+                "cpu",
+                220,
+                2,
+                0.0,
+                1.0,
+                100,
+                "");
+
+        List<String> conversation = new java.util.ArrayList<>();
+        for (int i = 0; i < 14; i++) {
+            conversation.add("user: user turn " + i + " long details about migration plan phase " + i + " and many constraints");
+            conversation.add("assistant: assistant response " + i + " with mitigation actions, owners, schedules and trade-offs");
+        }
+
+        List<SearchResult> sources = List.of(
+                searchResult("chunk-1", "src/Legacy.java", 1, 20, "Legacy module note repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated."),
+                searchResult("chunk-2", "src/New.java", 30, 60, "New module note repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated."),
+                searchResult("chunk-3", "src/Other.java", 5, 15, "Other note repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated repeated."));
+
+        String prompt = Main.buildPromptWithinBudget("Give a rollout recommendation", conversation, sources, profile);
+
+        assertTrue(prompt.split("\\s+").length <= profile.contextWindowTokens());
+    }
+
+    @Test
+    void shouldPreserveImportantRecentTurnsWhenSummarizing() {
+        RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
+                "cpu-low-memory",
+                "cpu-low-memory",
+                "model-a",
+                "cpu",
+                240,
+                2,
+                0.0,
+                1.0,
+                100,
+                "");
+
+        List<String> conversation = List.of(
+                "user: old requirement about batch import",
+                "assistant: old answer about migration",
+                "user: mid context for service boundaries",
+                "assistant: mid answer for boundaries",
+                "user: latest critical ask about rollback safety",
+                "assistant: latest guidance mentions rollback checklists");
+
+        String prompt = Main.buildPromptWithinBudget("What should we do next?", conversation, List.of(), profile);
+
+        assertTrue(prompt.contains("latest critical ask about rollback safety"));
+        assertTrue(prompt.contains("latest guidance mentions rollback checklists"));
+    }
+
+    @Test
+    void shouldSummarizeOlderContentInsteadOfDroppingItEntirely() {
+        RuntimeProfileResolver.ResolvedProfile profile = new RuntimeProfileResolver.ResolvedProfile(
+                "cpu-low-memory",
+                "cpu-low-memory",
+                "model-a",
+                "cpu",
+                220,
+                1,
+                0.0,
+                1.0,
+                100,
+                "");
+
+        List<String> conversation = List.of(
+                "user: very old architecture decision around auth service segmentation and token boundaries",
+                "assistant: very old answer about auth segmentation and token boundaries",
+                "user: newer detail",
+                "assistant: newer answer",
+                "user: latest request",
+                "assistant: latest response");
+
+        String prompt = Main.buildPromptWithinBudget("Need summary", conversation, List.of(), profile);
+
+        assertTrue(prompt.contains("memory note: Earlier context summary:"));
+        assertTrue(prompt.contains("very old architecture decision around auth service segmentation"));
+        assertFalse(prompt.contains("very old answer about auth segmentation and token boundaries\n"));
     }
 
     @Test
