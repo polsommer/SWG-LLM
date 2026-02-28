@@ -89,12 +89,13 @@ APP_BASE_NAME=${0##*/}
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
 WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+if [ -z "$SWG_LLM_FORCE_WRAPPER" ] && command -v gradle >/dev/null 2>&1 ; then
+    # In sandboxed environments the wrapper often cannot download distributions.
+    # Prefer a preinstalled Gradle unless SWG_LLM_FORCE_WRAPPER is set.
+    exec gradle "$@"
+fi
 if [ ! -f "$WRAPPER_JAR" ] ; then
-    if command -v gradle >/dev/null 2>&1 ; then
-        echo "gradle-wrapper.jar is missing; falling back to system 'gradle'." >&2
-        exec gradle "$@"
-    fi
-    echo "ERROR: gradle-wrapper.jar is missing and no system 'gradle' command was found." >&2
+    echo "ERROR: gradle-wrapper.jar is missing and no system fallback was selected." >&2
     echo "Run 'gradle wrapper' once to regenerate wrapper artifacts." >&2
     exit 1
 fi
