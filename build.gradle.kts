@@ -5,6 +5,9 @@ plugins {
     // id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
+
 group = "com.swgllm"
 version = "0.1.0"
 
@@ -56,6 +59,91 @@ tasks.withType<Test> {
         showStackTraces = true
         showStandardStreams = true
     }
+}
+
+tasks.register("testFailureDiagnostics") {
+    group = "verification"
+    description = "Emits concise diagnostics for JUnit XML failures from build/test-results/test/*.xml."
+
+    val testResultsDir = layout.buildDirectory.dir("test-results/test")
+
+    doLast {
+        val dir = testResultsDir.get().asFile
+        val xmlFiles = dir.listFiles { file -> file.isFile && file.extension == "xml" }
+            ?.sortedBy { it.name }
+            .orEmpty()
+
+        if (xmlFiles.isEmpty()) {
+            logger.lifecycle("No JUnit XML files found under ${dir.path}; skipping failure diagnostics.")
+            return@doLast
+        }
+
+        val parser = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+        var failuresFound = 0
+
+        xmlFiles.forEach { xml ->
+            val doc = parser.parse(xml)
+            val testCases = doc.getElementsByTagName("testcase")
+
+            for (i in 0 until testCases.length) {
+                val testCase = testCases.item(i)
+                val children = testCase.childNodes
+
+                for (j in 0 until children.length) {
+                    val child = children.item(j)
+                    if (child.nodeName != "failure" && child.nodeName != "error") {
+                        continue
+                    }
+
+                    failuresFound++
+                    val className = testCase.attributes?.getNamedItem("classname")?.nodeValue ?: "<unknown class>"
+                    val methodName = testCase.attributes?.getNamedItem("name")?.nodeValue ?: "<unknown method>"
+                    val fqTestName = "$className.$methodName"
+
+                    val messageAttr = child.attributes?.getNamedItem("message")?.nodeValue?.trim().orEmpty()
+                    val details = child.textContent?.trim().orEmpty()
+                    val message = messageAttr.ifBlank {
+                        details.lineSequence().firstOrNull { it.isNotBlank() } ?: "<no message>"
+                    }
+
+                    val firstProjectFrame = details
+                        .lineSequence()
+                        .map { it.trim() }
+                        .filter { it.startsWith("at ") }
+                        .mapNotNull { frame ->
+                            val methodStart = frame.removePrefix("at ").substringBefore("(")
+                            val classNameInFrame = methodStart.substringBeforeLast('.', missingDelimiterValue = "")
+                            if (classNameInFrame.isBlank()) {
+                                return@mapNotNull null
+                            }
+
+                            val candidates = listOf(
+                                File(projectDir, "src/main/java/${classNameInFrame.substringBefore('$').replace('.', '/')}.java"),
+                                File(projectDir, "src/test/java/${classNameInFrame.substringBefore('$').replace('.', '/')}.java")
+                            )
+                            val source = candidates.firstOrNull { it.exists() } ?: return@mapNotNull null
+                            "$frame [$source]"
+                        }
+                        .firstOrNull()
+                        ?: "<no project frame in src/main or src/test>"
+
+                    logger.lifecycle("\n==== JUnit failure ====")
+                    logger.lifecycle("test: $fqTestName")
+                    logger.lifecycle("message: $message")
+                    logger.lifecycle("firstProjectFrame: $firstProjectFrame")
+                    logger.lifecycle("raw ${child.nodeName} content:\n$details")
+                }
+            }
+        }
+
+        if (failuresFound == 0) {
+            logger.lifecycle("No failing <testcase> entries found in JUnit XML files.")
+        }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    finalizedBy("testFailureDiagnostics")
 }
 
 tasks.named<JavaExec>("run") {
