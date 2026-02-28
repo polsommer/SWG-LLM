@@ -324,6 +324,63 @@ class AutoPublishServiceTest {
         assertEquals("DRY_RUN", auditLog.readAll(auditPath).getLast().outcome());
     }
 
+    @Test
+    void shouldSupportScpStyleGitUrlsWhenResolvingRepositoryName() throws Exception {
+        Path tempDir = Files.createTempDirectory("autopublish-scp-url");
+        Path artifactsDir = tempDir.resolve("artifacts");
+        Files.createDirectories(artifactsDir);
+        Files.writeString(artifactsDir.resolve("README.md"), "new content");
+        Path auditPath = tempDir.resolve("audit.log");
+
+        List<String> commands = List.of(
+                "git clone --branch main git@github.com:example/repo.git repo",
+                "git add -A",
+                "git status --porcelain");
+        StubCommandExecutor executor = new StubCommandExecutor(commands);
+        executor.register(commands.get(0), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(1), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(2), new GitCommandResult(0, "M README.md", "", false, false, false));
+
+        AutoPublishService service = new AutoPublishService(
+                executor,
+                new AutoPublishAuditLog(),
+                Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC));
+
+        AppConfig.AutoPublishConfig config = new AppConfig.AutoPublishConfig();
+        config.setEnabled(true);
+        config.setAllowedBranches(List.of("main"));
+        config.setDryRun(true);
+        config.setWorkspacePath(tempDir.resolve("workspace").toString());
+        config.setTargetRepoUrl("git@github.com:example/repo.git");
+
+        AutoPublishService.PublishResult result = service.publish(new AutoPublishService.PublishRequest(
+                "git@github.com:example/repo.git",
+                tempDir.resolve("workspace"),
+                artifactsDir,
+                List.of(),
+                "main",
+                "tester",
+                "update-doc",
+                "",
+                true,
+                true,
+                false,
+                true,
+                0.12,
+                Map.of("eval", 0.91),
+                false,
+                auditPath,
+                0.05,
+                10,
+                5,
+                false,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
+
+        assertTrue(result.policyPassed());
+        assertEquals("DRY_RUN", new AutoPublishAuditLog().readAll(auditPath).getFirst().outcome());
+    }
+
     private static class StubCommandExecutor implements AutoPublishService.CommandExecutor {
         private final List<String> expected;
         private final Map<String, GitCommandResult> responses = new HashMap<>();
