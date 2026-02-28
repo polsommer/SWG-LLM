@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class FeedbackCaptureService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("\\b(?:\\+?\\d[\\d()\\- ]{6,}\\d)\\b");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("(?<![\\w+])(?:\\+?\\d[\\d()\\- ]{6,}\\d)(?!\\w)");
     private final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .build();
