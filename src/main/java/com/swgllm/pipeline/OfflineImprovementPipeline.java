@@ -8,6 +8,7 @@ import com.swgllm.feedback.FeedbackCaptureService;
 import com.swgllm.governance.GovernanceEvaluation;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
+import com.swgllm.governance.GovernanceTestResult;
 import com.swgllm.governance.QualitySafetyRegressionSuite;
 import com.swgllm.versioning.ArtifactVersions;
 import com.swgllm.versioning.RolloutState;
@@ -34,24 +35,27 @@ public class OfflineImprovementPipeline {
             Path versionRegistryPath,
             ArtifactVersions candidate,
             GovernanceMetrics metrics,
+            List<GovernanceTestResult> testResults,
+            Path evaluationArtifactDir,
             GovernancePolicy policy) throws IOException {
         List<TrainingExample> dataset = datasetBuilder.buildFromApprovedFeedback(feedbackPath, datasetOutputPath);
         AdapterArtifact adapterArtifact = adapterUpdateJob.runPeriodicUpdate(dataset, adapterDir);
 
         RolloutState canaryState = rolloutManager.canaryRollout(versionRegistryPath, candidate);
-        GovernanceEvaluation evaluation = regressionSuite.evaluate(metrics, policy);
+        GovernanceEvaluation evaluation = regressionSuite.evaluate(metrics, policy, testResults);
         if (!evaluation.passed()) {
             RolloutState rollbackState = rolloutManager.rollback(versionRegistryPath);
-            return new PipelineResult(dataset.size(), adapterArtifact, evaluation, rollbackState);
+            return new PipelineResult(dataset.size(), adapterArtifact, evaluation, rollbackState, evaluationArtifactDir);
         }
         RolloutState promoted = rolloutManager.promoteCanary(versionRegistryPath);
-        return new PipelineResult(dataset.size(), adapterArtifact, evaluation, promoted);
+        return new PipelineResult(dataset.size(), adapterArtifact, evaluation, promoted, evaluationArtifactDir);
     }
 
     public record PipelineResult(
             int trainingExamples,
             AdapterArtifact adapterArtifact,
             GovernanceEvaluation governanceEvaluation,
-            RolloutState rolloutState) {
+            RolloutState rolloutState,
+            Path evaluationArtifactDir) {
     }
 }

@@ -3,6 +3,7 @@ package com.swgllm.pipeline;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
+import com.swgllm.governance.GovernanceTestResult;
 import com.swgllm.ingest.GitRepositoryManager;
 import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
@@ -36,6 +38,7 @@ public class ContinuousImprovementCoordinator {
     private final ArtifactVersions candidate;
     private final GovernanceMetrics metrics;
     private final GovernancePolicy policy;
+    private final Path evalArtifactPath;
     private final Path coordinatorStatePath;
 
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
@@ -57,7 +60,8 @@ public class ContinuousImprovementCoordinator {
             Path versionRegistryPath,
             ArtifactVersions candidate,
             GovernanceMetrics metrics,
-            GovernancePolicy policy) {
+            GovernancePolicy policy,
+            Path evalArtifactPath) {
         this.gitRepositoryManager = gitRepositoryManager;
         this.ingestionService = ingestionService;
         this.improvementPipeline = improvementPipeline;
@@ -74,6 +78,7 @@ public class ContinuousImprovementCoordinator {
         this.candidate = candidate;
         this.metrics = metrics;
         this.policy = policy;
+        this.evalArtifactPath = evalArtifactPath;
         this.coordinatorStatePath = Path.of(continuousConfig.getStatePath());
     }
 
@@ -211,7 +216,7 @@ public class ContinuousImprovementCoordinator {
     }
 
     private OfflineImprovementPipeline.PipelineResult runImprove() throws IOException {
-        return improvementPipeline.run(feedbackPath, datasetPath, adapterDir, versionRegistryPath, candidate, metrics, policy);
+        return improvementPipeline.run(feedbackPath, datasetPath, adapterDir, versionRegistryPath, candidate, metrics, List.<GovernanceTestResult>of(), evalArtifactPath, policy);
     }
 
     private Path resolveRepository() throws IOException, InterruptedException {

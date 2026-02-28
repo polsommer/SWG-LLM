@@ -11,6 +11,7 @@ import com.swgllm.feedback.FeedbackCaptureService;
 import com.swgllm.feedback.FeedbackRating;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
+import com.swgllm.governance.GovernanceTestResult;
 import com.swgllm.versioning.ArtifactVersions;
 import com.swgllm.versioning.SemanticVersion;
 
@@ -40,6 +41,8 @@ class OfflineImprovementPipelineTest {
                 rolloutPath,
                 new ArtifactVersions(new SemanticVersion(1, 0, 0), new SemanticVersion(1, 0, 0), new SemanticVersion(1, 0, 0)),
                 new GovernanceMetrics(0.01, 0.01, 0.95),
+                java.util.List.<GovernanceTestResult>of(),
+                adaptersDir.resolve("eval-artifacts"),
                 new GovernancePolicy(0.1, 0.1, 0.8));
 
         assertEquals(3, result.trainingExamples());
@@ -79,6 +82,8 @@ class OfflineImprovementPipelineTest {
                 rolloutPath,
                 new ArtifactVersions(new SemanticVersion(1, 0, 0), new SemanticVersion(1, 0, 0), new SemanticVersion(1, 0, 0)),
                 new GovernanceMetrics(0.01, 0.01, 0.95),
+                java.util.List.<GovernanceTestResult>of(),
+                adaptersDir.resolve("eval-artifacts"),
                 new GovernancePolicy(0.1, 0.1, 0.8)));
     }
 }
