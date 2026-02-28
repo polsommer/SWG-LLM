@@ -261,6 +261,9 @@ class AutoPublishServiceTest {
     @Test
     void shouldApplyDailyPushLimitUsingClockTimeZoneBoundary() throws Exception {
         Path tempDir = Files.createTempDirectory("autopublish-zone-limit");
+        Path artifactsDir = tempDir.resolve("artifacts");
+        Files.createDirectories(artifactsDir);
+        Files.writeString(artifactsDir.resolve("README.md"), "new content");
         Path auditPath = tempDir.resolve("audit.log");
         Path artifactsDir = tempDir.resolve("artifacts");
         Files.createDirectories(artifactsDir);
@@ -287,8 +290,17 @@ class AutoPublishServiceTest {
                 "msg",
                 "abc123"));
 
+        List<String> commands = List.of(
+                "git clone --branch main https://example.com/repo.git repo",
+                "git add -A",
+                "git status --porcelain");
+        StubCommandExecutor executor = new StubCommandExecutor(commands);
+        executor.register(commands.get(0), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(1), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(2), new GitCommandResult(0, "M README.md", "", false, false, false));
+
         AutoPublishService service = new AutoPublishService(
-                (workingDirectory, command) -> new GitCommandResult(0, "", "", false, false, false),
+                executor,
                 auditLog,
                 Clock.fixed(now, zone));
 
@@ -324,6 +336,7 @@ class AutoPublishServiceTest {
                 tempDir.resolve("incidents.jsonl")), config);
 
         assertTrue(result.policyPassed());
+        assertTrue(result.commitCreated());
         assertEquals("DRY_RUN", auditLog.readAll(auditPath).getLast().outcome());
     }
 
