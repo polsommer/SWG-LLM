@@ -42,6 +42,20 @@ application {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+
+    reports {
+        html.required = false
+        junitXml.required = true
+    }
+
+    testLogging {
+        events("failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        showStandardStreams = true
+    }
 }
 
 tasks.named<JavaExec>("run") {
