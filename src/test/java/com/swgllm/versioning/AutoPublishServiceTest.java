@@ -262,6 +262,9 @@ class AutoPublishServiceTest {
     void shouldApplyDailyPushLimitUsingClockTimeZoneBoundary() throws Exception {
         Path tempDir = Files.createTempDirectory("autopublish-zone-limit");
         Path auditPath = tempDir.resolve("audit.log");
+        Path artifactsDir = tempDir.resolve("artifacts");
+        Files.createDirectories(artifactsDir);
+        Files.writeString(artifactsDir.resolve("README.md"), "daily-limit-change");
         AutoPublishAuditLog auditLog = new AutoPublishAuditLog();
         ZoneId zone = ZoneId.of("America/Los_Angeles");
         Instant now = Instant.parse("2026-01-01T02:00:00Z");
@@ -299,7 +302,7 @@ class AutoPublishServiceTest {
         AutoPublishService.PublishResult result = service.publish(new AutoPublishService.PublishRequest(
                 "https://example.com/repo.git",
                 tempDir,
-                null,
+                artifactsDir,
                 List.of(),
                 "main",
                 "tester",
