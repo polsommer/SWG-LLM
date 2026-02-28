@@ -17,8 +17,10 @@ import com.swgllm.ingest.IngestionService;
 import picocli.CommandLine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class MainTest {
 
@@ -69,18 +71,29 @@ class MainTest {
     }
 
     @Test
-    void shouldParseRepoUrlAndCacheDirOptions() {
+    void shouldParseRepoUrlAndCacheDirOptions() throws IOException {
         RecordingGitRepositoryManager manager = new RecordingGitRepositoryManager(tempDir.resolve("checkout"));
-        Main main = new Main(manager);
+        SequencingMain main = new SequencingMain(manager);
+        Path cacheDir = tempDir.resolve("cache");
+        Path configPath = writeTestConfig(tempDir.resolve("test-config.yml"));
+        Path indexPath = tempDir.resolve("vector-index.json");
+        Path statePath = tempDir.resolve("index-state.json");
+        Path versionRegistryPath = tempDir.resolve("version-registry.json");
 
         int exitCode = new CommandLine(main).execute(
                 "--mode", "ingest",
                 "--repo-url", "https://github.com/SWG-Source/dsrc.git",
-                "--repo-cache-dir", tempDir.resolve("cache").toString());
+                "--repo-cache-dir", cacheDir.toString(),
+                "--config", configPath.toString(),
+                "--index-path", indexPath.toString(),
+                "--state-path", statePath.toString(),
+                "--version-registry-path", versionRegistryPath.toString());
 
         assertEquals(0, exitCode);
         assertEquals("https://github.com/SWG-Source/dsrc.git", manager.recordedRepoUrl);
-        assertEquals(tempDir.resolve("cache"), manager.recordedRepoCacheDir);
+        assertNotNull(manager.recordedRepoCacheDir, "Expected --repo-cache-dir to be forwarded to GitRepositoryManager");
+        assertEquals(cacheDir.toAbsolutePath().normalize(), manager.recordedRepoCacheDir.toAbsolutePath().normalize());
+        assertEquals(List.of("ingest"), main.events);
     }
 
     @Test
@@ -209,9 +222,21 @@ class MainTest {
             try {
                 Files.createDirectories(resolvedPath);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                fail("Failed to create test checkout directory: " + resolvedPath.toAbsolutePath().normalize(), e);
             }
             return resolvedPath;
+        }
+    }
+
+    private Path writeTestConfig(Path configPath) throws IOException {
+        try {
+            return Files.writeString(configPath, """
+                    runtime:
+                      timeoutMs: 30000
+                    """);
+        } catch (RuntimeException e) {
+            fail("Failed to create test config file: " + configPath.toAbsolutePath().normalize(), e);
+            return configPath;
         }
     }
 
