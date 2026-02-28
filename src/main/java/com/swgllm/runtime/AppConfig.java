@@ -42,6 +42,9 @@ public class AppConfig {
         private String defaultProfile = "cpu-low-memory";
         private int defaultRetrievalChunks = 4;
         private int defaultContextWindowTokens = 2048;
+        private double defaultTemperature = 0.0;
+        private double defaultTopP = 1.0;
+        private int defaultMaxTokens = 256;
         private Map<String, RuntimeProfile> profiles = new HashMap<>();
 
         public int getTimeoutMs() {
@@ -76,6 +79,30 @@ public class AppConfig {
             this.defaultContextWindowTokens = defaultContextWindowTokens;
         }
 
+        public double getDefaultTemperature() {
+            return defaultTemperature;
+        }
+
+        public void setDefaultTemperature(double defaultTemperature) {
+            this.defaultTemperature = defaultTemperature;
+        }
+
+        public double getDefaultTopP() {
+            return defaultTopP;
+        }
+
+        public void setDefaultTopP(double defaultTopP) {
+            this.defaultTopP = defaultTopP;
+        }
+
+        public int getDefaultMaxTokens() {
+            return defaultMaxTokens;
+        }
+
+        public void setDefaultMaxTokens(int defaultMaxTokens) {
+            this.defaultMaxTokens = defaultMaxTokens;
+        }
+
         public Map<String, RuntimeProfile> getProfiles() {
             return profiles;
         }
@@ -91,6 +118,9 @@ public class AppConfig {
         private String backend;
         private int contextWindowTokens;
         private int retrievalChunks;
+        private Double temperature;
+        private Double topP;
+        private Integer maxTokens;
 
         public String getModel() {
             return model;
@@ -122,6 +152,30 @@ public class AppConfig {
 
         public void setRetrievalChunks(int retrievalChunks) {
             this.retrievalChunks = retrievalChunks;
+        }
+
+        public Double getTemperature() {
+            return temperature;
+        }
+
+        public void setTemperature(Double temperature) {
+            this.temperature = temperature;
+        }
+
+        public Double getTopP() {
+            return topP;
+        }
+
+        public void setTopP(Double topP) {
+            this.topP = topP;
+        }
+
+        public Integer getMaxTokens() {
+            return maxTokens;
+        }
+
+        public void setMaxTokens(Integer maxTokens) {
+            this.maxTokens = maxTokens;
         }
     }
 

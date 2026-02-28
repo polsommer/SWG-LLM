@@ -5,6 +5,9 @@ runtime:
   timeoutMs: 30000
   defaultProfile: cpu-low-memory
   defaultContextWindowTokens: 2048
+  defaultTemperature: 0.0
+  defaultTopP: 1.0
+  defaultMaxTokens: 256
   defaultRetrievalChunks: 4
   profiles:
     cpu-low-memory:
@@ -12,11 +15,17 @@ runtime:
       backend: cpu
       contextWindowTokens: 2048
       retrievalChunks: 4
+      temperature: 0.0
+      topP: 1.0
+      maxTokens: 256
     intel-igpu:
       model: phi-3-mini-4k-instruct-q4
       backend: openvino-onednn-igpu
       contextWindowTokens: 3072
       retrievalChunks: 5
+      temperature: 0.0
+      topP: 1.0
+      maxTokens: 256
 continuous:
   ingestIntervalMs: 120000
   improveIntervalMs: 300000
