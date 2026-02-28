@@ -38,6 +38,7 @@ import com.swgllm.inference.CpuInferenceEngine;
 import com.swgllm.inference.InferenceContext;
 import com.swgllm.inference.InferenceEngine;
 import com.swgllm.inference.IntelIgpuInferenceEngine;
+import com.swgllm.pipeline.ContinuousImprovementCoordinator;
 import com.swgllm.pipeline.OfflineImprovementPipeline;
 import com.swgllm.runtime.AppConfig;
 import com.swgllm.runtime.IntelGpuCapabilityProbe;
@@ -152,6 +153,7 @@ public class Main implements Callable<Integer> {
         retrieve,
         feedback,
         improve,
+        daemon,
         chat
     }
 
@@ -278,6 +280,9 @@ public class Main implements Callable<Integer> {
             if (improvementExit != 0) {
                 return improvementExit;
             }
+        }
+        if (mode == Mode.daemon) {
+            return runDaemonMode(config);
         }
 
         return 0;
@@ -622,6 +627,50 @@ public class Main implements Callable<Integer> {
                     result.governanceEvaluation().passed());
         } catch (IllegalArgumentException e) {
             log.info("Improvement pipeline skipped: {}", e.getMessage());
+        }
+    }
+
+    private int runDaemonMode(AppConfig config) {
+        AppConfig.ContinuousModeConfig continuous = config.getContinuous();
+        ContinuousImprovementCoordinator coordinator = new ContinuousImprovementCoordinator(
+                gitRepositoryManager,
+                createIngestionService(),
+                new OfflineImprovementPipeline(),
+                continuous,
+                repoPath,
+                repoUrl,
+                repoCacheDir,
+                indexPath,
+                statePath,
+                feedbackPath,
+                datasetPath,
+                adapterDir,
+                versionRegistryPath,
+                new ArtifactVersions(
+                        SemanticVersion.parse("0.2.0"),
+                        SemanticVersion.parse("0.2.0"),
+                        SemanticVersion.parse("0.2.0")),
+                new GovernanceMetrics(0.04, 0.01, 0.91),
+                new GovernancePolicy(0.05, 0.02, 0.90));
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Received shutdown signal, stopping continuous coordinator");
+            coordinator.requestStop();
+        }, "continuous-stop-hook"));
+
+        try {
+            coordinator.runLoop();
+            return 0;
+        } catch (IllegalArgumentException e) {
+            log.error("stage=daemon status=failed reason={}", e.getMessage());
+            return EXIT_USAGE_ERROR;
+        } catch (InterruptedException e) {
+            log.error("stage=daemon status=failed reason={}", e.getMessage(), e);
+            Thread.currentThread().interrupt();
+            return EXIT_IMPROVE_FAILURE;
+        } catch (IOException e) {
+            log.error("stage=daemon status=failed reason={}", e.getMessage(), e);
+            return EXIT_IMPROVE_FAILURE;
         }
     }
 

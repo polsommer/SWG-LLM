@@ -32,6 +32,42 @@ class MainTest {
         assertEquals(0, exitCode);
     }
 
+
+    @Test
+    void shouldRunDaemonModeWithBoundedCycleAndPersistState() throws IOException {
+        Path configPath = tempDir.resolve("daemon.yml");
+        Path daemonStatePath = tempDir.resolve("continuous-state.json");
+        Files.writeString(configPath, """
+                runtime:
+                  timeoutMs: 30000
+                continuous:
+                  ingestIntervalMs: 0
+                  improveIntervalMs: 0
+                  maxRetries: 0
+                  retryBackoffMs: 0
+                  maxCycles: 1
+                  maxRuntimeMs: 0
+                  idleTimeoutMs: 0
+                  statePath: %s
+                """.formatted(daemonStatePath.toString().replace('\\', '/')));
+
+        Main main = new Main();
+
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "daemon",
+                "--config", configPath.toString(),
+                "--repo-path", tempDir.toString(),
+                "--feedback-path", tempDir.resolve("feedback.json").toString(),
+                "--dataset-path", tempDir.resolve("dataset.json").toString(),
+                "--adapter-dir", tempDir.resolve("adapters").toString(),
+                "--version-registry-path", tempDir.resolve("rollout.json").toString(),
+                "--index-path", tempDir.resolve("index.json").toString(),
+                "--state-path", tempDir.resolve("ingest-state.json").toString());
+
+        assertEquals(0, exitCode);
+        assertTrue(Files.exists(daemonStatePath));
+    }
+
     @Test
     void shouldParseRepoUrlAndCacheDirOptions() {
         RecordingGitRepositoryManager manager = new RecordingGitRepositoryManager(tempDir.resolve("checkout"));
