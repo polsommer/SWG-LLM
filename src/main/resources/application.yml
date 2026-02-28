@@ -17,3 +17,12 @@ runtime:
       backend: openvino-onednn-igpu
       contextWindowTokens: 3072
       retrievalChunks: 5
+continuous:
+  ingestIntervalMs: 120000
+  improveIntervalMs: 300000
+  maxRetries: 3
+  retryBackoffMs: 5000
+  maxCycles: 0
+  maxRuntimeMs: 0
+  idleTimeoutMs: 900000
+  statePath: .swgllm/continuous-state.json
