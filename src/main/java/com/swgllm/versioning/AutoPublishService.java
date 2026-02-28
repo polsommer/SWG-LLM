@@ -241,8 +241,8 @@ public class AutoPublishService {
         String normalized = targetRepoUrl.endsWith(".git")
                 ? targetRepoUrl.substring(0, targetRepoUrl.length() - 4)
                 : targetRepoUrl;
-        int slash = normalized.lastIndexOf('/');
-        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+        int separator = Math.max(normalized.lastIndexOf('/'), normalized.lastIndexOf(':'));
+        return separator >= 0 ? normalized.substring(separator + 1) : normalized;
     }
 
     @FunctionalInterface
