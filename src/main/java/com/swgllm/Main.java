@@ -25,8 +25,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.swgllm.feedback.FeedbackCaptureService;
 import com.swgllm.feedback.FeedbackRating;
 import com.swgllm.feedback.FeedbackRecord;
+import com.swgllm.governance.AutomaticEvaluationRunner;
 import com.swgllm.governance.GovernanceMetrics;
 import com.swgllm.governance.GovernancePolicy;
+import com.swgllm.governance.GovernanceTestResult;
 import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.EmbeddingServices;
 import com.swgllm.ingest.GitRepositoryManager;
@@ -111,6 +113,12 @@ public class Main implements Callable<Integer> {
     @Option(names = "--adapter-dir", description = "Path where adapter artifacts are generated", defaultValue = ".swgllm/adapters")
     Path adapterDir;
 
+    @Option(names = "--eval-suite-path", description = "Path to evaluation suite JSON", defaultValue = ".swgllm/evals/eval-suite.json")
+    Path evalSuitePath;
+
+    @Option(names = "--eval-artifacts-dir", description = "Directory for evaluation outputs", defaultValue = ".swgllm/evals")
+    Path evalArtifactsDir;
+
     @Option(names = "--query", description = "Query text used in retrieve mode")
     String query;
 
@@ -137,6 +145,7 @@ public class Main implements Callable<Integer> {
     private final IntelGpuCapabilityProbe capabilityProbe = new IntelGpuCapabilityProbe();
     private final GitRepositoryManager gitRepositoryManager;
     private int inferenceTimeoutMs = 30_000;
+    private RuntimeProfileResolver.ResolvedProfile activeProfile;
 
     public Main() {
         this(new GitRepositoryManager());
@@ -171,6 +180,7 @@ public class Main implements Callable<Integer> {
         AppConfig config = loadConfig(Path.of(configPath));
         RuntimeProfileResolver.ResolvedProfile resolvedProfile = new RuntimeProfileResolver(capabilityProbe)
                 .resolve(config.getRuntime(), runtimeProfile);
+        activeProfile = resolvedProfile;
         inferenceTimeoutMs = config.getRuntime().getTimeoutMs();
 
         log.info("Starting SWG-LLM in {} mode", mode);
@@ -587,6 +597,29 @@ public class Main implements Callable<Integer> {
                 .sum();
     }
 
+    private String runEvaluationInference(String promptInput, RuntimeProfileResolver.ResolvedProfile profile) {
+        RuntimeProfileResolver.ResolvedProfile effectiveProfile = profile != null
+                ? profile
+                : new RuntimeProfileResolver.ResolvedProfile(
+                        "cpu-low-memory",
+                        "cpu-low-memory",
+                        "tinyllama",
+                        "cpu",
+                        2048,
+                        3,
+                        "");
+        RetrievalService retrievalService = new RetrievalService(embeddingService);
+        List<SearchResult> sources;
+        try {
+            sources = retrievalService.retrieve(indexPath, promptInput, topK);
+        } catch (IOException e) {
+            log.warn("Evaluation retrieval failed; continuing without sources", e);
+            sources = List.of();
+        }
+        String fullPrompt = buildPrompt(promptInput, List.of(), sources, effectiveProfile);
+        return runInferenceWithTimeout(fullPrompt, List.of(), sources, effectiveProfile);
+    }
+
     private void runBenchmark(RuntimeProfileResolver.ResolvedProfile profile) {
         if ("intel-igpu".equals(profile.requestedProfile())) {
             IntelGpuCapabilityProbe.CapabilityReport report = capabilityProbe.probeUbuntu2204();
@@ -610,8 +643,15 @@ public class Main implements Callable<Integer> {
                 SemanticVersion.parse("0.2.0"),
                 SemanticVersion.parse("0.2.0"),
                 SemanticVersion.parse("0.2.0"));
-        GovernanceMetrics metrics = new GovernanceMetrics(0.04, 0.01, 0.91);
         GovernancePolicy policy = new GovernancePolicy(0.05, 0.02, 0.90);
+        AutomaticEvaluationRunner evaluator = new AutomaticEvaluationRunner();
+        AutomaticEvaluationRunner.EvaluationRun evaluationRun = evaluator.run(
+                evalSuitePath,
+                evalArtifactsDir,
+                prompt -> runEvaluationInference(prompt, activeProfile));
+        GovernanceMetrics metrics = evaluationRun.metrics();
+        List<GovernanceTestResult> testResults = evaluationRun.testResults();
+
         try {
             OfflineImprovementPipeline.PipelineResult result = pipeline.run(
                     feedbackPath,
@@ -620,11 +660,14 @@ public class Main implements Callable<Integer> {
                     versionRegistryPath,
                     candidate,
                     metrics,
+                    testResults,
+                    evaluationRun.artifactDirectory(),
                     policy);
-            log.info("Improvement pipeline completed examples={} adapter={} governancePassed={}",
+            log.info("Improvement pipeline completed examples={} adapter={} governancePassed={} evalArtifacts={}",
                     result.trainingExamples(),
                     result.adapterArtifact(),
-                    result.governanceEvaluation().passed());
+                    result.governanceEvaluation().passed(),
+                    result.evaluationArtifactDir());
         } catch (IllegalArgumentException e) {
             log.info("Improvement pipeline skipped: {}", e.getMessage());
         }
@@ -651,7 +694,8 @@ public class Main implements Callable<Integer> {
                         SemanticVersion.parse("0.2.0"),
                         SemanticVersion.parse("0.2.0")),
                 new GovernanceMetrics(0.04, 0.01, 0.91),
-                new GovernancePolicy(0.05, 0.02, 0.90));
+                new GovernancePolicy(0.05, 0.02, 0.90),
+                evalArtifactsDir);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Received shutdown signal, stopping continuous coordinator");
