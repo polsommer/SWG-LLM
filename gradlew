@@ -88,6 +88,17 @@ APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+if [ ! -f "$WRAPPER_JAR" ] ; then
+    if command -v gradle >/dev/null 2>&1 ; then
+        echo "gradle-wrapper.jar is missing; falling back to system 'gradle'." >&2
+        exec gradle "$@"
+    fi
+    echo "ERROR: gradle-wrapper.jar is missing and no system 'gradle' command was found." >&2
+    echo "Run 'gradle wrapper' once to regenerate wrapper artifacts." >&2
+    exit 1
+fi
+
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
 
@@ -114,7 +125,7 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
-CLASSPATH="\\\"\\\""
+CLASSPATH=$WRAPPER_JAR
 
 
 # Determine the Java command to use to start the JVM.
@@ -213,7 +224,7 @@ DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 set -- \
         "-Dorg.gradle.appname=$APP_BASE_NAME" \
         -classpath "$CLASSPATH" \
-        -jar "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+        -jar "$CLASSPATH" \
         "$@"
 
 # Stop when "xargs" is not available.
