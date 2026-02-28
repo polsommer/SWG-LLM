@@ -90,6 +90,12 @@ class InferenceIntegrationTest {
         assertTrue(prompt.contains("assistant: hello"));
         assertTrue(prompt.contains("Retrieved snippets:"));
         assertTrue(prompt.contains("[1] src/A.java:1-10"));
+        assertTrue(prompt.contains("Behavior rules:"));
+        assertTrue(prompt.contains("If user intent is ambiguous, ask one brief clarifying question"));
+        assertTrue(prompt.contains("Prefer short, direct answers first"));
+        assertTrue(prompt.contains("include citations like [1], [2]"));
+        assertTrue(prompt.contains("explicitly state uncertainty"));
+        assertTrue(prompt.contains("Do not dump raw snippets verbatim unless the user explicitly asks"));
         assertTrue(prompt.contains("Current user request:\nHow does this work?"));
     }
 

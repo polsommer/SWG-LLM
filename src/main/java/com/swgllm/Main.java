@@ -47,6 +47,7 @@ import com.swgllm.runtime.AppConfig;
 import com.swgllm.runtime.IntelGpuCapabilityProbe;
 import com.swgllm.runtime.RuntimeProfileResolver;
 import com.swgllm.versioning.ArtifactVersions;
+import com.swgllm.versioning.PromptPolicyTemplateRegistry;
 import com.swgllm.versioning.RolloutState;
 import com.swgllm.versioning.SemanticVersion;
 import com.swgllm.versioning.VersionRolloutManager;
@@ -527,8 +528,8 @@ public class Main implements Callable<Integer> {
             RuntimeProfileResolver.ResolvedProfile profile) {
         StringBuilder builder = new StringBuilder();
         builder.append("System instruction:\n")
-                .append("You are SWG-LLM. Answer with grounded, concise guidance using provided snippets when relevant. ")
-                .append("If snippets are missing, state that ingestion may be required.\n\n")
+                .append(PromptPolicyTemplateRegistry.activeSystemPolicy())
+                .append("\n\n")
                 .append("Runtime profile: ")
                 .append(profile.profileName())
                 .append(" | Model: ")
