@@ -51,7 +51,13 @@ class AutoPublishServiceTest {
                 0.10,
                 Map.of("quality", 0.88),
                 false,
-                auditPath), config);
+                auditPath,
+                0.05,
+                10,
+                5,
+                false,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
 
         assertFalse(result.policyPassed());
         assertFalse(result.commitCreated());
@@ -105,12 +111,83 @@ class AutoPublishServiceTest {
                 0.12,
                 Map.of("eval", 0.91),
                 false,
-                auditPath), config);
+                auditPath,
+                0.05,
+                10,
+                5,
+                false,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
 
         assertTrue(result.policyPassed());
         assertTrue(result.commitCreated());
         assertFalse(result.pushed());
         assertEquals("DRY_RUN", new AutoPublishAuditLog().readAll(auditPath).getFirst().outcome());
+    }
+
+
+    @Test
+    void shouldPushToQuarantineBranchForUncertainImprovements() throws Exception {
+        Path tempDir = Files.createTempDirectory("autopublish-quarantine");
+        Path artifactsDir = tempDir.resolve("artifacts");
+        Files.createDirectories(artifactsDir);
+        Files.writeString(artifactsDir.resolve("README.md"), "new content");
+        Path auditPath = tempDir.resolve("audit.log");
+
+        List<String> commands = List.of(
+                "git clone --branch quarantine/uncertain-improvements https://example.com/repo.git repo",
+                "git add -A",
+                "git status --porcelain",
+                "git commit -m autopublish(improvement): update-doc -m actor: tester -m scoreDelta: 0.1200 -m governance: true -m evaluation: true -m highImpact: false",
+                "git rev-parse HEAD",
+                "git push origin quarantine/uncertain-improvements");
+        StubCommandExecutor executor = new StubCommandExecutor(commands);
+        executor.register(commands.get(0), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(1), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(2), new GitCommandResult(0, "M README.md", "", false, false, false));
+        executor.register(commands.get(3), new GitCommandResult(0, "", "", false, false, false));
+        executor.register(commands.get(4), new GitCommandResult(0, "abc123", "", false, false, false));
+        executor.register(commands.get(5), new GitCommandResult(0, "", "", false, false, false));
+
+        AutoPublishService service = new AutoPublishService(
+                executor,
+                new AutoPublishAuditLog(),
+                Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC));
+
+        AppConfig.AutoPublishConfig config = new AppConfig.AutoPublishConfig();
+        config.setEnabled(true);
+        config.setAllowedBranches(List.of("main", "quarantine/uncertain-improvements"));
+        config.setDryRun(false);
+        config.setWorkspacePath(tempDir.resolve("workspace").toString());
+        config.setTargetRepoUrl("https://example.com/repo.git");
+
+        AutoPublishService.PublishResult result = service.publish(new AutoPublishService.PublishRequest(
+                "https://example.com/repo.git",
+                tempDir.resolve("workspace"),
+                artifactsDir,
+                List.of(),
+                "main",
+                "tester",
+                "update-doc",
+                "",
+                true,
+                true,
+                false,
+                true,
+                0.12,
+                Map.of("eval", 0.91),
+                false,
+                auditPath,
+                0.05,
+                10,
+                5,
+                true,
+                tempDir.resolve("governor-state.json"),
+                tempDir.resolve("incidents.jsonl")), config);
+
+        assertTrue(result.pushed());
+        assertTrue(result.safetyDecision().quarantine());
+        assertEquals("PUSHED_QUARANTINE", new AutoPublishAuditLog().readAll(auditPath).getFirst().outcome());
     }
 
     private static class StubCommandExecutor implements AutoPublishService.CommandExecutor {
