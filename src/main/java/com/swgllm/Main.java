@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -444,7 +445,7 @@ public class Main implements Callable<Integer> {
                     ? retrievalService.retrieve(indexPath, promptInput, boundedK)
                     : List.of();
             long generationStart = System.nanoTime();
-            String fullPrompt = buildPrompt(promptInput, conversation, lastSources, profile);
+            String fullPrompt = buildPromptWithinBudget(promptInput, conversation, lastSources, profile);
             String response = runInferenceWithTimeout(fullPrompt, conversation, lastSources, profile);
             long firstTokenLatencyMs = (System.nanoTime() - generationStart) / 1_000_000;
             streamTokens(response);
@@ -464,7 +465,6 @@ public class Main implements Callable<Integer> {
 
             conversation.add("user: " + promptInput);
             conversation.add("assistant: " + response);
-            trimConversation(conversation, profile.contextWindowTokens());
             captureAutoFeedback(promptInput, response, lastSources);
         }
     }
@@ -526,6 +526,41 @@ public class Main implements Callable<Integer> {
             List<String> conversation,
             List<SearchResult> sources,
             RuntimeProfileResolver.ResolvedProfile profile) {
+        return buildPromptWithSections(userPrompt, conversation, sources, profile, null);
+    }
+
+    static String buildPromptWithinBudget(
+            String userPrompt,
+            List<String> conversation,
+            List<SearchResult> sources,
+            RuntimeProfileResolver.ResolvedProfile profile) {
+        int budget = Math.max(256, profile.contextWindowTokens());
+        int reservedForResponse = Math.max(96, profile.maxTokens());
+        int availableBudget = Math.max(128, budget - reservedForResponse);
+
+        int baseTokens = estimateTokens("System instruction: " + PromptPolicyTemplateRegistry.activeSystemPolicy())
+                + estimateTokens("Runtime profile: " + profile.profileName() + " model " + profile.model() + " backend " + profile.backend())
+                + estimateTokens("Current user request: " + userPrompt)
+                + 32;
+        int remaining = Math.max(64, availableBudget - baseTokens);
+
+        int snippetBudget = Math.max(40, Math.min(remaining / 3, profile.retrievalChunks() * 60));
+        List<SearchResult> boundedSources = selectSourcesWithinBudget(sources, snippetBudget, profile.retrievalChunks());
+        int usedBySnippets = boundedSources.stream()
+                .mapToInt(s -> estimateTokens(s.citationSnippet()))
+                .sum();
+        int conversationBudget = Math.max(48, remaining - usedBySnippets);
+        PromptMemory promptMemory = summarizeConversationWithinBudget(conversation, conversationBudget);
+
+        return buildPromptWithSections(userPrompt, promptMemory.turns(), boundedSources, profile, promptMemory.summary());
+    }
+
+    private static String buildPromptWithSections(
+            String userPrompt,
+            List<String> conversation,
+            List<SearchResult> sources,
+            RuntimeProfileResolver.ResolvedProfile profile,
+            String memorySummary) {
         StringBuilder builder = new StringBuilder();
         builder.append("System instruction:\n")
                 .append(PromptPolicyTemplateRegistry.activeSystemPolicy())
@@ -537,6 +572,10 @@ public class Main implements Callable<Integer> {
                 .append(" | Backend: ")
                 .append(profile.backend())
                 .append("\n\nConversation history:\n");
+
+        if (memorySummary != null && !memorySummary.isBlank()) {
+            builder.append("memory note: ").append(memorySummary).append("\n");
+        }
 
         if (conversation.isEmpty()) {
             builder.append("(none)\n");
@@ -563,6 +602,90 @@ public class Main implements Callable<Integer> {
                 .append(userPrompt)
                 .append("\n");
         return builder.toString();
+    }
+
+    private static List<SearchResult> selectSourcesWithinBudget(List<SearchResult> sources, int snippetBudget, int maxChunks) {
+        if (sources.isEmpty() || snippetBudget <= 0 || maxChunks <= 0) {
+            return List.of();
+        }
+        List<SearchResult> ranked = new ArrayList<>(sources);
+        ranked.sort(Comparator.comparingDouble((SearchResult s) -> s.rerankScore())
+                .thenComparingDouble(SearchResult::score)
+                .reversed());
+
+        List<SearchResult> selected = new ArrayList<>();
+        int used = 0;
+        int chunkLimit = Math.min(maxChunks, ranked.size());
+        for (int i = 0; i < chunkLimit; i++) {
+            SearchResult candidate = ranked.get(i);
+            String clipped = clipToWords(candidate.citationSnippet(), 40);
+            int tokens = estimateTokens(clipped);
+            if (!selected.isEmpty() && used + tokens > snippetBudget) {
+                continue;
+            }
+            selected.add(new SearchResult(candidate.chunk(), candidate.score(), candidate.rerankScore(), clipped));
+            used += tokens;
+            if (used >= snippetBudget) {
+                break;
+            }
+        }
+        return selected;
+    }
+
+    private static PromptMemory summarizeConversationWithinBudget(List<String> conversation, int conversationBudget) {
+        if (conversation.isEmpty() || conversationBudget <= 0) {
+            return new PromptMemory(List.of(), null);
+        }
+        List<String> recentTurns = new ArrayList<>();
+        int used = 0;
+        for (int i = conversation.size() - 1; i >= 0; i--) {
+            String turn = conversation.get(i);
+            int turnTokens = estimateTokens(turn);
+            if (!recentTurns.isEmpty() && used + turnTokens > conversationBudget) {
+                break;
+            }
+            recentTurns.add(0, turn);
+            used += turnTokens;
+        }
+
+        int omittedCount = Math.max(0, conversation.size() - recentTurns.size());
+        if (omittedCount == 0) {
+            return new PromptMemory(recentTurns, null);
+        }
+
+        List<String> omittedTurns = conversation.subList(0, omittedCount);
+        StringBuilder memory = new StringBuilder("Earlier context summary: ");
+        int included = 0;
+        for (String turn : omittedTurns) {
+            if (included >= 6) {
+                memory.append(" …");
+                break;
+            }
+            if (included > 0) {
+                memory.append(" | ");
+            }
+            memory.append(clipToWords(turn, 12));
+            included++;
+        }
+        return new PromptMemory(recentTurns, clipToWords(memory.toString(), 60));
+    }
+
+    private static String clipToWords(String text, int maxWords) {
+        String[] words = text.trim().split("\\s+");
+        if (words.length <= maxWords) {
+            return text;
+        }
+        return String.join(" ", List.of(words).subList(0, maxWords)) + " ...";
+    }
+
+    private static int estimateTokens(String text) {
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+        return text.trim().split("\\s+").length;
+    }
+
+    private record PromptMemory(List<String> turns, String summary) {
     }
 
     private String runInferenceWithTimeout(
@@ -602,18 +725,6 @@ public class Main implements Callable<Integer> {
         System.out.println();
     }
 
-    private static void trimConversation(List<String> conversation, int contextWindowTokens) {
-        while (estimateTokenCount(conversation) > contextWindowTokens && conversation.size() > 2) {
-            conversation.remove(0);
-            conversation.remove(0);
-        }
-    }
-
-    private static int estimateTokenCount(List<String> conversation) {
-        return conversation.stream()
-                .mapToInt(turn -> turn.split("\\s+").length)
-                .sum();
-    }
 
     private String runEvaluationInference(String promptInput, RuntimeProfileResolver.ResolvedProfile profile) {
         RuntimeProfileResolver.ResolvedProfile effectiveProfile = profile != null
