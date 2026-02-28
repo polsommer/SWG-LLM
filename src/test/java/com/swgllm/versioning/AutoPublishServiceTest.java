@@ -187,7 +187,9 @@ class AutoPublishServiceTest {
 
         assertTrue(result.pushed());
         assertTrue(result.safetyDecision().quarantine());
-        assertEquals("PUSHED_QUARANTINE", new AutoPublishAuditLog().readAll(auditPath).getFirst().outcome());
+        AutoPublishAuditEntry entry = new AutoPublishAuditLog().readAll(auditPath).getFirst();
+        assertEquals("PUSHED_QUARANTINE", entry.outcome());
+        assertEquals("quarantine/uncertain-improvements", entry.branch());
     }
 
     private static class StubCommandExecutor implements AutoPublishService.CommandExecutor {
