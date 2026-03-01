@@ -18,6 +18,7 @@ import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
 import com.swgllm.runtime.AppConfig;
 import com.swgllm.versioning.ArtifactVersions;
+import com.swgllm.versioning.RolloutState;
 
 public class ContinuousImprovementCoordinator {
     private static final Logger log = LoggerFactory.getLogger(ContinuousImprovementCoordinator.class);
@@ -111,6 +112,7 @@ public class ContinuousImprovementCoordinator {
             persistState(state);
 
             boolean didWork = false;
+            boolean cycleHalted = false;
             try {
                 if (isDue(state.lastIngestAtEpochMs, continuousConfig.getIngestIntervalMs(), now)) {
                     IngestionReport report = runWithRetries(this::runIngestion);
@@ -128,11 +130,23 @@ public class ContinuousImprovementCoordinator {
                     OfflineImprovementPipeline.PipelineResult result = runWithRetries(this::runImprove);
                     state.lastImproveAtEpochMs = System.currentTimeMillis();
                     state.lastImprovementExamples = result.trainingExamples();
-                    state.lastSuccessfulCheckpoint = result.adapterArtifact().adapterId();
+
+                    String checkpoint = resolveCheckpoint(result);
+                    if (checkpoint != null && !checkpoint.isBlank()) {
+                        state.lastSuccessfulCheckpoint = checkpoint;
+                    }
+
+                    if (result.safetyDecision() != null && result.safetyDecision().halted()) {
+                        cycleHalted = true;
+                        state.lastCycleStatus = "halted";
+                        state.lastError = result.safetyDecision().reason();
+                    }
                     didWork = true;
                 }
 
-                if (didWork) {
+                if (cycleHalted) {
+                    state.lastActivityAtEpochMs = System.currentTimeMillis();
+                } else if (didWork) {
                     state.successfulCycles++;
                     state.lastActivityAtEpochMs = System.currentTimeMillis();
                     state.lastCycleStatus = "success";
@@ -157,9 +171,30 @@ public class ContinuousImprovementCoordinator {
             }
         }
 
-        state.lastCycleStatus = stopRequested.get() ? "stopped" : "completed";
+        if (stopRequested.get()) {
+            state.lastCycleStatus = "stopped";
+        } else if (state.lastCycleStatus == null || "running".equals(state.lastCycleStatus)) {
+            state.lastCycleStatus = "completed";
+        }
         state.lastUpdatedAtEpochMs = System.currentTimeMillis();
         persistState(state);
+    }
+
+    private String resolveCheckpoint(OfflineImprovementPipeline.PipelineResult result) {
+        if (result.adapterArtifact() != null && result.adapterArtifact().adapterId() != null) {
+            return result.adapterArtifact().adapterId();
+        }
+        return rolloutCheckpoint(result.rolloutState());
+    }
+
+    private String rolloutCheckpoint(RolloutState rolloutState) {
+        if (rolloutState == null || rolloutState.currentStable() == null) {
+            return null;
+        }
+        ArtifactVersions stable = rolloutState.currentStable();
+        return "stable:prompt=" + stable.promptTemplateVersion()
+                + ",retriever=" + stable.retrieverVersion()
+                + ",model=" + stable.modelVersion();
     }
 
     private void validateConfig() {
