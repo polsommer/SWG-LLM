@@ -69,6 +69,7 @@ import picocli.CommandLine.Model.CommandSpec;
         description = "Starter CLI for SWG-LLM runtime integration.")
 public class Main implements Callable<Integer> {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final String ASSISTANT_POLICY_BLOCK = "Assistant policy: Give a plain-language quick answer first, then details with headings and bullets. Provide step-by-step depth when asked. Ground factual claims in retrieved snippets and cite them as [n]. If no snippets are available, state that evidence is missing and suggest running ingest/retrieve. Ask one clarifying question when user intent is ambiguous.";
     static final int EXIT_USAGE_ERROR = 2;
     static final int EXIT_DOWNLOAD_FAILURE = 3;
     static final int EXIT_INGEST_FAILURE = 4;
@@ -537,6 +538,7 @@ public class Main implements Callable<Integer> {
         int availableBudget = Math.max(48, budget - reservedForResponse);
 
         int baseTokens = estimateTokens("System instruction: " + PromptPolicyTemplateRegistry.activeSystemPolicy())
+                + estimateTokens(ASSISTANT_POLICY_BLOCK)
                 + estimateTokens("Runtime profile: " + profile.profileName() + " model " + profile.model() + " backend " + profile.backend())
                 + estimateTokens("Current user request: " + userPrompt)
                 + 32;
@@ -594,6 +596,8 @@ public class Main implements Callable<Integer> {
         StringBuilder builder = new StringBuilder();
         builder.append("System instruction:\n")
                 .append(PromptPolicyTemplateRegistry.activeSystemPolicy())
+                .append("\n\n")
+                .append(ASSISTANT_POLICY_BLOCK)
                 .append("\n\n")
                 .append("Runtime profile: ")
                 .append(profile.profileName())
