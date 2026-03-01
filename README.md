@@ -98,6 +98,49 @@ cd SWG-LLM
 
 If `intel-igpu` is not available, SWG-LLM automatically falls back to `cpu-low-memory`.
 
+## Mode selection and prompt quality guide
+
+### When to use each mode
+
+| Mode | Use it when | Typical command |
+|---|---|---|
+| `--mode chat` | You want conversational answers grounded in repo context. | `./gradlew run --args='chat --repo-path ../swg-main'` |
+| `--mode retrieve` | You want raw evidence lookup without full answer synthesis. | `./gradlew run --args='--mode retrieve --query "Where is login flow defined?"'` |
+| `--mode ingest` | You are doing first-time indexing, or the target repo was updated and needs re-indexing. | `./gradlew run --args='--mode ingest --repo-path ../swg-main'` |
+| `--mode daemon` | You want continuous ingest + improve cycles running in the background. | `./gradlew run --args='--mode daemon --repo-path ../swg-main'` |
+
+### Prompt patterns that produce better answers
+
+Use patterns like these to increase precision and usefulness:
+
+- `Where is X defined? Return file path + function/class.`
+- `Explain this in beginner terms, then advanced terms.`
+- `Summarize with bullet points and cite top 3 sources.`
+
+### Bad vs good prompt examples (SWG domain)
+
+- **Login flow**
+  - Bad: `Explain login.`
+  - Good: `Where is the login flow defined? Return file path + function/class, and include citations.`
+- **Buildout**
+  - Bad: `What about buildout stuff?`
+  - Good: `Summarize buildout initialization in bullet points and cite top 3 sources.`
+- **Spawning**
+  - Bad: `How does spawning work?`
+  - Good: `Explain spawning in beginner terms, then advanced terms, and name the key symbols involved.`
+
+### Mini troubleshooting for noisy retrieval
+
+If results are broad or noisy:
+
+- Narrow query terms to specific mechanics or objects (for example, `player login session handoff` instead of `login`).
+- Include subsystem keywords (for example, `server`, `buildout`, `spawning`, `zone`, `auth`).
+- Explicitly request symbol names and citations in the response.
+
+### Verification habit
+
+After every important response, run `/source` in chat to verify the cited evidence before acting on the answer.
+
 ## Chat commands
 
 Inside the chat REPL:
