@@ -62,19 +62,21 @@ If this passes, your local install is healthy.
 
 ### 4) (Optional but recommended) Ingest your SWG code/content repo
 
-Point SWG-LLM to a repository you want to query in chat. You can provide a local path (example: `../swg-main`) or a remote URL:
+Point SWG-LLM to a repository you want to query in chat. You can provide a local path (for the current repo, use `.`) or a remote URL:
 
 ```bash
-./gradlew run --args='--mode ingest --repo-path ../swg-main'
+./gradlew run --args='--mode ingest --repo-path .'
 ./gradlew run --args='--mode ingest --repo-url https://github.com/SWG-Source/dsrc.git'
 ```
 
 When `--repo-url` is provided, SWG-LLM clones/updates it under `.swgllm/repos` by default before ingestion.
 
+If you see an `Invalid --repo-path` error, verify the directory exists or use `--repo-path .` to ingest the current repository.
+
 ### 5) Start chat
 
 ```bash
-./gradlew run --args='chat --repo-path ../swg-main'
+./gradlew run --args='chat --repo-path .'
 ```
 
 If you do not need retrieval context yet, you can also run:
@@ -104,10 +106,10 @@ If `intel-igpu` is not available, SWG-LLM automatically falls back to `cpu-low-m
 
 | Mode | Use it when | Typical command |
 |---|---|---|
-| `--mode chat` | You want conversational answers grounded in repo context. | `./gradlew run --args='chat --repo-path ../swg-main'` |
+| `--mode chat` | You want conversational answers grounded in repo context. | `./gradlew run --args='chat --repo-path .'` |
 | `--mode retrieve` | You want raw evidence lookup without full answer synthesis. | `./gradlew run --args='--mode retrieve --query "Where is login flow defined?"'` |
-| `--mode ingest` | You are doing first-time indexing, or the target repo was updated and needs re-indexing. | `./gradlew run --args='--mode ingest --repo-path ../swg-main'` |
-| `--mode daemon` | You want continuous ingest + improve cycles running in the background. | `./gradlew run --args='--mode daemon --repo-path ../swg-main'` |
+| `--mode ingest` | You are doing first-time indexing, or the target repo was updated and needs re-indexing. | `./gradlew run --args='--mode ingest --repo-path .'` |
+| `--mode daemon` | You want continuous ingest + improve cycles running in the background. | `./gradlew run --args='--mode daemon --repo-path .'` |
 
 ### Prompt patterns that produce better answers
 
