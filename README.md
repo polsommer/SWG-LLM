@@ -111,6 +111,8 @@ If `intel-igpu` is not available, SWG-LLM automatically falls back to `cpu-low-m
 | `--mode ingest` | You are doing first-time indexing, or the target repo was updated and needs re-indexing. | `./gradlew run --args='--mode ingest --repo-path .'` |
 | `--mode daemon` | You want continuous ingest + improve cycles running in the background. | `./gradlew run --args='--mode daemon --repo-path .'` |
 
+`daemon` now defaults to persistent operation (no idle timeout) and auto-publish enabled (non-dry-run), so it keeps ingesting/improving and pushes approved updates to the configured Git remote for backup/versioned retention.
+
 ### Prompt patterns that produce better answers
 
 Use patterns like these to increase precision and usefulness:
