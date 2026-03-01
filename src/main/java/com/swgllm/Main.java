@@ -567,7 +567,7 @@ public class Main implements Callable<Integer> {
         String prompt = buildPromptWithSections(userPrompt, mutableConversation, mutableSources, profile, mutableSummary);
         while (estimateTokens(prompt) > budget) {
             if (!mutableConversation.isEmpty()) {
-                mutableConversation.remove(0);
+                trimOldestConversationUnit(mutableConversation);
             } else if (!mutableSources.isEmpty()) {
                 SearchResult source = mutableSources.remove(mutableSources.size() - 1);
                 String shortened = clipToWords(source.citationSnippet(), 20);
@@ -666,19 +666,27 @@ public class Main implements Callable<Integer> {
         if (conversation.isEmpty() || conversationBudget <= 0) {
             return new PromptMemory(List.of(), null);
         }
-        List<String> recentTurns = new ArrayList<>();
+        List<ConversationUnit> units = toConversationUnits(conversation);
+        List<ConversationUnit> retainedUnits = new ArrayList<>();
         int used = 0;
-        for (int i = conversation.size() - 1; i >= 0; i--) {
-            String turn = conversation.get(i);
-            int turnTokens = estimateTokens(turn);
-            if (!recentTurns.isEmpty() && used + turnTokens > conversationBudget) {
+        for (int i = units.size() - 1; i >= 0; i--) {
+            ConversationUnit unit = units.get(i);
+            int unitTokens = estimateTokensForRange(conversation, unit.startInclusive(), unit.endExclusive());
+            if (!retainedUnits.isEmpty() && used + unitTokens > conversationBudget) {
                 break;
             }
-            recentTurns.add(0, turn);
-            used += turnTokens;
+            retainedUnits.add(0, unit);
+            used += unitTokens;
         }
 
-        int omittedCount = Math.max(0, conversation.size() - recentTurns.size());
+        List<String> recentTurns = new ArrayList<>();
+        for (ConversationUnit unit : retainedUnits) {
+            for (int i = unit.startInclusive(); i < unit.endExclusive(); i++) {
+                recentTurns.add(conversation.get(i));
+            }
+        }
+
+        int omittedCount = retainedUnits.isEmpty() ? conversation.size() : retainedUnits.get(0).startInclusive();
         if (omittedCount == 0) {
             return new PromptMemory(recentTurns, null);
         }
@@ -707,6 +715,46 @@ public class Main implements Callable<Integer> {
         return new PromptMemory(recentTurns, clipToWords(memory.toString(), 60));
     }
 
+    private static int estimateTokensForRange(List<String> turns, int startInclusive, int endExclusive) {
+        int total = 0;
+        for (int i = startInclusive; i < endExclusive; i++) {
+            total += estimateTokens(turns.get(i));
+        }
+        return total;
+    }
+
+    private static List<ConversationUnit> toConversationUnits(List<String> conversation) {
+        List<ConversationUnit> units = new ArrayList<>();
+        int i = 0;
+        while (i < conversation.size()) {
+            int start = i;
+            i++;
+            if (isUserTurn(conversation.get(start)) && i < conversation.size() && isAssistantTurn(conversation.get(i))) {
+                i++;
+            }
+            units.add(new ConversationUnit(start, i));
+        }
+        return units;
+    }
+
+    private static void trimOldestConversationUnit(List<String> conversation) {
+        if (conversation.isEmpty()) {
+            return;
+        }
+        String removed = conversation.remove(0);
+        if (isUserTurn(removed) && !conversation.isEmpty() && isAssistantTurn(conversation.get(0))) {
+            conversation.remove(0);
+            return;
+        }
+        while (!conversation.isEmpty() && isAssistantTurn(conversation.get(0))) {
+            conversation.remove(0);
+        }
+    }
+
+    private static boolean isUserTurn(String turn) {
+        return turn != null && turn.stripLeading().regionMatches(true, 0, "user:", 0, "user:".length());
+    }
+
     private static boolean isAssistantTurn(String turn) {
         return turn != null && turn.stripLeading().regionMatches(true, 0, "assistant:", 0, "assistant:".length());
     }
@@ -727,6 +775,9 @@ public class Main implements Callable<Integer> {
     }
 
     private record PromptMemory(List<String> turns, String summary) {
+    }
+
+    private record ConversationUnit(int startInclusive, int endExclusive) {
     }
 
     private String runInferenceWithTimeout(
