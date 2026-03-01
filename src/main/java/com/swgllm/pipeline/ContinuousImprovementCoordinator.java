@@ -41,6 +41,7 @@ public class ContinuousImprovementCoordinator {
     private final GovernancePolicy policy;
     private final Path evalArtifactPath;
     private final Path coordinatorStatePath;
+    private final ImprovementObserver improvementObserver;
 
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
     private final ObjectMapper mapper = new ObjectMapper();
@@ -63,6 +64,47 @@ public class ContinuousImprovementCoordinator {
             GovernanceMetrics metrics,
             GovernancePolicy policy,
             Path evalArtifactPath) {
+        this(
+                gitRepositoryManager,
+                ingestionService,
+                improvementPipeline,
+                continuousConfig,
+                repoPath,
+                repoUrl,
+                repoCacheDir,
+                indexPath,
+                ingestStatePath,
+                feedbackPath,
+                datasetPath,
+                adapterDir,
+                versionRegistryPath,
+                candidate,
+                metrics,
+                policy,
+                evalArtifactPath,
+                result -> {
+                });
+    }
+
+    public ContinuousImprovementCoordinator(
+            GitRepositoryManager gitRepositoryManager,
+            IngestionService ingestionService,
+            OfflineImprovementPipeline improvementPipeline,
+            AppConfig.ContinuousModeConfig continuousConfig,
+            Path repoPath,
+            String repoUrl,
+            Path repoCacheDir,
+            Path indexPath,
+            Path ingestStatePath,
+            Path feedbackPath,
+            Path datasetPath,
+            Path adapterDir,
+            Path versionRegistryPath,
+            ArtifactVersions candidate,
+            GovernanceMetrics metrics,
+            GovernancePolicy policy,
+            Path evalArtifactPath,
+            ImprovementObserver improvementObserver) {
         this.gitRepositoryManager = gitRepositoryManager;
         this.ingestionService = ingestionService;
         this.improvementPipeline = improvementPipeline;
@@ -81,6 +123,7 @@ public class ContinuousImprovementCoordinator {
         this.policy = policy;
         this.evalArtifactPath = evalArtifactPath;
         this.coordinatorStatePath = Path.of(continuousConfig.getStatePath());
+        this.improvementObserver = improvementObserver;
     }
 
     public void requestStop() {
@@ -128,6 +171,7 @@ public class ContinuousImprovementCoordinator {
 
                 if (isDue(state.lastImproveAtEpochMs, continuousConfig.getImproveIntervalMs(), now)) {
                     OfflineImprovementPipeline.PipelineResult result = runWithRetries(this::runImprove);
+                    improvementObserver.onImproveCompleted(result);
                     state.lastImproveAtEpochMs = System.currentTimeMillis();
                     state.lastImprovementExamples = result.trainingExamples();
 
@@ -296,6 +340,11 @@ public class ContinuousImprovementCoordinator {
             Files.createDirectories(parent);
         }
         mapper.writerWithDefaultPrettyPrinter().writeValue(coordinatorStatePath.toFile(), state);
+    }
+
+    @FunctionalInterface
+    public interface ImprovementObserver {
+        void onImproveCompleted(OfflineImprovementPipeline.PipelineResult result) throws Exception;
     }
 
     @FunctionalInterface
