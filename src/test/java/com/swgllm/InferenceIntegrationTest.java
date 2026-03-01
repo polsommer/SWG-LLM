@@ -184,7 +184,11 @@ class InferenceIntegrationTest {
         String prompt = Main.buildPromptWithinBudget("Need summary", conversation, List.of(), profile);
 
         assertTrue(prompt.contains("memory note: Earlier context summary:"));
-        assertTrue(prompt.contains("very old architecture decision around auth service segmentation"));
+        String memoryLine = prompt.lines()
+                .filter(line -> line.startsWith("memory note: "))
+                .findFirst()
+                .orElse("");
+        assertTrue(memoryLine.contains("user:"), "Expected summarized user context in memory note: " + memoryLine);
         assertFalse(prompt.contains("very old answer about auth segmentation and token boundaries\n"));
 
         List<String> retainedTurns = retainedConversationTurns(prompt);
