@@ -166,7 +166,7 @@ class InferenceIntegrationTest {
                 "cpu-low-memory",
                 "model-a",
                 "cpu",
-                220,
+                170,
                 1,
                 0.0,
                 1.0,
@@ -176,16 +176,25 @@ class InferenceIntegrationTest {
         List<String> conversation = List.of(
                 "user: very old architecture decision around auth service segmentation and token boundaries",
                 "assistant: very old answer about auth segmentation and token boundaries",
-                "user: newer detail",
-                "assistant: newer answer",
-                "user: latest request",
-                "assistant: latest response");
+                "user: newer detail with additional context for migration and constraints",
+                "assistant: newer answer with migration guidance and mitigations",
+                "user: latest request with strict deadline and rollback concerns",
+                "assistant: latest response with final recommendation and caveats");
 
         String prompt = Main.buildPromptWithinBudget("Need summary", conversation, List.of(), profile);
 
         assertTrue(prompt.contains("memory note: Earlier context summary:"));
         assertTrue(prompt.contains("very old architecture decision around auth service segmentation"));
         assertFalse(prompt.contains("very old answer about auth segmentation and token boundaries\n"));
+
+        List<String> retainedTurns = retainedConversationTurns(prompt);
+        for (int i = 0; i < retainedTurns.size(); i++) {
+            String turn = retainedTurns.get(i);
+            if (turn.startsWith("assistant:")) {
+                assertTrue(i > 0 && retainedTurns.get(i - 1).startsWith("user:"),
+                        "Retained assistant turn should have a preceding user turn: " + turn);
+            }
+        }
     }
 
     @Test
@@ -218,6 +227,19 @@ class InferenceIntegrationTest {
         assertTrue(responseA.contains("src/Auth.java:1-12"));
         assertTrue(responseA.contains("src/Session.java:20-38"));
         assertTrue(responseB.contains("session tokens expire"));
+    }
+
+
+    private static List<String> retainedConversationTurns(String prompt) {
+        String[] parts = prompt.split("Conversation history:\n", 2);
+        if (parts.length < 2) {
+            return List.of();
+        }
+        String conversationSection = parts[1].split("\n\nRetrieved snippets:\n", 2)[0];
+        return conversationSection.lines()
+                .map(String::trim)
+                .filter(line -> line.startsWith("user:") || line.startsWith("assistant:"))
+                .toList();
     }
 
     private static SearchResult searchResult(String chunkId, String filePath, int lineStart, int lineEnd, String text) {
