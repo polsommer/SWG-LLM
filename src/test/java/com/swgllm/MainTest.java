@@ -431,7 +431,7 @@ class MainTest {
                             new GovernanceEvaluation(true, List.of()),
                             new RolloutState(candidate, candidate, candidate),
                             evaluationArtifactDir,
-                            AutonomySafetyGovernor.GovernorDecision.allow());
+                            AutonomySafetyGovernor.GovernorDecision.pass("All safety checks passed"));
                 }
             };
         }
@@ -466,7 +466,7 @@ class MainTest {
                     "",
                     "",
                     request.workspaceRoot(),
-                    AutonomySafetyGovernor.GovernorDecision.allow());
+                    AutonomySafetyGovernor.GovernorDecision.pass("All safety checks passed"));
         }
     }
 
