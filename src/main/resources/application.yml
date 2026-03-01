@@ -33,16 +33,16 @@ continuous:
   retryBackoffMs: 5000
   maxCycles: 0
   maxRuntimeMs: 0
-  idleTimeoutMs: 900000
+  idleTimeoutMs: 0
   statePath: .swgllm/continuous-state.json
 
 autopublish:
-  enabled: false
+  enabled: true
   targetRepoUrl: https://github.com/polsommer/llm-dsrc.git
   workspacePath: .swgllm/autopublish/workspace
   allowedBranches:
     - main
   requiredMinScoreDelta: 0.02
   maxPushesPerDay: 3
-  manualApprovalForHighImpactChanges: true
-  dryRun: true
+  manualApprovalForHighImpactChanges: false
+  dryRun: false

@@ -187,7 +187,7 @@ public class AppConfig {
         private long retryBackoffMs = 5000;
         private long maxCycles = 0;
         private long maxRuntimeMs = 0;
-        private long idleTimeoutMs = 900000;
+        private long idleTimeoutMs = 0;
         private String statePath = ".swgllm/continuous-state.json";
 
         public long getIngestIntervalMs() {
@@ -257,14 +257,14 @@ public class AppConfig {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class AutoPublishConfig {
-        private boolean enabled = false;
+        private boolean enabled = true;
         private String targetRepoUrl = "https://github.com/polsommer/llm-dsrc.git";
         private String workspacePath = ".swgllm/autopublish/workspace";
         private List<String> allowedBranches = List.of("main");
         private double requiredMinScoreDelta = 0.0;
         private int maxPushesPerDay = 3;
-        private boolean manualApprovalForHighImpactChanges = true;
-        private boolean dryRun = true;
+        private boolean manualApprovalForHighImpactChanges = false;
+        private boolean dryRun = false;
 
         public boolean isEnabled() {
             return enabled;
