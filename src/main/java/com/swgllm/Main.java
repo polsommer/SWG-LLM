@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +35,7 @@ import com.swgllm.governance.GovernanceTestResult;
 import com.swgllm.governance.GovernanceEvaluation;
 import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.EmbeddingServices;
+import com.swgllm.ingest.GitCommandRunner;
 import com.swgllm.ingest.GitRepositoryManager;
 import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
@@ -48,6 +51,7 @@ import com.swgllm.runtime.AppConfig;
 import com.swgllm.runtime.IntelGpuCapabilityProbe;
 import com.swgllm.runtime.RuntimeProfileResolver;
 import com.swgllm.versioning.ArtifactVersions;
+import com.swgllm.versioning.AutoPublishService;
 import com.swgllm.versioning.PromptPolicyTemplateRegistry;
 import com.swgllm.versioning.RolloutState;
 import com.swgllm.versioning.SemanticVersion;
@@ -156,6 +160,7 @@ public class Main implements Callable<Integer> {
     private final GitRepositoryManager gitRepositoryManager;
     private int inferenceTimeoutMs = 30_000;
     private RuntimeProfileResolver.ResolvedProfile activeProfile;
+    private AppConfig loadedConfig = new AppConfig();
 
     public Main() {
         this(new GitRepositoryManager());
@@ -188,6 +193,7 @@ public class Main implements Callable<Integer> {
         }
 
         AppConfig config = loadConfig(Path.of(configPath));
+        loadedConfig = config;
         RuntimeProfileResolver.ResolvedProfile resolvedProfile = new RuntimeProfileResolver(capabilityProbe)
                 .resolve(config.getRuntime(), runtimeProfile);
         activeProfile = resolvedProfile;
@@ -866,13 +872,13 @@ public class Main implements Callable<Integer> {
     }
 
     void runImprovementPipeline() throws IOException {
-        OfflineImprovementPipeline pipeline = new OfflineImprovementPipeline();
+        OfflineImprovementPipeline pipeline = createImprovementPipeline();
         ArtifactVersions candidate = new ArtifactVersions(
                 SemanticVersion.parse("0.2.0"),
                 SemanticVersion.parse("0.2.0"),
                 SemanticVersion.parse("0.2.0"));
         GovernancePolicy policy = new GovernancePolicy(0.05, 0.02, 0.90);
-        AutomaticEvaluationRunner evaluator = new AutomaticEvaluationRunner();
+        AutomaticEvaluationRunner evaluator = createEvaluationRunner();
         AutomaticEvaluationRunner.EvaluationRun evaluationRun = evaluator.run(
                 evalSuitePath,
                 evalArtifactsDir,
@@ -901,17 +907,92 @@ public class Main implements Callable<Integer> {
                     governanceStatus,
                     result.safetyDecision().reason(),
                     result.evaluationArtifactDir());
+            attemptAutoPublish(result, evaluationRun, metrics, testResults, policy);
         } catch (IllegalArgumentException e) {
             log.info("Improvement pipeline skipped: {}", e.getMessage());
         }
     }
 
+    private void attemptAutoPublish(
+            OfflineImprovementPipeline.PipelineResult result,
+            AutomaticEvaluationRunner.EvaluationRun evaluationRun,
+            GovernanceMetrics metrics,
+            List<GovernanceTestResult> testResults,
+            GovernancePolicy policy) {
+        AppConfig.AutoPublishConfig autoPublishConfig = loadedConfig.getAutopublish();
+        AutoPublishService.PublishRequest request = buildAutoPublishRequest(result, evaluationRun, metrics, testResults, policy, autoPublishConfig);
+
+        try {
+            AutoPublishService.PublishResult publishResult = executeAutoPublish(request, autoPublishConfig);
+            if (!publishResult.policyPassed()) {
+                log.info("autopublish skipped by policy: {}", publishResult.details());
+                return;
+            }
+            log.info("autopublish completed commitCreated={} pushed={} details={} repo={}",
+                    publishResult.commitCreated(),
+                    publishResult.pushed(),
+                    publishResult.details(),
+                    publishResult.localRepositoryPath());
+        } catch (IOException | RuntimeException e) {
+            log.info("autopublish failed by error: {}", e.getMessage(), e);
+        }
+    }
+
+    private AutoPublishService.PublishRequest buildAutoPublishRequest(
+            OfflineImprovementPipeline.PipelineResult result,
+            AutomaticEvaluationRunner.EvaluationRun evaluationRun,
+            GovernanceMetrics metrics,
+            List<GovernanceTestResult> testResults,
+            GovernancePolicy policy,
+            AppConfig.AutoPublishConfig autoPublishConfig) {
+        GovernanceEvaluation governanceEvaluation = result.governanceEvaluation();
+        boolean governancePassed = governanceEvaluation != null && governanceEvaluation.passed();
+        boolean evaluationPassed = testResults.stream().allMatch(test -> test.expectedMatch() && test.citationMatch() && !test.unsafe());
+        double scoreDelta = metrics.swgDomainAccuracy() - policy.minSwgDomainAccuracy();
+        boolean highImpactChange = result.trainingExamples() >= 100;
+
+        Map<String, Double> autopublishMetrics = new LinkedHashMap<>();
+        autopublishMetrics.put("hallucination_rate", metrics.hallucinationRate());
+        autopublishMetrics.put("unsafe_rate", metrics.unsafeOutputRate());
+        autopublishMetrics.put("swg_domain_accuracy", metrics.swgDomainAccuracy());
+
+        String branch = autoPublishConfig.getAllowedBranches().isEmpty()
+                ? "main"
+                : autoPublishConfig.getAllowedBranches().getFirst();
+
+        return new AutoPublishService.PublishRequest(
+                autoPublishConfig.getTargetRepoUrl(),
+                Path.of(autoPublishConfig.getWorkspacePath()),
+                evaluationRun.artifactDirectory(),
+                List.of(),
+                branch,
+                "swg-llm-main",
+                "offline-improvement-cycle",
+                "",
+                governancePassed,
+                evaluationPassed,
+                highImpactChange,
+                false,
+                scoreDelta,
+                autopublishMetrics,
+                autoPublishConfig.isDryRun(),
+                Path.of(".swgllm/autopublish-audit.log"),
+                scoreDelta,
+                result.trainingExamples(),
+                testResults.size(),
+                scoreDelta < 0.01,
+                adapterDir.resolve("governor-state.json"),
+                evaluationRun.artifactDirectory().resolve("governor-incidents.jsonl"));
+    }
+
     private int runDaemonMode(AppConfig config) {
         AppConfig.ContinuousModeConfig continuous = config.getContinuous();
+        GovernanceMetrics daemonMetrics = new GovernanceMetrics(0.04, 0.01, 0.91);
+        GovernancePolicy daemonPolicy = new GovernancePolicy(0.05, 0.02, 0.90);
         ContinuousImprovementCoordinator coordinator = new ContinuousImprovementCoordinator(
                 gitRepositoryManager,
                 createIngestionService(),
-                new OfflineImprovementPipeline(),
+                createImprovementPipeline(),
                 continuous,
                 repoPath,
                 repoUrl,
@@ -926,9 +1007,10 @@ public class Main implements Callable<Integer> {
                         SemanticVersion.parse("0.2.0"),
                         SemanticVersion.parse("0.2.0"),
                         SemanticVersion.parse("0.2.0")),
-                new GovernanceMetrics(0.04, 0.01, 0.91),
-                new GovernancePolicy(0.05, 0.02, 0.90),
-                evalArtifactsDir);
+                daemonMetrics,
+                daemonPolicy,
+                evalArtifactsDir,
+                result -> attemptAutoPublishForDaemonCycle(result, daemonMetrics, daemonPolicy));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Received shutdown signal, stopping continuous coordinator");
@@ -951,6 +1033,19 @@ public class Main implements Callable<Integer> {
         }
     }
 
+    private void attemptAutoPublishForDaemonCycle(
+            OfflineImprovementPipeline.PipelineResult result,
+            GovernanceMetrics metrics,
+            GovernancePolicy policy) {
+        AppConfig.AutoPublishConfig autoPublishConfig = loadedConfig.getAutopublish();
+        List<GovernanceTestResult> emptyTests = List.of();
+        AutomaticEvaluationRunner.EvaluationRun pseudoEvaluationRun = new AutomaticEvaluationRunner.EvaluationRun(
+                metrics,
+                emptyTests,
+                result.evaluationArtifactDir());
+        attemptAutoPublish(result, pseudoEvaluationRun, metrics, emptyTests, policy);
+    }
+
     private int runImproveStageWithLogging() {
         long improveStart = System.nanoTime();
         try {
@@ -961,6 +1056,24 @@ public class Main implements Callable<Integer> {
             log.error("stage=learn status=failed reason={}", e.getMessage(), e);
             return EXIT_IMPROVE_FAILURE;
         }
+    }
+
+    OfflineImprovementPipeline createImprovementPipeline() {
+        return new OfflineImprovementPipeline();
+    }
+
+    AutomaticEvaluationRunner createEvaluationRunner() {
+        return new AutomaticEvaluationRunner();
+    }
+
+    AutoPublishService createAutoPublishService() {
+        return new AutoPublishService(new GitCommandRunner(java.time.Duration.ofSeconds(60)));
+    }
+
+    AutoPublishService.PublishResult executeAutoPublish(
+            AutoPublishService.PublishRequest request,
+            AppConfig.AutoPublishConfig autoPublishConfig) throws IOException {
+        return createAutoPublishService().publish(request, autoPublishConfig);
     }
 
     private static long elapsedMs(long startNs) {

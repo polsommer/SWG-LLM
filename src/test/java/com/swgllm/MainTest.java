@@ -13,10 +13,22 @@ import com.swgllm.ingest.EmbeddingService;
 import com.swgllm.ingest.GitRepositoryManager;
 import com.swgllm.ingest.IngestionReport;
 import com.swgllm.ingest.IngestionService;
+import com.swgllm.governance.AutomaticEvaluationRunner;
+import com.swgllm.governance.AutonomySafetyGovernor;
+import com.swgllm.governance.GovernanceEvaluation;
+import com.swgllm.governance.GovernanceMetrics;
+import com.swgllm.governance.GovernancePolicy;
+import com.swgllm.governance.GovernanceTestResult;
+import com.swgllm.pipeline.OfflineImprovementPipeline;
+import com.swgllm.runtime.AppConfig;
+import com.swgllm.versioning.ArtifactVersions;
+import com.swgllm.versioning.AutoPublishService;
+import com.swgllm.versioning.RolloutState;
 
 import picocli.CommandLine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,6 +225,91 @@ class MainTest {
         assertEquals(List.of("ingest", "improve"), main.events);
     }
 
+    @Test
+    void shouldSkipAutopublishWhenDisabledDuringImproveMode() throws IOException {
+        Path configPath = tempDir.resolve("autopublish-disabled.yml");
+        Files.writeString(configPath, """
+                runtime:
+                  defaultProfile: cpu-low-memory
+                  profiles:
+                    cpu-low-memory:
+                      model: test-model
+                      backend: cpu
+                      contextWindowTokens: 2048
+                      retrievalChunks: 4
+                autopublish:
+                  enabled: false
+                  dryRun: false
+                  allowedBranches: [main]
+                  targetRepoUrl: https://example.com/repo.git
+                  workspacePath: %s
+                """.formatted(tempDir.resolve("workspace").toString().replace('\\', '/')));
+
+        AutopublishRecordingMain main = new AutopublishRecordingMain();
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "improve",
+                "--config", configPath.toString(),
+                "--feedback-path", tempDir.resolve("feedback.json").toString(),
+                "--dataset-path", tempDir.resolve("dataset.json").toString(),
+                "--adapter-dir", tempDir.resolve("adapters").toString(),
+                "--version-registry-path", tempDir.resolve("rollout.json").toString(),
+                "--eval-artifacts-dir", tempDir.resolve("evals").toString(),
+                "--eval-suite-path", tempDir.resolve("eval-suite.json").toString());
+
+        assertEquals(0, exitCode);
+        assertEquals(1, main.publishRequestCount);
+        assertEquals(0, main.pushCount);
+        assertFalse(main.lastPolicyPassed);
+    }
+
+    @Test
+    void shouldInvokeAutopublishDuringDaemonImproveCycle() throws IOException {
+        Path configPath = tempDir.resolve("autopublish-daemon.yml");
+        Path statePath = tempDir.resolve("state.json");
+        Files.writeString(configPath, """
+                runtime:
+                  defaultProfile: cpu-low-memory
+                  profiles:
+                    cpu-low-memory:
+                      model: test-model
+                      backend: cpu
+                      contextWindowTokens: 2048
+                      retrievalChunks: 4
+                continuous:
+                  ingestIntervalMs: 0
+                  improveIntervalMs: 0
+                  maxRetries: 0
+                  retryBackoffMs: 0
+                  maxCycles: 1
+                  statePath: %s
+                autopublish:
+                  enabled: true
+                  dryRun: true
+                  allowedBranches: [main]
+                  targetRepoUrl: https://example.com/repo.git
+                  workspacePath: %s
+                """.formatted(
+                        statePath.toString().replace('\\', '/'),
+                        tempDir.resolve("workspace").toString().replace('\\', '/')));
+
+        AutopublishRecordingMain main = new AutopublishRecordingMain();
+        int exitCode = new CommandLine(main).execute(
+                "--mode", "daemon",
+                "--config", configPath.toString(),
+                "--repo-path", tempDir.toString(),
+                "--feedback-path", tempDir.resolve("feedback.json").toString(),
+                "--dataset-path", tempDir.resolve("dataset.json").toString(),
+                "--adapter-dir", tempDir.resolve("adapters").toString(),
+                "--version-registry-path", tempDir.resolve("rollout.json").toString(),
+                "--index-path", tempDir.resolve("index.json").toString(),
+                "--state-path", tempDir.resolve("ingest-state.json").toString(),
+                "--eval-artifacts-dir", tempDir.resolve("evals").toString(),
+                "--eval-suite-path", tempDir.resolve("eval-suite.json").toString());
+
+        assertEquals(0, exitCode);
+        assertEquals(1, main.publishRequestCount);
+    }
+
     static class RecordingGitRepositoryManager extends GitRepositoryManager {
         private final Path resolvedPath;
         private String recordedRepoUrl;
@@ -296,6 +393,80 @@ class MainTest {
             if (failImprove) {
                 throw new IOException("improve failed");
             }
+        }
+    }
+
+    static class AutopublishRecordingMain extends Main {
+        int publishRequestCount;
+        int pushCount;
+        boolean lastPolicyPassed = true;
+
+        @Override
+        IngestionService createIngestionService() {
+            return new IngestionService(new NoOpEmbeddingService()) {
+                @Override
+                public IngestionReport ingest(Path repoPath, Path indexPath, Path statePath) {
+                    return new IngestionReport(1, 0, 1, "abc123", "v1.0.0");
+                }
+            };
+        }
+
+        @Override
+        OfflineImprovementPipeline createImprovementPipeline() {
+            return new OfflineImprovementPipeline() {
+                @Override
+                public PipelineResult run(
+                        Path feedbackPath,
+                        Path datasetOutputPath,
+                        Path adapterDir,
+                        Path versionRegistryPath,
+                        ArtifactVersions candidate,
+                        GovernanceMetrics metrics,
+                        List<GovernanceTestResult> testResults,
+                        Path evaluationArtifactDir,
+                        GovernancePolicy policy) {
+                    return new PipelineResult(
+                            5,
+                            null,
+                            new GovernanceEvaluation(true, List.of()),
+                            new RolloutState(candidate, candidate, candidate),
+                            evaluationArtifactDir,
+                            AutonomySafetyGovernor.GovernorDecision.allow());
+                }
+            };
+        }
+
+        @Override
+        AutomaticEvaluationRunner createEvaluationRunner() {
+            return new AutomaticEvaluationRunner() {
+                @Override
+                public EvaluationRun run(Path evalSuitePath, Path evalArtifactsRoot, ModelResponseGenerator responseGenerator) throws IOException {
+                    Files.createDirectories(evalArtifactsRoot);
+                    return new EvaluationRun(
+                            new GovernanceMetrics(0.02, 0.01, 0.95),
+                            List.of(new GovernanceTestResult("t1", "p", "o", true, true, false, List.of())),
+                            evalArtifactsRoot.resolve("run-1"));
+                }
+            };
+        }
+
+        @Override
+        AutoPublishService.PublishResult executeAutoPublish(AutoPublishService.PublishRequest request, AppConfig.AutoPublishConfig autoPublishConfig) {
+            publishRequestCount++;
+            lastPolicyPassed = autoPublishConfig.isEnabled();
+            boolean pushed = autoPublishConfig.isEnabled() && !autoPublishConfig.isDryRun();
+            if (pushed) {
+                pushCount++;
+            }
+            return new AutoPublishService.PublishResult(
+                    autoPublishConfig.isEnabled(),
+                    true,
+                    pushed,
+                    autoPublishConfig.isEnabled() ? "ok" : "autopublish is disabled",
+                    "",
+                    "",
+                    request.workspaceRoot(),
+                    AutonomySafetyGovernor.GovernorDecision.allow());
         }
     }
 
