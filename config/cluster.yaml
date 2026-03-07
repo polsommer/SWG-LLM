@@ -2,6 +2,19 @@ cluster:
   name: swg-llm
   debate_rounds: 3
 
+cluster_control:
+  # fixed => always use fixed_coordinator_id
+  # election => coordinator elected from healthy nodes
+  coordinator_mode: fixed
+  fixed_coordinator_id: agent_192_168_88_5
+  heartbeat_ttl_seconds: 30
+  telemetry_retention_cycles: 100
+  queue:
+    max_inflight_tasks: 8
+    allowed_task_types:
+      - ingestion
+      - debate
+
 retry_policy:
   max_attempts: 3
   backoff_seconds: 5
@@ -15,11 +28,13 @@ nodes:
     role: orchestrator_agent
     agent_id: agent_192_168_88_5
     enabled: true
+    health_endpoint: http://192.168.88.5:8080/healthz
 
   - address: 192.168.88.10
     role: reviewer_agent
     agent_id: agent_192_168_88_10
     enabled: true
+    health_endpoint: http://192.168.88.10:8080/healthz
 
 stages:
   - name: ingestion
