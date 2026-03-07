@@ -1,5 +1,0 @@
-# Local Gradle state
-.gradle/
-
-# Wrapper binary is generated locally
-gradle/wrapper/gradle-wrapper.jar
