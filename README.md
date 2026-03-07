@@ -57,13 +57,13 @@ python -m pip install --upgrade pip
 
 ### 4) Install Python dependencies
 
-This scaffold currently uses only the Python standard library, so there is no mandatory `requirements.txt` yet.
-
-If you add dependencies later, install them here (for example):
+Install dependencies from `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+`requirements.txt` currently contains only comments because this scaffold uses the Python standard library today. Add pinned third-party dependencies there as your implementation grows.
 
 ### 5) Configure runtime environment
 
