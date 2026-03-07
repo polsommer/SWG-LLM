@@ -1,0 +1,30 @@
+cluster:
+  name: swg-llm
+  debate_rounds: 3
+
+retry_policy:
+  max_attempts: 3
+  backoff_seconds: 5
+  retry_on:
+    - transient_network_error
+    - timeout
+    - rate_limit
+
+nodes:
+  - address: 192.168.88.5
+    role: orchestrator_agent
+    agent_id: agent_192_168_88_5
+    enabled: true
+
+  - address: 192.168.88.10
+    role: reviewer_agent
+    agent_id: agent_192_168_88_10
+    enabled: true
+
+stages:
+  - name: ingestion
+    module: ingestion
+  - name: consensus
+    module: consensus
+  - name: sync
+    module: sync
