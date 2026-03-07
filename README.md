@@ -43,7 +43,7 @@ sudo apt install -y build-essential tree
 ### 2) Clone the repository
 
 ```bash
-git clone <YOUR_REPO_URL> SWG-LLM
+git clone https://github.com/polsommer/SWG-LLM.git SWG-LLM
 cd SWG-LLM
 ```
 
