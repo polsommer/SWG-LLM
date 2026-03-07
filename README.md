@@ -114,6 +114,22 @@ python -m unittest discover -s tests
 - If Git clone via SSH fails, test with HTTPS first and verify SSH keys separately.
 - Keep your virtual environment active (`source .venv/bin/activate`) when running commands.
 
+
+## Full Guide: Data Ingestion + LLM Setup
+
+If you want an end-to-end, copy/paste walkthrough (ingest data, validate retrieval, and connect your LLM with a simple RAG flow), use:
+
+- `docs/GETTING_STARTED_INGESTION_AND_LLM.md`
+
+Quick command to run ingestion immediately:
+
+```bash
+python - <<'PY'
+from ingestion.query_interface import KnowledgeQueryService
+print(KnowledgeQueryService().refresh())
+PY
+```
+
 ## Environment Variables
 
 - `SWG_CLUSTER_CONFIG` - path to cluster config file (default: `config/cluster.yaml`).
