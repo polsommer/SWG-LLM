@@ -89,6 +89,18 @@ export SWG_LOG_LEVEL=INFO
 python -m orchestrator
 ```
 
+The orchestrator now runs continuously and renders a live console view with:
+- node health/status,
+- rolling conversation/telemetry output ("talk"), and
+- runtime metrics (success rate, task counts, events/min).
+
+Useful runtime options:
+
+```bash
+export SWG_CONSOLE_REFRESH_SECONDS=2   # how often to refresh console
+export SWG_MAX_TICKS=0                 # 0 means run forever; set >0 for bounded runs/tests
+```
+
 ### 7) Run tests
 
 ```bash
