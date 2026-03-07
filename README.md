@@ -121,13 +121,20 @@ If you want an end-to-end, copy/paste walkthrough (ingest data, validate retriev
 
 - `docs/GETTING_STARTED_INGESTION_AND_LLM.md`
 
-Quick command to run ingestion immediately:
+Quick commands to start ingestion and learning context immediately:
 
 ```bash
-python - <<'PY'
-from ingestion.query_interface import KnowledgeQueryService
-print(KnowledgeQueryService().refresh())
-PY
+python -m ingestion ingest
+python -m ingestion ask "How does orchestration and consensus work?" --top-k 3
+python -m ingestion auto-ingest --interval-seconds 300
+```
+
+Optional convenience targets:
+
+```bash
+make ingest
+make ask Q="How does orchestration and consensus work?"
+make auto-ingest INTERVAL=300
 ```
 
 ## Environment Variables
