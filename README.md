@@ -120,6 +120,7 @@ python -m unittest discover -s tests
 If you want an end-to-end, copy/paste walkthrough (ingest data, validate retrieval, and connect your LLM with a simple RAG flow), use:
 
 - `docs/GETTING_STARTED_INGESTION_AND_LLM.md`
+- `docs/FULLY_AUTOMATED_CLUSTER_GUIDE.md` (cluster mode + automatic ingest/review/learn/repeat runbook)
 
 Quick commands to start ingestion and learning context immediately:
 
