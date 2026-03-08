@@ -134,7 +134,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=%i
+User=<linux-user>
 WorkingDirectory=/opt/SWG-LLM
 EnvironmentFile=/opt/SWG-LLM/.env.cluster
 ExecStart=/opt/SWG-LLM/.venv/bin/python -m ingestion auto-ingest --interval-seconds 300
@@ -158,7 +158,7 @@ After=network.target swg-ingest.service
 
 [Service]
 Type=simple
-User=%i
+User=<linux-user>
 WorkingDirectory=/opt/SWG-LLM
 EnvironmentFile=/opt/SWG-LLM/.env.cluster
 ExecStart=/opt/SWG-LLM/.venv/bin/python -m orchestrator
@@ -173,21 +173,21 @@ WantedBy=multi-user.target
 
 ### 6.3 Enable and start
 
-Replace `<linux-user>` with your runtime user:
+Replace `<linux-user>` in both service files with your runtime user:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable swg-ingest@swg-node1.service
-sudo systemctl enable swg-orchestrator@swg-node1.service
-sudo systemctl start swg-ingest@swg-node1.service
-sudo systemctl start swg-orchestrator@swg-node1.service
+sudo systemctl enable swg-ingest.service
+sudo systemctl enable swg-orchestrator.service
+sudo systemctl start swg-ingest.service
+sudo systemctl start swg-orchestrator.service
 ```
 
 Check status:
 
 ```bash
-systemctl status swg-ingest@swg-node1.service --no-pager
-systemctl status swg-orchestrator@swg-node1.service --no-pager
+systemctl status swg-ingest.service --no-pager
+systemctl status swg-orchestrator.service --no-pager
 ```
 
 Tail logs:
@@ -240,4 +240,3 @@ Use this quick checklist for reliable long-running operation:
 - **No new learning detected:** verify upstream repo changed and auto-ingest interval elapsed.
 - **Weak review quality:** increase retrieval `--top-k` during evaluation and tune chunking settings in ingestion components.
 - **No orchestrator activity:** verify `SWG_CLUSTER_CONFIG` path and YAML validity.
-
