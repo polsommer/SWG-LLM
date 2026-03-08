@@ -7,10 +7,18 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any
 
 from ingestion.query_interface import KnowledgeQueryService
+from webapp.llm_adapter import (
+    _DEFAULT_ABSTAIN_ANSWER,
+    build_context,
+    build_prompt,
+    generate_answer,
+    get_backend_name,
+)
 
 
 @dataclass(frozen=True)
@@ -64,12 +72,35 @@ def _build_chat_payload(
     top_k: int,
     max_context_chars: int,
 ) -> dict[str, Any]:
-    results = service.query(message, top_k=top_k)
-    context = "\n\n".join(item.text for item in results)
+    start = time.perf_counter()
+    results = build_context(message, top_k=top_k, service=service)
+
+    if not results:
+        answer = _DEFAULT_ABSTAIN_ANSWER
+    else:
+        prompt = build_prompt(message, results)
+        answer = generate_answer(prompt)
+
+    citations = [
+        {
+            "file_path": item.file_path,
+            "start_line": item.start_line,
+            "end_line": item.end_line,
+            "snippet": _trim_context(item.text, max_context_chars),
+        }
+        for item in results
+    ]
+
+    latency_ms = round((time.perf_counter() - start) * 1000, 2)
+
     return {
-        "message": message,
-        "top_k": top_k,
-        "context": _trim_context(context, max_context_chars),
+        "answer": answer,
+        "citations": citations,
+        "metadata": {
+            "backend": get_backend_name(),
+            "top_k": top_k,
+            "latency_ms": latency_ms,
+        },
         "results": [asdict(item) for item in results],
     }
 
