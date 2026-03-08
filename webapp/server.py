@@ -18,6 +18,7 @@ from webapp.llm_adapter import (
     build_prompt,
     generate_answer,
     get_backend_name,
+    rewrite_question,
 )
 
 
@@ -86,6 +87,7 @@ def _build_chat_payload(
     message: str,
     top_k: int,
     max_context_chars: int,
+    history: list[str] | None = None,
 ) -> dict[str, Any]:
     start = time.perf_counter()
 
@@ -102,12 +104,13 @@ def _build_chat_payload(
             "results": [],
         }
 
-    results = build_context(message, top_k=top_k, service=service)
+    normalized_question = rewrite_question(message, history=history)
+    results = build_context(normalized_question, top_k=top_k, service=service)
 
     if not results:
         answer = _DEFAULT_ABSTAIN_ANSWER
     else:
-        prompt = build_prompt(message, results)
+        prompt = build_prompt(normalized_question, results)
         answer = generate_answer(prompt)
 
     citations = [
@@ -129,6 +132,7 @@ def _build_chat_payload(
             "backend": get_backend_name(),
             "top_k": top_k,
             "latency_ms": latency_ms,
+            "normalized_question": normalized_question,
         },
         "results": [asdict(item) for item in results],
     }
@@ -172,11 +176,17 @@ class _WebHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.BAD_REQUEST, {"error": "top_k must be an integer"})
             return
 
+        history = payload.get("history", [])
+        if not isinstance(history, list) or not all(isinstance(item, str) for item in history):
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "history must be an array of strings"})
+            return
+
         response = _build_chat_payload(
             service=self.service,
             message=message,
             top_k=max(1, top_k),
             max_context_chars=max(1, self.config.max_context_chars),
+            history=history,
         )
         self._send_json(HTTPStatus.OK, response)
 

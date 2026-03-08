@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Any
 from urllib import error, request
 
@@ -15,6 +16,39 @@ _DEFAULT_ABSTAIN_ANSWER = (
     "There is not enough evidence in the retrieved documents to answer confidently. "
     "Please provide more context or ingest more relevant sources."
 )
+
+_FOLLOW_UP_STARTERS = {
+    "it",
+    "they",
+    "that",
+    "those",
+    "this",
+    "he",
+    "she",
+    "these",
+    "there",
+}
+
+
+def rewrite_question(question: str, history: list[str] | None = None) -> str:
+    """Expand follow-up questions with recent context for better retrieval recall."""
+    normalized = " ".join(question.split())
+    if not normalized:
+        return question
+
+    prior_turns = [" ".join(item.split()) for item in (history or []) if item.strip()]
+    if not prior_turns:
+        return normalized
+
+    tokens = [re.sub(r"[^a-zA-Z0-9_]", "", token).lower() for token in normalized.split()]
+    follow_up = any(token in _FOLLOW_UP_STARTERS for token in tokens)
+    if not follow_up and len(tokens) <= 3:
+        follow_up = True
+    if not follow_up:
+        return normalized
+
+    context_window = " | ".join(prior_turns[-2:])
+    return f"{normalized} (context: {context_window})"
 
 
 def build_context(
@@ -45,8 +79,10 @@ def build_prompt(question: str, docs: list[QueryResult]) -> str:
 
     evidence = "\n\n".join(evidence_blocks)
     return (
-        "You are a retrieval-grounded assistant. Answer only with support from evidence. "
-        "If evidence is insufficient, explicitly say there is not enough evidence.\n\n"
+        "You are a retrieval-grounded assistant aligned to automatically ingested sources. "
+        "Answer only from the evidence below. When you make a claim, cite at least one bracketed "
+        "reference in this format: [path:start-end]. If evidence is insufficient, explicitly say there "
+        "is not enough evidence.\n\n"
         f"Question:\n{question}\n\n"
         f"Evidence:\n{evidence}\n\n"
         "Answer:"
@@ -138,4 +174,3 @@ def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> di
     except json.JSONDecodeError:
         return {}
     return data if isinstance(data, dict) else {}
-

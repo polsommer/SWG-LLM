@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from ingestion.knowledge_store import QueryResult
-from webapp.llm_adapter import build_prompt, generate_answer, get_backend_name
+from webapp.llm_adapter import build_prompt, generate_answer, get_backend_name, rewrite_question
 
 
 class LLMAdapterTests(unittest.TestCase):
@@ -35,6 +35,16 @@ class LLMAdapterTests(unittest.TestCase):
         prompt = build_prompt("Unknown", [])
         answer = generate_answer(prompt)
         self.assertIn("enough evidence", answer.lower())
+
+
+    def test_rewrite_question_adds_history_for_follow_up(self) -> None:
+        rewritten = rewrite_question("How does it work?", history=["Explain orchestration layer"])
+        self.assertIn("context:", rewritten)
+        self.assertIn("Explain orchestration layer", rewritten)
+
+    def test_rewrite_question_keeps_independent_question(self) -> None:
+        rewritten = rewrite_question("What is the architecture overview?", history=["Prior question"])
+        self.assertEqual(rewritten, "What is the architecture overview?")
 
     def test_get_backend_defaults_to_mock(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
