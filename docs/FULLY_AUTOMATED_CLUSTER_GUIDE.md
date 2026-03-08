@@ -177,17 +177,17 @@ Replace `<linux-user>` with your runtime user:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable swg-ingest@<linux-user>.service
-sudo systemctl enable swg-orchestrator@<linux-user>.service
-sudo systemctl start swg-ingest@<linux-user>.service
-sudo systemctl start swg-orchestrator@<linux-user>.service
+sudo systemctl enable swg-ingest@swg-node1.service
+sudo systemctl enable swg-orchestrator@swg-node1.service
+sudo systemctl start swg-ingest@swg-node1.service
+sudo systemctl start swg-orchestrator@swg-node1.service
 ```
 
 Check status:
 
 ```bash
-systemctl status swg-ingest@<linux-user>.service --no-pager
-systemctl status swg-orchestrator@<linux-user>.service --no-pager
+systemctl status swg-ingest@swg-node1.service --no-pager
+systemctl status swg-orchestrator@swg-node1.service --no-pager
 ```
 
 Tail logs:
