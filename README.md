@@ -139,6 +139,24 @@ make ask Q="How does orchestration and consensus work?"
 make auto-ingest INTERVAL=300
 ```
 
+## Web Chat Deployment
+
+Use the lightweight web chat server to expose retrieval + LLM responses on your LAN:
+
+```bash
+python -m webapp
+```
+
+For a full deployment runbook (environment variables, LAN/firewall guidance, reverse proxy options, and health checks), see:
+
+- `docs/WEB_CHAT_DEPLOY.md`
+
+Convenience target:
+
+```bash
+make web-chat
+```
+
 ## Environment Variables
 
 - `SWG_CLUSTER_CONFIG` - path to cluster config file (default: `config/cluster.yaml`).
