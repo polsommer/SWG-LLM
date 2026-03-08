@@ -19,6 +19,14 @@ def _mock_retriever(question: str, top_k: int) -> list[dict[str, object]]:
             "start_line": 10 + idx,
             "end_line": 11 + idx,
             "text": f"Evidence {idx} for {question}",
+            "semantic_score": 0.9 - idx * 0.1,
+            "keyword_score": 1.2 - idx * 0.1,
+            "rerank_score": 0.8 - idx * 0.1,
+            "document_title": "Spec",
+            "section": "Overview",
+            "last_updated": "2024-01-01T00:00:00+00:00",
+            "access_scope": "public",
+            "source_kind": "internal_docs",
         }
         for idx in range(top_k)
     ]
@@ -53,6 +61,7 @@ class RefinementLoopTests(unittest.TestCase):
             self.assertIn("192.168.88.5", payload["provenance"])
             self.assertIn("192.168.88.10", payload["provenance"])
             self.assertGreaterEqual(result.conclusion.agreement_score, 0.0)
+            self.assertTrue(result.conclusion.grounded)
 
 
 if __name__ == "__main__":
