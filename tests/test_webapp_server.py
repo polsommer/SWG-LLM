@@ -4,7 +4,7 @@ import json
 import threading
 import unittest
 from unittest.mock import patch
-from urllib import request
+from urllib import error, request
 
 from ingestion.knowledge_store import QueryResult
 from webapp.server import WebAppConfig, _build_chat_payload, load_config_from_env, create_server
@@ -50,6 +50,17 @@ class WebAppServerTests(unittest.TestCase):
         self.assertIn("[truncated]", payload["citations"][0]["snippet"])
 
 
+
+    def test_build_chat_payload_uses_history_for_follow_up(self) -> None:
+        payload = _build_chat_payload(
+            _FakeService(),
+            "How does it work?",
+            top_k=1,
+            max_context_chars=100,
+            history=["Describe the orchestration layer"],
+        )
+        self.assertIn("context:", payload["metadata"]["normalized_question"])
+
     def test_build_chat_payload_handles_greeting_without_retrieval(self) -> None:
         payload = _build_chat_payload(_FakeService(), "hi", top_k=3, max_context_chars=50)
         self.assertIn("hi", payload["answer"].lower())
@@ -93,6 +104,17 @@ class WebAppServerTests(unittest.TestCase):
             self.assertIn("answer", chat_payload)
             self.assertEqual(chat_payload["metadata"]["top_k"], 1)
             self.assertEqual(len(chat_payload["citations"]), 1)
+
+
+            invalid_history_req = request.Request(
+                url=f"http://{host}:{port}/api/chat",
+                data=json.dumps({"message": "What is this?", "history": "bad"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with self.assertRaises(error.HTTPError) as ctx:
+                request.urlopen(invalid_history_req)
+            self.assertEqual(ctx.exception.code, 400)
         finally:
             server.shutdown()
             server.server_close()
