@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SWG Chat</title>
+  </head>
+  <body>
+    <h1>SWG Chat</h1>
+    <form id="chat-form">
+      <label>
+        Message
+        <input id="message" name="message" type="text" required />
+      </label>
+      <label>
+        Top K
+        <input id="top-k" name="top_k" type="number" min="1" value="5" />
+      </label>
+      <button type="submit">Send</button>
+    </form>
+    <pre id="output"></pre>
+
+    <script>
+      const form = document.getElementById('chat-form');
+      const output = document.getElementById('output');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = document.getElementById('message').value;
+        const topK = Number(document.getElementById('top-k').value || 5);
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, top_k: topK })
+        });
+
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      });
+    </script>
+  </body>
+</html>
