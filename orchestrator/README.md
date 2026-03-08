@@ -30,3 +30,6 @@ Responsibilities:
 - **Stop conditions:** auto-complete requires verification pass **and** confidence threshold.
 - **Persistence/resume:** task state and traces are persisted to JSON for safe workflow continuation.
 - **Execution traces:** stage-by-stage trace events support observability/debugging.
+- **Scoped durable memory:** session/user/team/global memory scopes with tenant-safe retrieval and JSON durability.
+- **Memory controls:** TTL expiry, user edit/delete operations, and strict scope access constraints.
+- **Memory telemetry:** tracks memory usefulness vs hallucination risk per request for evaluation.

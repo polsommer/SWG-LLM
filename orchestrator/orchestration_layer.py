@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
+from .memory_layer import MemoryRequestContext, MemoryTelemetry, MemoryTelemetryEvent, ScopedMemoryRetriever
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -240,6 +242,7 @@ class TaskState:
     confidence_threshold: float
     current_step: str = "planning"
     outputs: dict[str, Any] = field(default_factory=dict)
+    memory_injection: list[dict[str, Any]] = field(default_factory=list)
     verification: dict[str, Any] = field(default_factory=dict)
     traces: list[TraceEvent] = field(default_factory=list)
 
@@ -285,6 +288,7 @@ class TaskStateStore:
             confidence_threshold=payload["confidence_threshold"],
             current_step=payload.get("current_step", "planning"),
             outputs=outputs,
+            memory_injection=payload.get("memory_injection", []),
             verification=payload.get("verification", {}),
             traces=traces,
         )
@@ -329,11 +333,15 @@ class TaskOrchestrator:
         verifier: VerifierStage,
         state_store: TaskStateStore,
         adapters: dict[str, ToolAdapter[Any, Any]],
+        memory_retriever: ScopedMemoryRetriever | None = None,
+        memory_telemetry: MemoryTelemetry | None = None,
     ) -> None:
         self._planner = planner
         self._verifier = verifier
         self._state_store = state_store
         self._adapters = adapters
+        self._memory_retriever = memory_retriever
+        self._memory_telemetry = memory_telemetry
 
     def run(
         self,
@@ -342,6 +350,7 @@ class TaskOrchestrator:
         *,
         max_attempts: int = 3,
         confidence_threshold: float = 0.8,
+        memory_context: MemoryRequestContext | None = None,
     ) -> TaskState:
         state = TaskState(
             task_id=task_id,
@@ -352,6 +361,15 @@ class TaskOrchestrator:
             confidence_threshold=confidence_threshold,
         )
         self._trace(state, "planning", "building plan from intent")
+        if self._memory_retriever is not None and memory_context is not None:
+            memory_injection = self._memory_retriever.retrieve(query=intent, context=memory_context)
+            state.memory_injection = [asdict(item) for item in memory_injection.items]
+            self._trace(
+                state,
+                "memory",
+                "memory injected",
+                {"count": len(memory_injection.items), "scopes": [item.scope for item in memory_injection.items]},
+            )
         plan = self._planner.build_plan(task_id=task_id, intent=intent)
         self._trace(state, "planning", "plan built", {"subtasks": [asdict(item) for item in plan.subtasks]})
         self._state_store.save(state)
@@ -419,6 +437,28 @@ class TaskOrchestrator:
         if tool == "code_action":
             return adapter.execute(CodeActionInput(action="compose", target="workflow", content=intent))
         raise ValueError(f"Unsupported tool: {tool}")
+
+    def record_memory_telemetry(
+        self,
+        *,
+        request_id: str,
+        context: MemoryRequestContext,
+        usefulness_score: float,
+        hallucination_risk_score: float,
+        state: TaskState,
+    ) -> None:
+        if self._memory_telemetry is None:
+            return
+        item_ids = tuple(item.get("item_id", "") for item in state.memory_injection)
+        self._memory_telemetry.record(
+            MemoryTelemetryEvent(
+                request_id=request_id,
+                tenant_id=context.tenant_id,
+                memory_item_ids=item_ids,
+                usefulness_score=usefulness_score,
+                hallucination_risk_score=hallucination_risk_score,
+            )
+        )
 
     def _trace(self, state: TaskState, stage: str, message: str, data: dict[str, Any] | None = None) -> None:
         state.traces.append(TraceEvent(timestamp=_utc_now(), stage=stage, message=message, data=data or {}))
