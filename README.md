@@ -151,11 +151,14 @@ For a full deployment runbook (environment variables, LAN/firewall guidance, rev
 
 - `docs/WEB_CHAT_DEPLOY.md`
 
-Convenience target:
+Convenience targets:
 
 ```bash
 make web-chat
+make web-auto INTERVAL=60
 ```
+
+`make web-auto` starts the auto-ingest loop in the background and then launches the web chat server in the foreground.
 
 ## Environment Variables
 

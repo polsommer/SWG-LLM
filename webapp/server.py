@@ -21,6 +21,21 @@ from webapp.llm_adapter import (
 )
 
 
+_GREETING_MESSAGES = {
+    "hi",
+    "hello",
+    "hey",
+    "yo",
+    "sup",
+    "howdy",
+}
+
+
+def _is_greeting(message: str) -> bool:
+    normalized = " ".join(message.lower().strip().split())
+    return normalized in _GREETING_MESSAGES
+
+
 @dataclass(frozen=True)
 class WebAppConfig:
     host: str = "192.168.88.10"
@@ -73,6 +88,20 @@ def _build_chat_payload(
     max_context_chars: int,
 ) -> dict[str, Any]:
     start = time.perf_counter()
+
+    if _is_greeting(message):
+        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+        return {
+            "answer": "Hi! Ask me anything about the ingested SWG sources and I will answer with citations.",
+            "citations": [],
+            "metadata": {
+                "backend": get_backend_name(),
+                "top_k": top_k,
+                "latency_ms": latency_ms,
+            },
+            "results": [],
+        }
+
     results = build_context(message, top_k=top_k, service=service)
 
     if not results:
