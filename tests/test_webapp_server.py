@@ -41,7 +41,7 @@ class _EmptyService:
 
 class WebAppServerTests(unittest.TestCase):
     def test_build_chat_payload_includes_answer_citations_and_metadata(self) -> None:
-        payload = _build_chat_payload(_FakeService(), "hello", top_k=1, max_context_chars=5)
+        payload = _build_chat_payload(_FakeService(), "What is this?", top_k=1, max_context_chars=5)
         self.assertIn("answer", payload)
         self.assertIn("citations", payload)
         self.assertIn("metadata", payload)
@@ -49,6 +49,12 @@ class WebAppServerTests(unittest.TestCase):
         self.assertEqual(len(payload["citations"]), 1)
         self.assertIn("[truncated]", payload["citations"][0]["snippet"])
 
+
+    def test_build_chat_payload_handles_greeting_without_retrieval(self) -> None:
+        payload = _build_chat_payload(_FakeService(), "hi", top_k=3, max_context_chars=50)
+        self.assertIn("hi", payload["answer"].lower())
+        self.assertEqual(payload["citations"], [])
+        self.assertEqual(payload["results"], [])
 
     def test_build_chat_payload_abstains_without_retrieval(self) -> None:
         payload = _build_chat_payload(_EmptyService(), "unknown", top_k=2, max_context_chars=50)
@@ -78,7 +84,7 @@ class WebAppServerTests(unittest.TestCase):
 
             chat_req = request.Request(
                 url=f"http://{host}:{port}/api/chat",
-                data=json.dumps({"message": "hello", "top_k": 1}).encode("utf-8"),
+                data=json.dumps({"message": "What is this?", "top_k": 1}).encode("utf-8"),
                 method="POST",
                 headers={"Content-Type": "application/json"},
             )
