@@ -32,12 +32,28 @@ class _FakeService:
         ][:top_k]
 
 
+
+
+class _EmptyService:
+    def query(self, question: str, top_k: int = 5) -> list[QueryResult]:
+        return []
+
+
 class WebAppServerTests(unittest.TestCase):
-    def test_build_chat_payload_applies_truncation(self) -> None:
+    def test_build_chat_payload_includes_answer_citations_and_metadata(self) -> None:
         payload = _build_chat_payload(_FakeService(), "hello", top_k=1, max_context_chars=5)
-        self.assertEqual(payload["message"], "hello")
-        self.assertIn("[truncated]", payload["context"])
-        self.assertEqual(len(payload["results"]), 1)
+        self.assertIn("answer", payload)
+        self.assertIn("citations", payload)
+        self.assertIn("metadata", payload)
+        self.assertEqual(payload["metadata"]["top_k"], 1)
+        self.assertEqual(len(payload["citations"]), 1)
+        self.assertIn("[truncated]", payload["citations"][0]["snippet"])
+
+
+    def test_build_chat_payload_abstains_without_retrieval(self) -> None:
+        payload = _build_chat_payload(_EmptyService(), "unknown", top_k=2, max_context_chars=50)
+        self.assertIn("not enough evidence", payload["answer"].lower())
+        self.assertEqual(payload["citations"], [])
 
     def test_load_config_from_env_defaults(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
@@ -68,9 +84,9 @@ class WebAppServerTests(unittest.TestCase):
             )
             chat = request.urlopen(chat_req)
             chat_payload = json.loads(chat.read().decode("utf-8"))
-            self.assertEqual(chat_payload["message"], "hello")
-            self.assertEqual(chat_payload["top_k"], 1)
-            self.assertEqual(len(chat_payload["results"]), 1)
+            self.assertIn("answer", chat_payload)
+            self.assertEqual(chat_payload["metadata"]["top_k"], 1)
+            self.assertEqual(len(chat_payload["citations"]), 1)
         finally:
             server.shutdown()
             server.server_close()
