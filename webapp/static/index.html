@@ -4,39 +4,214 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SWG Chat</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f7fb;
+        color: #111827;
+      }
+
+      .app {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.5rem;
+      }
+
+      #history {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        min-height: 260px;
+        max-height: 60vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .message {
+        border-radius: 0.75rem;
+        padding: 0.7rem 0.8rem;
+        line-height: 1.4;
+      }
+
+      .message.user {
+        background: #dbeafe;
+        align-self: flex-end;
+        max-width: 80%;
+      }
+
+      .message.assistant {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+      }
+
+      .role {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #374151;
+      }
+
+      .citations {
+        margin: 0.55rem 0 0;
+        padding-left: 1.1rem;
+        font-size: 0.88rem;
+      }
+
+      .citations li {
+        margin-bottom: 0.3rem;
+      }
+
+      #composer {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      #message-input {
+        flex: 1;
+        border-radius: 0.6rem;
+        border: 1px solid #9ca3af;
+        padding: 0.7rem;
+        font-size: 1rem;
+      }
+
+      button {
+        border: none;
+        border-radius: 0.6rem;
+        background: #2563eb;
+        color: #fff;
+        padding: 0.7rem 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button[disabled] {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      #loading {
+        margin-top: 0.6rem;
+        font-size: 0.9rem;
+        color: #4b5563;
+        min-height: 1.2rem;
+      }
+    </style>
   </head>
   <body>
-    <h1>SWG Chat</h1>
-    <form id="chat-form">
-      <label>
-        Message
-        <input id="message" name="message" type="text" required />
-      </label>
-      <label>
-        Top K
-        <input id="top-k" name="top_k" type="number" min="1" value="5" />
-      </label>
-      <button type="submit">Send</button>
-    </form>
-    <pre id="output"></pre>
+    <main class="app">
+      <h1>SWG Chat</h1>
+      <section id="history" aria-live="polite"></section>
+
+      <form id="composer">
+        <input id="message-input" type="text" placeholder="Ask a question about your indexed repo..." required />
+        <button id="send-button" type="submit">Send</button>
+      </form>
+      <div id="loading" aria-live="assertive"></div>
+    </main>
 
     <script>
-      const form = document.getElementById('chat-form');
-      const output = document.getElementById('output');
+      const historyEl = document.getElementById('history');
+      const formEl = document.getElementById('composer');
+      const inputEl = document.getElementById('message-input');
+      const sendButtonEl = document.getElementById('send-button');
+      const loadingEl = document.getElementById('loading');
 
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const message = document.getElementById('message').value;
-        const topK = Number(document.getElementById('top-k').value || 5);
+      function appendMessage(role, text, citations = []) {
+        const messageEl = document.createElement('article');
+        messageEl.className = `message ${role}`;
 
+        const roleEl = document.createElement('div');
+        roleEl.className = 'role';
+        roleEl.textContent = role === 'user' ? 'You' : 'Assistant';
+
+        const textEl = document.createElement('div');
+        textEl.textContent = text;
+
+        messageEl.append(roleEl, textEl);
+
+        if (role === 'assistant' && citations.length > 0) {
+          const citationsTitle = document.createElement('div');
+          citationsTitle.className = 'role';
+          citationsTitle.textContent = 'Sources';
+
+          const listEl = document.createElement('ul');
+          listEl.className = 'citations';
+          citations.forEach((citation) => {
+            const item = document.createElement('li');
+            const lineRange = citation.start_line === citation.end_line
+              ? `L${citation.start_line}`
+              : `L${citation.start_line}-L${citation.end_line}`;
+            item.textContent = `${citation.file_path}:${lineRange}`;
+            listEl.appendChild(item);
+          });
+
+          messageEl.append(citationsTitle, listEl);
+        }
+
+        historyEl.appendChild(messageEl);
+        historyEl.scrollTop = historyEl.scrollHeight;
+      }
+
+      async function sendMessage(message) {
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, top_k: topK })
+          body: JSON.stringify({ message }),
         });
 
-        const data = await response.json();
-        output.textContent = JSON.stringify(data, null, 2);
+        if (!response.ok) {
+          let errorText = `Request failed (${response.status})`;
+          try {
+            const errorPayload = await response.json();
+            if (errorPayload.error) {
+              errorText = errorPayload.error;
+            }
+          } catch (error) {
+            // ignore parse failure and keep fallback message
+          }
+          throw new Error(errorText);
+        }
+
+        return response.json();
+      }
+
+      formEl.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = inputEl.value.trim();
+        if (!message) {
+          return;
+        }
+
+        appendMessage('user', message);
+        inputEl.value = '';
+        inputEl.focus();
+
+        sendButtonEl.disabled = true;
+        loadingEl.textContent = 'Assistant is thinking...';
+
+        try {
+          const payload = await sendMessage(message);
+          appendMessage('assistant', payload.answer || '', payload.citations || []);
+        } catch (error) {
+          appendMessage('assistant', `Error: ${error.message}`);
+        } finally {
+          sendButtonEl.disabled = false;
+          loadingEl.textContent = '';
+        }
       });
     </script>
   </body>
