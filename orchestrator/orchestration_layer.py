@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, is_dataclass
 from datetime import datetime, timezone
+from enum import Enum
 import json
 from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
@@ -80,6 +81,37 @@ class CodeActionInput:
 class CodeActionOutput:
     applied: bool
     summary: str
+
+
+class RiskLevel(str, Enum):
+    READ_ONLY = "read_only"
+    LOW_RISK_WRITE = "low_risk_write"
+    HIGH_IMPACT = "high_impact"
+
+
+@dataclass(frozen=True)
+class PolicyCheckResult:
+    allowed: bool
+    reasons: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class OutputFilterResult:
+    allowed: bool
+    sanitized_output: Any
+    reasons: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AuditEvent:
+    event_id: str
+    timestamp: str
+    task_id: str
+    stage: str
+    action: str
+    risk_level: str
+    status: str
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 I = TypeVar("I")
@@ -244,7 +276,9 @@ class TaskState:
     outputs: dict[str, Any] = field(default_factory=dict)
     memory_injection: list[dict[str, Any]] = field(default_factory=list)
     verification: dict[str, Any] = field(default_factory=dict)
+    fallback_reason: str | None = None
     traces: list[TraceEvent] = field(default_factory=list)
+    audit_events: list[AuditEvent] = field(default_factory=list)
 
 
 class TaskStateStore:
@@ -290,7 +324,9 @@ class TaskStateStore:
             outputs=outputs,
             memory_injection=payload.get("memory_injection", []),
             verification=payload.get("verification", {}),
+            fallback_reason=payload.get("fallback_reason"),
             traces=traces,
+            audit_events=[AuditEvent(**item) for item in payload.get("audit_events", [])],
         )
 
     def _deserialize_value(self, value: Any) -> Any:
@@ -333,6 +369,7 @@ class TaskOrchestrator:
         verifier: VerifierStage,
         state_store: TaskStateStore,
         adapters: dict[str, ToolAdapter[Any, Any]],
+        approval_callback: Callable[[str, str, str], bool] | None = None,
         memory_retriever: ScopedMemoryRetriever | None = None,
         memory_telemetry: MemoryTelemetry | None = None,
     ) -> None:
@@ -340,6 +377,7 @@ class TaskOrchestrator:
         self._verifier = verifier
         self._state_store = state_store
         self._adapters = adapters
+        self._approval_callback = approval_callback
         self._memory_retriever = memory_retriever
         self._memory_telemetry = memory_telemetry
 
@@ -396,9 +434,70 @@ class TaskOrchestrator:
                 if subtask.tool not in self._adapters:
                     self._trace(state, "execution", "missing adapter", {"tool": subtask.tool})
                     continue
+                risk = self._classify_risk(subtask.tool)
+                self._audit(
+                    state,
+                    stage="pre_execution",
+                    action=subtask.tool,
+                    risk_level=risk,
+                    status="start",
+                    details={"step_id": subtask.step_id},
+                )
+                policy_result = self._policy_check(subtask.tool, state.intent)
+                if not policy_result.allowed:
+                    reason = f"policy check failed before {subtask.tool}: {', '.join(policy_result.reasons)}"
+                    self._trace(state, "guardrail", reason)
+                    self._audit(
+                        state,
+                        stage="pre_execution",
+                        action=subtask.tool,
+                        risk_level=risk,
+                        status="blocked",
+                        details={"reasons": list(policy_result.reasons)},
+                    )
+                    state.fallback_reason = reason
+                    return self._apply_safe_fallback(state, stop_status="stopped")
+
+                if risk == RiskLevel.HIGH_IMPACT and not self._is_approved(subtask.tool, state.intent):
+                    reason = f"human approval required for high-impact action: {subtask.tool}"
+                    self._trace(state, "guardrail", reason)
+                    self._audit(
+                        state,
+                        stage="pre_execution",
+                        action=subtask.tool,
+                        risk_level=risk,
+                        status="needs_approval",
+                    )
+                    state.fallback_reason = reason
+                    return self._apply_safe_fallback(state, stop_status="stopped")
+
                 output = self._run_tool(subtask.tool, state.intent)
+                filter_result = self._filter_output(output)
+                if not filter_result.allowed:
+                    reason = f"output filter blocked {subtask.tool}: {', '.join(filter_result.reasons)}"
+                    self._trace(state, "guardrail", reason)
+                    self._audit(
+                        state,
+                        stage="post_execution",
+                        action=subtask.tool,
+                        risk_level=risk,
+                        status="blocked",
+                        details={"reasons": list(filter_result.reasons)},
+                    )
+                    state.fallback_reason = reason
+                    return self._apply_safe_fallback(state, stop_status="stopped")
+
+                output = filter_result.sanitized_output
                 state.outputs[subtask.step_id] = output
                 self._trace(state, "execution", "tool completed", {"step_id": subtask.step_id, "tool": subtask.tool})
+                self._audit(
+                    state,
+                    stage="post_execution",
+                    action=subtask.tool,
+                    risk_level=risk,
+                    status="completed",
+                    details={"step_id": subtask.step_id},
+                )
 
             state.current_step = "verification"
             report = self._verifier.verify(plan, state.outputs)
@@ -411,6 +510,20 @@ class TaskOrchestrator:
                 self._trace(state, "stop", "completion criteria reached")
                 self._state_store.save(state)
                 return state
+
+            if report.confidence < state.confidence_threshold:
+                reason = f"confidence below threshold ({report.confidence:.2f} < {state.confidence_threshold:.2f})"
+                self._trace(state, "guardrail", reason)
+                self._audit(
+                    state,
+                    stage="verification",
+                    action="confidence_gate",
+                    risk_level=RiskLevel.LOW_RISK_WRITE,
+                    status="fallback",
+                    details={"confidence": report.confidence, "threshold": state.confidence_threshold},
+                )
+                state.fallback_reason = reason
+                return self._apply_safe_fallback(state, stop_status="stopped")
 
             self._trace(
                 state,
@@ -437,6 +550,83 @@ class TaskOrchestrator:
         if tool == "code_action":
             return adapter.execute(CodeActionInput(action="compose", target="workflow", content=intent))
         raise ValueError(f"Unsupported tool: {tool}")
+
+    def _classify_risk(self, tool: str) -> RiskLevel:
+        if tool in {"search", "db_read"}:
+            return RiskLevel.READ_ONLY
+        if tool == "api_call":
+            return RiskLevel.LOW_RISK_WRITE
+        if tool == "code_action":
+            return RiskLevel.HIGH_IMPACT
+        return RiskLevel.HIGH_IMPACT
+
+    def _policy_check(self, tool: str, intent: str) -> PolicyCheckResult:
+        lowered = intent.lower()
+        reasons: list[str] = []
+        security_flags = ("disable auth", "exfiltrate", "bypass")
+        privacy_flags = ("ssn", "social security", "credit card", "password")
+        compliance_flags = ("ignore policy", "without consent", "gdpr bypass", "hipaa bypass")
+        if any(flag in lowered for flag in security_flags):
+            reasons.append("security policy violation")
+        if any(flag in lowered for flag in privacy_flags):
+            reasons.append("privacy policy violation")
+        if any(flag in lowered for flag in compliance_flags):
+            reasons.append("compliance policy violation")
+        if tool == "code_action" and "delete" in lowered:
+            reasons.append("destructive high-impact action blocked")
+        return PolicyCheckResult(allowed=not reasons, reasons=tuple(reasons))
+
+    def _filter_output(self, output: Any) -> OutputFilterResult:
+        serialized = json.dumps(self._normalize_payload(output)).lower()
+        disallowed = ("api_key", "private key", "exploit", "jailbreak")
+        reasons = ["unsafe output content" for item in disallowed if item in serialized]
+        if reasons:
+            return OutputFilterResult(allowed=False, sanitized_output=None, reasons=tuple(sorted(set(reasons))))
+        return OutputFilterResult(allowed=True, sanitized_output=output)
+
+    def _is_approved(self, tool: str, intent: str) -> bool:
+        if self._approval_callback is None:
+            return False
+        return self._approval_callback(tool, intent, _utc_now())
+
+    def _apply_safe_fallback(self, state: TaskState, *, stop_status: str) -> TaskState:
+        state.status = stop_status
+        state.current_step = "safe_fallback"
+        state.outputs["fallback"] = {
+            "mode": "safe_fallback",
+            "message": "Action blocked by guardrails. Returning minimal safe response.",
+            "reason": state.fallback_reason,
+        }
+        self._trace(state, "fallback", "safe fallback applied", {"reason": state.fallback_reason})
+        self._state_store.save(state)
+        return state
+
+    def _normalize_payload(self, payload: Any) -> Any:
+        if is_dataclass(payload):
+            return asdict(payload)
+        return payload
+
+    def _audit(
+        self,
+        state: TaskState,
+        *,
+        stage: str,
+        action: str,
+        risk_level: RiskLevel,
+        status: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        event = AuditEvent(
+            event_id=f"{state.task_id}-{len(state.audit_events) + 1}",
+            timestamp=_utc_now(),
+            task_id=state.task_id,
+            stage=stage,
+            action=action,
+            risk_level=risk_level.value,
+            status=status,
+            details=details or {},
+        )
+        state.audit_events.append(event)
 
     def record_memory_telemetry(
         self,
@@ -471,6 +661,10 @@ __all__ = [
     "CodeActionInput",
     "CodeActionOutput",
     "CodeActionToolAdapter",
+    "OutputFilterResult",
+    "PolicyCheckResult",
+    "RiskLevel",
+    "AuditEvent",
     "DBReadInput",
     "DBReadOutput",
     "DBReadToolAdapter",
