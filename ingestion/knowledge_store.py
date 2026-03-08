@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import json
 import math
 import os
@@ -252,7 +252,7 @@ class KnowledgeStore:
 
     def _log_retrieval(self, query: str, top_k: int, results: list[QueryResult], hit: bool) -> None:
         event = {
-            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             "query": query,
             "top_k": top_k,
             "hit": hit,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from hashlib import sha1
 from pathlib import Path
 from typing import Iterator, Sequence
@@ -144,7 +144,7 @@ class ChunkIndexer:
 
     @staticmethod
     def _last_updated(file_path: Path) -> str:
-        return datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC).isoformat()
+        return datetime.fromtimestamp(file_path.stat().st_mtime, tz=timezone.utc).isoformat()
 
     @staticmethod
     def _source_kind(rel_path: str) -> str:
