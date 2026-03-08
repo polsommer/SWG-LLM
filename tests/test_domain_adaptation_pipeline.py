@@ -8,9 +8,17 @@ from domain_adaptation.pipeline import (
     DataRefreshScheduler,
     DomainAdaptationProgram,
     EvalSample,
+    FailureTaxonomy,
+    HumanReviewRouter,
+    InteractionQualityMetrics,
     LiveQualitySnapshot,
+    NightlyRegressionEvaluator,
     OfflineComparator,
+    ProductionInteraction,
     PromptResponseExample,
+    QualityDashboardPublisher,
+    ReviewedExampleRouter,
+    ReviewedInteraction,
 )
 
 
@@ -92,6 +100,96 @@ class DomainAdaptationPipelineTests(unittest.TestCase):
             ]
         )
         self.assertEqual(len(refreshed), 1)
+
+    def test_failure_taxonomy_and_lightweight_review_routing(self) -> None:
+        taxonomy = FailureTaxonomy()
+        self.assertEqual(taxonomy.classify(hallucination=True), "hallucination")
+        self.assertEqual(taxonomy.classify(missed_context=True), "missed_context")
+        self.assertEqual(taxonomy.classify(wrong_tool=True), "wrong_tool_choice")
+        self.assertEqual(taxonomy.classify(incomplete_action=True), "incomplete_action")
+        self.assertIsNone(taxonomy.classify())
+
+        review_router = HumanReviewRouter(low_confidence_threshold=0.65)
+        high_impact = ProductionInteraction(
+            prompt="Reset payment account",
+            response="Done",
+            use_case="billing_ops",
+            confidence=0.99,
+            high_impact=True,
+            metrics=InteractionQualityMetrics(0.9, 1.0, 500, 1.0, 0.8),
+        )
+        low_confidence = ProductionInteraction(
+            prompt="Troubleshoot CI",
+            response="Try step 1",
+            use_case="dev_support",
+            confidence=0.5,
+            high_impact=False,
+            metrics=InteractionQualityMetrics(0.6, 0.5, 900, 0.7, 0.4),
+        )
+        safe = ProductionInteraction(
+            prompt="Where docs?",
+            response="Answer: docs link",
+            use_case="dev_support",
+            confidence=0.9,
+            high_impact=False,
+            metrics=InteractionQualityMetrics(1.0, 1.0, 200, 1.0, 0.95),
+        )
+
+        self.assertTrue(review_router.needs_review(high_impact))
+        self.assertTrue(review_router.needs_review(low_confidence))
+        self.assertFalse(review_router.needs_review(safe))
+
+    def test_reviewed_example_routing_regression_gate_and_dashboard(self) -> None:
+        reviewed = [
+            ReviewedInteraction(
+                interaction=ProductionInteraction(
+                    prompt="Approve refund",
+                    response="Answer: escalate via billing runbook",
+                    use_case="billing_ops",
+                    confidence=0.6,
+                    high_impact=True,
+                    metrics=InteractionQualityMetrics(0.7, 0.5, 850, 0.6, 0.4),
+                ),
+                approved=False,
+                failure_type="incomplete_action",
+            ),
+            ReviewedInteraction(
+                interaction=ProductionInteraction(
+                    prompt="Debug deploy",
+                    response="Answer: inspect rollout logs",
+                    use_case="dev_support",
+                    confidence=0.8,
+                    high_impact=False,
+                    metrics=InteractionQualityMetrics(0.95, 1.0, 300, 1.0, 0.9),
+                ),
+                approved=True,
+                failure_type=None,
+            ),
+        ]
+
+        routed = ReviewedExampleRouter().route(reviewed)
+        self.assertEqual(len(routed.training_examples), 1)
+        self.assertEqual(len(routed.regression_eval_examples), 2)
+        self.assertEqual(routed.training_examples[0].source, "review:dev_support")
+
+        baseline = {
+            "billing_ops": {"answer_correctness": 0.9, "task_success": 0.85},
+            "dev_support": {"answer_correctness": 0.9, "task_success": 0.9},
+        }
+        current = {
+            "billing_ops": {"answer_correctness": 0.8, "task_success": 0.79},
+            "dev_support": {"answer_correctness": 0.89, "task_success": 0.88},
+        }
+
+        report = NightlyRegressionEvaluator(max_drop=0.03).evaluate(baseline=baseline, current=current)
+        self.assertFalse(report.overall_passed)
+        self.assertEqual(report.blocked_segments, ("billing_ops",))
+        self.assertIn("answer_correctness", report.metric_drops["billing_ops"])
+
+        dashboard = QualityDashboardPublisher().build_snapshot(reviewed)
+        self.assertIn("answer_correctness", dashboard.overall_metrics)
+        self.assertIn("billing_ops", dashboard.segmented_metrics)
+        self.assertEqual(dashboard.failure_breakdown["incomplete_action"], 1)
 
 
 if __name__ == "__main__":

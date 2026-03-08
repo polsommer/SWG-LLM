@@ -178,3 +178,15 @@ Run coverage for this flow:
 ```bash
 python -m unittest tests/test_domain_adaptation_pipeline.py
 ```
+
+### Closed-loop quality system (production -> training -> release gate)
+
+The `domain_adaptation.pipeline` module includes a reference closed-loop quality workflow:
+
+1. Track per-interaction core metrics: `answer_correctness`, `task_success`, `latency_ms`, `tool_success_rate`, and `user_satisfaction` via `InteractionQualityMetrics`.
+2. Apply standardized failure labels with `FailureTaxonomy`: `hallucination`, `missed_context`, `wrong_tool_choice`, and `incomplete_action`.
+3. Route only high-impact or low-confidence outputs to human review using `HumanReviewRouter`.
+4. Automatically route reviewed examples to both training and regression datasets with `ReviewedExampleRouter`.
+5. Run segmented nightly regression checks and block release on metric drops with `NightlyRegressionEvaluator`.
+6. Segment all reporting by `use_case` to avoid aggregate-only blind spots.
+7. Publish a shared quality snapshot with `QualityDashboardPublisher` for engineering and product teams.
