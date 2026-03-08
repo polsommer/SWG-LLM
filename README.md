@@ -9,6 +9,7 @@ This repository provides a starter scaffold for a multi-node LLM workflow that c
 - `ingestion/` - repository cloning, parsing, embedding, and indexing pipeline hooks.
 - `consensus/` - debate/refinement orchestration and disagreement resolution flow.
 - `sync/` - output publishing and synchronization with a target Git repository.
+- `domain_adaptation/` - supervised fine-tune/LoRA data curation, benchmark comparison, canary rollout, and refresh pipeline utilities.
 - `config/cluster.yaml` - cluster topology, roles, retry policy, and debate rounds.
 
 ## Startup
@@ -159,3 +160,21 @@ The scaffold is organized to make failures explicit and recoverable:
 - **Auditability:** each module should emit structured logs with run IDs to support root-cause analysis.
 
 Implement production-specific alerting, checkpointing, and rollback behavior as a next step.
+
+## Train and Ship a Domain-Adapted Variant
+
+Use the `domain_adaptation` module to execute an end-to-end workflow:
+
+1. Curate high-signal reviewed prompt/response pairs (`DatasetCurator`).
+2. Remove noisy/contradictory entries and standardize response prefix format (`Answer:`).
+3. Train a supervised variant (`FineTuneTrainer`) with `method="lora"` or full fine-tune metadata.
+4. Build benchmark suites for correctness, tone, policy adherence, and task completion (`BenchmarkSuite`).
+5. Compare base vs tuned variants offline and gate rollout on improvement (`OfflineComparator`).
+6. Deploy through canary routing plus rollback triggers (`CanaryDeploymentManager`).
+7. Periodically refresh training data from reviewed production interactions (`DataRefreshScheduler`).
+
+Run coverage for this flow:
+
+```bash
+python -m unittest tests/test_domain_adaptation_pipeline.py
+```
