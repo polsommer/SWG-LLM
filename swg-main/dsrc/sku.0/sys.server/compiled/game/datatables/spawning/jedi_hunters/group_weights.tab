@@ -1,0 +1,15 @@
+planet	group_size	weight
+s	i	i
+default	2	15
+default	3	30
+default	4	30
+default	5	18
+default	6	7
+naboo	3	25
+naboo	4	35
+naboo	5	25
+naboo	6	15
+tatooine	2	20
+tatooine	3	35
+tatooine	4	30
+tatooine	5	15

@@ -1,0 +1,6 @@
+eventId	displayName	modifierType	modifierValue	description	supplyTag
+s	s	s	f	s	s
+ion_storm	Ion Storm	reward_multiplier	1.25	Charged particle storms draw more contacts, increasing objective counts alongside payout bonuses.	space
+pirate_influx	Pirate Influx	extra_objectives	2.0	Independent raiders are thick in the lanes; expect additional objectives during engagements.	neutral
+imperial_summons	Imperial Summons	faction_bonus_imperial	15.0	Imperial command requests additional auxiliaries; loyal pilots face extra objectives for bonuses.	imperial
+rebel_uprising	Rebel Uprising	faction_bonus_rebel	15.0	Alliance cells mobilize; rebel-aligned missions include extra objectives for bonus pay.	rebel

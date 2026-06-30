@@ -1,0 +1,8 @@
+TASK_NAME	PLANET	X	Y	Z	SPAWN_RADIUS	REGION_NAME	TEMPLATE	DESPAWN_SECONDS	RESPAWN_SECONDS	PROXIMITY_RANGE
+s	s	f	f	f	f	s	s	i	i	f
+rodstart_06	dathomir	170.46	430	452.403	40		object/tangible/quest/township/nightsister_artifact6.iff	900	60	32
+rodstart_05	dathomir	1202.17	121	99.3105	40		object/tangible/quest/township/nightsister_artifact5.iff	900	60	32
+rodstart_04	dathomir	1583	121	99.3105	40		object/tangible/quest/township/nightsister_artifact4.iff	900	60	32
+rodstart_03	dathomir	1488	130.2	1464.56	40		object/tangible/quest/township/nightsister_artifact3.iff	900	60	32
+rodstart_02	dathomir	178	150	1987	40		object/tangible/quest/township/nightsister_artifact2.iff	900	60	32
+rodstart_01	dathomir	178	120	1780	40		object/tangible/quest/township/nightsister_artifact.iff	900	60	32

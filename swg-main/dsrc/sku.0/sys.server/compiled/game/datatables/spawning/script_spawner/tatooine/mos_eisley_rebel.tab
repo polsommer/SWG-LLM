@@ -1,0 +1,92 @@
+spawns	name	room	loc_x	loc_y	loc_z	scriptOne	scriptTwo	scriptThree	convo_script	yaw	mood	respawn_time	spawn_objvar	spawn_objvar_value	spawn_objvar2	spawn_objvar_value2	special_room	special_room_script	room_objvar	room_objvar_name	room_objvar_value	building_id
+s	s	s	f	f	f	s	s	s	s	f	s	i	s	s	s	s	s	s	s	s	s	i
+mos_eisley_police_officer		world	3318.3	5	-4613	theme_park.script_spawner.spawner_methods.ss_setup				30		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+crackdown_rebel_guardsman		world	3304.54	5	-4602.49	theme_park.script_spawner.spawner_methods.ss_setup				122.066		180	spawn_objvar	static								
+crackdown_rebel_command_security_guard		world	3322.23	5	-4623.57	theme_park.script_spawner.spawner_methods.ss_setup				27.6331		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3288.68	5	-4636.09	theme_park.script_spawner.spawner_methods.ss_setup				123.862		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3278.49	5	-4676.19	theme_park.script_spawner.spawner_methods.ss_setup				-56.2543		180	spawn_objvar	static								
+crackdown_rebel_command_security_guard		world	3290.16	5	-4695.84	theme_park.script_spawner.spawner_methods.ss_setup				125.876		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3360.18	5	-4742.17	theme_park.script_spawner.spawner_methods.ss_setup				-149.953		180	spawn_objvar	static								
+crackdown_rebel_elite_sand_rat		world	3356.79	7.5	-4711.31	theme_park.script_spawner.spawner_methods.ss_setup				124.501		180	spawn_objvar	static								
+crackdown_rebel_liberator		world	3427.46	7.5	-4728.61	theme_park.script_spawner.spawner_methods.ss_setup				-146.462		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3483.38	7.5	-4683.25	theme_park.script_spawner.spawner_methods.ss_setup				128.829		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3585.84	5	-4719.95	theme_park.script_spawner.spawner_methods.ss_setup				-87.9181		180	spawn_objvar	static								
+crackdown_rebel_command_security_guard		world	3538.04	5.12457	-4806.46	theme_park.script_spawner.spawner_methods.ss_setup				-73.0986		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3516.17	5	-4879.7	theme_park.script_spawner.spawner_methods.ss_setup				153.841		180	spawn_objvar	static								
+crackdown_rebel_guard_captain		world	3496.81	5.52789	-4923.13	theme_park.script_spawner.spawner_methods.ss_setup				-7.4209		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3427.14	5	-4952.92	theme_park.script_spawner.spawner_methods.ss_setup				56.0972		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3417.99	5	-4974.46	theme_park.script_spawner.spawner_methods.ss_setup				-49.8416		180	spawn_objvar	static								
+crackdown_rebel_liberator		world	3288.12	5	-4842.11	theme_park.script_spawner.spawner_methods.ss_setup				36		180	spawn_objvar	static								
+crackdown_rebel_guardsman		world	3279.95	5	-4835.74	theme_park.script_spawner.spawner_methods.ss_setup				54.4279		180	spawn_objvar	static								
+mos_eisley_police_officer		world	3288.68	5	-4636.09	theme_park.script_spawner.spawner_methods.ss_setup				123.862		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_officer		world	3360.18	5	-4742.17	theme_park.script_spawner.spawner_methods.ss_setup				-149.953		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_officer		world	3538.04	5.12457	-4806.46	theme_park.script_spawner.spawner_methods.ss_setup				-73.0986		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_officer		world	3427.14	5	-4952.92	theme_park.script_spawner.spawner_methods.ss_setup				56.0972		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_officer		world	3288.12	5	-4842.11	theme_park.script_spawner.spawner_methods.ss_setup				-35.7642		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_officer		world	3304.54	5	-4602.49	theme_park.script_spawner.spawner_methods.ss_setup				122.066		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_sergeant		world	3472.3	5	-4788.4	theme_park.script_spawner.spawner_methods.ss_setup				18.5		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_lieutenant		world	3489.5	5	-4710.2	theme_park.script_spawner.spawner_methods.ss_setup				-95		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_sergeant		world	3385.4	5	-4681.0	theme_park.script_spawner.spawner_methods.ss_setup				62		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_lieutenant		world	3325.2	5	-4755.6	theme_park.script_spawner.spawner_methods.ss_setup				-120.5		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_sergeant		world	3410.8	5	-4859.3	theme_park.script_spawner.spawner_methods.ss_setup				134.2		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+mos_eisley_police_lieutenant		world	3552.7	5	-4874.9	theme_park.script_spawner.spawner_methods.ss_setup				-45		180	spawn_objvar	city_wander	spawn_objvar2	customs						
+jawa		world	3298.5	5.0	-4587.2	theme_park.script_spawner.spawner_methods.ss_setup				45.0		180	spawn_objvar	city_wander								
+jawa		world	3314.1	5.0	-4610.6	theme_park.script_spawner.spawner_methods.ss_setup				-90.0		180	spawn_objvar	city_wander								
+jawa		world	3332.7	5.0	-4631.8	theme_park.script_spawner.spawner_methods.ss_setup				135.0		180	spawn_objvar	city_wander								
+jawa_smuggler		world	3348.4	5.0	-4650.2	theme_park.script_spawner.spawner_methods.ss_setup				12.0		180	spawn_objvar	city_wander								
+jawa_smuggler		world	3364.9	5.0	-4671.5	theme_park.script_spawner.spawner_methods.ss_setup				-60.0		180	spawn_objvar	city_wander								
+jawa_smuggler		world	3381.6	5.0	-4693.8	theme_park.script_spawner.spawner_methods.ss_setup				88.0		180	spawn_objvar	city_wander								
+jawa_engineer		world	3395.3	5.0	-4716.4	theme_park.script_spawner.spawner_methods.ss_setup				-120.0		180	spawn_objvar	city_wander								
+jawa_engineer		world	3412.8	5.0	-4738.7	theme_park.script_spawner.spawner_methods.ss_setup				32.0		180	spawn_objvar	city_wander								
+jawa_engineer		world	3430.5	5.0	-4759.3	theme_park.script_spawner.spawner_methods.ss_setup				-150.0		180	spawn_objvar	city_wander								
+jawa_healer		world	3448.1	5.0	-4781.6	theme_park.script_spawner.spawner_methods.ss_setup				64.0		180	spawn_objvar	city_wander								
+jawa_healer		world	3465.4	5.0	-4805.2	theme_park.script_spawner.spawner_methods.ss_setup				-20.0		180	spawn_objvar	city_wander								
+jawa_healer		world	3481.9	5.0	-4827.5	theme_park.script_spawner.spawner_methods.ss_setup				108.0		180	spawn_objvar	city_wander								
+jawa_henchman		world	3498.6	5.0	-4850.1	theme_park.script_spawner.spawner_methods.ss_setup				-135.0		180	spawn_objvar	city_wander								
+jawa_henchman		world	3515.2	5.0	-4872.4	theme_park.script_spawner.spawner_methods.ss_setup				26.0		180	spawn_objvar	city_wander								
+jawa_henchman		world	3532.8	5.0	-4894.7	theme_park.script_spawner.spawner_methods.ss_setup				-78.0		180	spawn_objvar	city_wander								
+jawa_protector		world	3550.3	5.0	-4916.9	theme_park.script_spawner.spawner_methods.ss_setup				146.0		180	spawn_objvar	city_wander								
+jawa_protector		world	3567.9	5.0	-4939.2	theme_park.script_spawner.spawner_methods.ss_setup				-52.0		180	spawn_objvar	city_wander								
+jawa_protector		world	3585.4	5.0	-4961.5	theme_park.script_spawner.spawner_methods.ss_setup				84.0		180	spawn_objvar	city_wander								
+jawa_thief		world	3602.8	5.0	-4983.7	theme_park.script_spawner.spawner_methods.ss_setup				-168.0		180	spawn_objvar	city_wander								
+jawa_thief		world	3619.3	5.0	-5005.9	theme_park.script_spawner.spawner_methods.ss_setup				38.0		180	spawn_objvar	city_wander								
+jawa_thief		world	3636.7	5.0	-5028.2	theme_park.script_spawner.spawner_methods.ss_setup				-24.0		180	spawn_objvar	city_wander								
+protocol_droid_3po		world	3415.0	5.0	-4690.4	theme_park.script_spawner.spawner_methods.ss_setup				-45.0		180	spawn_objvar	city_wander								
+protocol_droid_3po		world	3431.6	5.0	-4712.7	theme_park.script_spawner.spawner_methods.ss_setup				92.0		180	spawn_objvar	city_wander								
+protocol_droid_3po		world	3449.2	5.0	-4734.9	theme_park.script_spawner.spawner_methods.ss_setup				-88.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_red		world	3466.7	5.0	-4757.2	theme_park.script_spawner.spawner_methods.ss_setup				124.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_red		world	3484.2	5.0	-4779.4	theme_park.script_spawner.spawner_methods.ss_setup				-32.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_red		world	3501.6	5.0	-4801.7	theme_park.script_spawner.spawner_methods.ss_setup				58.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_silver		world	3519.2	5.0	-4823.9	theme_park.script_spawner.spawner_methods.ss_setup				-118.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_silver		world	3536.8	5.0	-4846.2	theme_park.script_spawner.spawner_methods.ss_setup				16.0		180	spawn_objvar	city_wander								
+protocol_droid_3po_silver		world	3554.3	5.0	-4868.4	theme_park.script_spawner.spawner_methods.ss_setup				-74.0		180	spawn_objvar	city_wander								
+astromech_waiter		world	3571.8	5.0	-4890.7	theme_park.script_spawner.spawner_methods.ss_setup				102.0		180	spawn_objvar	city_wander								
+astromech_waiter		world	3589.4	5.0	-4912.9	theme_park.script_spawner.spawner_methods.ss_setup				-140.0		180	spawn_objvar	city_wander								
+astromech_waiter		world	3606.9	5.0	-4935.2	theme_park.script_spawner.spawner_methods.ss_setup				70.0		180	spawn_objvar	city_wander								
+nhelper_droid		world	3624.3	5.0	-4957.4	theme_park.script_spawner.spawner_methods.ss_setup				-2.0		180	spawn_objvar	city_wander								
+nhelper_droid		world	3641.9	5.0	-4979.7	theme_park.script_spawner.spawner_methods.ss_setup				146.0		180	spawn_objvar	city_wander								
+nhelper_droid		world	3659.4	5.0	-5001.9	theme_park.script_spawner.spawner_methods.ss_setup				-58.0		180	spawn_objvar	city_wander								
+legacy_r3_droid		world	3676.9	5.0	-5024.2	theme_park.script_spawner.spawner_methods.ss_setup				34.0		180	spawn_objvar	city_wander								
+legacy_r3_droid		world	3694.5	5.0	-5046.4	theme_park.script_spawner.spawner_methods.ss_setup				-96.0		180	spawn_objvar	city_wander								
+legacy_r3_droid		world	3712.0	5.0	-5068.7	theme_park.script_spawner.spawner_methods.ss_setup				118.0		180	spawn_objvar	city_wander								
+legacy_lin34_droid		world	3729.7	5.0	-5048.8	theme_park.script_spawner.spawner_methods.ss_setup				-110.0		180	spawn_objvar	city_wander								
+legacy_lin34_droid		world	3747.2	5.0	-5026.5	theme_park.script_spawner.spawner_methods.ss_setup				58.0		180	spawn_objvar	city_wander								
+legacy_lin34_droid		world	3764.6	5.0	-5004.2	theme_park.script_spawner.spawner_methods.ss_setup				-32.0		180	spawn_objvar	city_wander								
+alkhara_bandit		world	3321.0	5.0	-4562.4	theme_park.script_spawner.spawner_methods.ss_setup				-20.0		180	spawn_objvar	city_wander								
+alkhara_bandit		world	3338.6	5.0	-4584.7	theme_park.script_spawner.spawner_methods.ss_setup				160.0		180	spawn_objvar	city_wander								
+alkhara_bandit		world	3356.1	5.0	-4606.9	theme_park.script_spawner.spawner_methods.ss_setup				-64.0		180	spawn_objvar	city_wander								
+alkhara_bandit_king		world	3373.6	5.0	-4629.2	theme_park.script_spawner.spawner_methods.ss_setup				44.0		180	spawn_objvar	city_wander								
+alkhara_bandit_king		world	3391.2	5.0	-4651.4	theme_park.script_spawner.spawner_methods.ss_setup				-132.0		180	spawn_objvar	city_wander								
+alkhara_bandit_king		world	3408.7	5.0	-4673.7	theme_park.script_spawner.spawner_methods.ss_setup				78.0		180	spawn_objvar	city_wander								
+assassin_twilek_male		world	3426.2	5.0	-4695.9	theme_park.script_spawner.spawner_methods.ss_setup				-100.0		180	spawn_objvar	city_wander								
+assassin_twilek_male		world	3443.8	5.0	-4718.2	theme_park.script_spawner.spawner_methods.ss_setup				26.0		180	spawn_objvar	city_wander								
+assassin_twilek_male		world	3461.3	5.0	-4740.4	theme_park.script_spawner.spawner_methods.ss_setup				-156.0		180	spawn_objvar	city_wander								
+black_sun_initiate		world	3478.8	5.0	-4762.7	theme_park.script_spawner.spawner_methods.ss_setup				112.0		180	spawn_objvar	city_wander								
+black_sun_initiate		world	3496.4	5.0	-4784.9	theme_park.script_spawner.spawner_methods.ss_setup				-48.0		180	spawn_objvar	city_wander								
+black_sun_initiate		world	3513.9	5.0	-4807.2	theme_park.script_spawner.spawner_methods.ss_setup				66.0		180	spawn_objvar	city_wander								
+pirate_cutthroat		world	3531.4	5.0	-4829.4	theme_park.script_spawner.spawner_methods.ss_setup				-122.0		180	spawn_objvar	city_wander								
+pirate_cutthroat		world	3549.0	5.0	-4851.7	theme_park.script_spawner.spawner_methods.ss_setup				8.0		180	spawn_objvar	city_wander								
+pirate_cutthroat		world	3566.5	5.0	-4873.9	theme_park.script_spawner.spawner_methods.ss_setup				-82.0		180	spawn_objvar	city_wander								
+smuggler		world	3584.0	5.0	-4896.2	theme_park.script_spawner.spawner_methods.ss_setup				138.0		180	spawn_objvar	city_wander								
+smuggler		world	3601.6	5.0	-4918.4	theme_park.script_spawner.spawner_methods.ss_setup				-30.0		180	spawn_objvar	city_wander								
+smuggler		world	3619.1	5.0	-4940.7	theme_park.script_spawner.spawner_methods.ss_setup				48.0		180	spawn_objvar	city_wander								

@@ -1,0 +1,6 @@
+mobiles	spawnLimit	comments	buildingsToSpawn	veryEasy	easy	medium	hard	veryHard
+s	i[-1]	c	c	s	s	s	s	s
+som_blackguard	8	Mustafar dynamic humanoid encounter						
+som_blackguard_elite	2							
+som_blackguard_wilder	3							
+som_blackguard_wilder_elite	1							

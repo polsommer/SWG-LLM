@@ -1,0 +1,48 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+900003001	0	object/static/structure/general/landing_pad_shuttle.iff	0	980.0	6.0	1040.0	0.86603	0	0.5	0		$|
+900003002	0	object/static/structure/general/streetlamp_medium_style_02.iff	0	932.0	6.0	1012.0	0.92388	0	0.38268	0		$|
+900003003	0	object/static/structure/general/streetlamp_medium_style_02.iff	0	1012.0	6.0	1106.0	0.70711	0	0.7071	0		$|
+900003004	0	object/static/structure/general/prp_engine.iff	0	968.0	6.0	1076.0	0.93969	0	0.34202	0		$|
+900003005	0	object/static/structure/general/tankfarm_s01.iff	0	1064.0	6.0	1178.0	0.70711	0	0.7071	0		$|
+900003006	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	996.0	8.6	1194.0	0.64279	0	0.76604	0		$|
+900003007	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	928.0	8.9	1100.0	0.38268	0	0.92388	0		$|
+900003008	0	object/tangible/ground_spawning/area_spawner.iff	0	1032.0	6.0	1136.0	0.81915	0	0.57358	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|200.000000|fltMinSpawnTime|2|80.000000|fltRadius|2|14.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|6|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_plaza_watch|strSpawnerType|4|area|strSpawns|4|taanab/farmer_watch|$|
+900003009	0	object/static/structure/general/poi_temple_ancient_ruined.iff	0	1308.0	14.0	1328.0	0.96593	0	0.25882	0		$|
+900003010	0	object/tangible/ground_spawning/area_spawner.iff	0	1316.0	13.4	1290.0	0.5	0	0.86603	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|240.000000|fltMinSpawnTime|2|150.000000|fltRadius|2|14.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|5|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_ruin_vigil|strSpawnerType|4|area|strSpawns|4|taanab/ruin_cultists|$|
+900003011	0	object/static/flora/flora_tree_rori_windswept_s00.iff	0	1248.0	13.2	1302.0	0.70711	0	0.7071	0		$|
+900003012	0	object/static/flora/flora_tree_rori_windswept_s00.iff	0	1346.0	12.1	1276.0	0.25882	0	0.96593	0		$|
+900003013	0	object/static/structure/general/rock_forestriverrock_lg.iff	0	1372.0	11.6	1390.0	0.99619	0	0.08716	0		$|
+900003014	0	object/static/structure/general/campfire_fresh.iff	0	1348.0	11.8	1292.0	1	0	0	0		$|
+900001001	0	object/building/general/cave_02_damprock.iff	0	1336.0	20.0	1412.0	0.99619	0	0.08716	0		$|
+900001010	900001001	object/cell/cell.iff	1	0	0	0	1	0	0	0		$|
+900001011	900001001	object/cell/cell.iff	2	0	0	0	1	0	0	0		$|
+900001012	900001011	object/tangible/poi/spawnegg/interior_spawnegg.iff	2	55.91520691	-68.47590637	-39.28940201	1	0	0	0		intRandomYaw|0|1|$|
+900001013	900001001	object/cell/cell.iff	3	0	0	0	1	0	0	0		$|
+900001014	900001001	object/cell/cell.iff	4	0	0	0	1	0	0	0		$|
+900001015	900001001	object/cell/cell.iff	5	0	0	0	1	0	0	0		$|
+900001016	900001001	object/cell/cell.iff	6	0	0	0	1	0	0	0		$|
+900001017	900001016	object/tangible/poi/spawnegg/interior_spawnegg.iff	6	62.82084656	-66.50696564	-134.1946716	1	0	0	0		intRandomYaw|0|1|$|
+900001018	900001001	object/cell/cell.iff	7	0	0	0	1	0	0	0		$|
+900001019	900001001	object/cell/cell.iff	8	0	0	0	1	0	0	0		$|
+900001020	900001019	object/tangible/poi/spawnegg/interior_spawnegg.iff	8	112.707634	-66.33864594	-107.2757568	1	0	0	0		intRandomYaw|0|1|$|
+900001021	900001019	object/tangible/poi/spawnegg/interior_spawnegg.iff	8	131.6912537	-66.54064941	-94.54445648	1	0	0	0		intRandomYaw|0|1|$|
+900001022	900001019	object/tangible/poi/spawnegg/interior_spawnegg.iff	8	151.820282	-66.56446075	-111.7184143	1	0	0	0		intRandomYaw|0|1|$|
+900001023	900001001	object/cell/cell.iff	9	0	0	0	1	0	0	0		$|
+900001024	900001023	object/tangible/poi/spawnegg/interior_spawnegg.iff	9	188.7104797	-65.94814301	-98.89992523	1	0	0	0		intRandomYaw|0|1|$|
+900001025	900001023	object/tangible/poi/spawnegg/interior_spawnegg.iff	9	192.9647827	-66.91439819	-106.5640488	1	0	0	0		intRandomYaw|0|1|$|
+900001026	900001001	object/cell/cell.iff	10	0	0	0	1	0	0	0		$|
+900001027	900001001	object/cell/cell.iff	11	0	0	0	1	0	0	0		$|
+900001028	900001027	object/tangible/collection/rare_rifle_lithitanium_rifle.iff	11	77.8989	-46.1541	-137.663	0.50906	-0.236355	0.483523	0.671713		$|
+900001029	900001027	object/tangible/npc/dantooine_spawn/drakka_judarrl.iff	11	74.2	-46.2	-141.6	-0.76604	0	0.64279	0		$|
+900001130	0	object/static/structure/general/cave_wall_damprock_style_01.iff	0	1324.0	16.2	1426.0	0.81915	0	0.57358	0		$|
+900001131	0	object/static/structure/general/rock_forestriverrock_lg.iff	0	1362.0	15.5	1436.0	0.57358	0	0.81915	0		$|
+900001200	0	object/building/general/cave_08_flatland_s03_damprock.iff	0	740.0	12.0	412.0	1	0	0	0		$|
+900001210	900001200	object/cell/cell.iff	1	0	0	0	1	0	0	0		$|
+900001211	900001210	object/tangible/ground_spawning/area_spawner.iff	1	10.0	-12.0	-20.0	0.81915	0	0.57358	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|220.000000|fltMinSpawnTime|2|100.000000|fltRadius|2|6.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|4|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_deep_vanguard|strSpawnerType|4|area|strSpawns|4|taanab/ruin_cultists|$|
+900001212	900001210	object/static/structure/general/cave_stalagmite_damprock_s02_large.iff	1	-4.8	-14.0	-14.4	1	0	0	0		$|
+900001213	900001210	object/static/structure/general/cave_stalactite_tato_s01_large.iff	1	4.6	-10.2	-16.0	1	0	0	0		$|
+900001214	900001210	object/static/structure/general/rock_forestriverrock_lg.iff	1	-2.4	-15.6	-10.2	0.96593	0	0.25882	0		$|
+900001215	0	object/static/structure/general/cave_wall_damprock_style_01.iff	0	724.0	11.1	428.0	0.70711	0	0.7071	0		$|
+900001216	0	object/static/structure/general/rock_forestriverrock_lg.iff	0	766.0	11.5	448.0	0.25882	0	0.96593	0		$|
+900001217	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	792.0	12.2	388.0	0.81915	0	0.57358	0		$|

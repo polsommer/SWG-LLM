@@ -1,0 +1,11 @@
+entry_id	spawn_x	spawn_y	spawn_z	hold_x	hold_y	hold_z	waypoint_x	waypoint_y	waypoint_z	tier
+s	f	f	f	f	f	f	f	f	f	i
+north_perimeter	-1168	12	-3468	-1145	12	-3498	-1232	12	-3422	1
+north_perimeter	-1168	12	-3468	-1145	12	-3498	-1088	12	-3415	1
+north_perimeter	-1168	12	-3468	-1145	12	-3498	-1038	12	-3490	1
+east_perimeter	-988	12	-3578	-1022	12	-3550	-940	12	-3650	2
+east_perimeter	-988	12	-3578	-1022	12	-3550	-922	12	-3488	2
+east_perimeter	-988	12	-3578	-1022	12	-3550	-1012	12	-3440	2
+south_perimeter	-1110	12	-3725	-1082	12	-3692	-1198	12	-3778	0
+south_perimeter	-1110	12	-3725	-1082	12	-3692	-1044	12	-3802	0
+south_perimeter	-1110	12	-3725	-1082	12	-3692	-962	12	-3712	0

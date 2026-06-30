@@ -1,0 +1,11 @@
+entry_id	spawn_x	spawn_y	spawn_z	hold_x	hold_y	hold_z	waypoint_x	waypoint_y	waypoint_z	tier
+s	f	f	f	f	f	f	f	f	f	i
+north_ridge	355	6	-2840	380	6	-2865	300	6	-2790	1
+north_ridge	355	6	-2840	380	6	-2865	430	6	-2768	1
+north_ridge	355	6	-2840	380	6	-2865	492	6	-2862	1
+east_approach	565	6	-2950	530	6	-2935	610	6	-3032	2
+east_approach	565	6	-2950	530	6	-2935	602	6	-2862	2
+east_approach	565	6	-2950	530	6	-2935	492	6	-2812	2
+south_flats	425	6	-3115	458	6	-3086	344	6	-3172	0
+south_flats	425	6	-3115	458	6	-3086	518	6	-3184	0
+south_flats	425	6	-3115	458	6	-3086	590	6	-3096	0

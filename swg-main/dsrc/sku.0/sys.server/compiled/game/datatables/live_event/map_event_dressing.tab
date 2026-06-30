@@ -1,0 +1,5 @@
+map_id	event_dressing_enabled	sky_profile	flyover_profile	announcement_profile	start_time_utc	end_time_utc	sky_toggle	flyover_toggle	announcement_toggle	fallback_profile
+s	b	s	s	s	s	s	b	b	b	s
+corellia	0	baseline	baseline	baseline	2026-01-01T00:00:00Z	2026-12-31T23:59:59Z	1	1	1	baseline_default
+tatooine	0	baseline	baseline	baseline	2026-01-01T00:00:00Z	2026-12-31T23:59:59Z	1	1	1	baseline_default
+naboo	0	baseline	baseline	baseline	2026-01-01T00:00:00Z	2026-12-31T23:59:59Z	1	1	1	baseline_default

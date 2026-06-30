@@ -1,0 +1,28 @@
+match_type	pattern	category	priority	notes
+s	s	s	i	c
+contains	object/weapon/melee/	weapon_melee	8	Melee weapon subgroup
+contains	object/weapon/ranged/	weapon_ranged	9	Ranged weapon subgroup
+contains	object/weapon/heavy/	weapon_heavy	10	Heavy weapon subgroup
+contains	object/weapon/	weapon	14	Classify explicit weapon object paths first
+contains	object/tangible/wearables/armor/	armor_segment	18	Armor segment subgroup
+contains	object/tangible/wearables/clothing/	armor_clothing	19	Clothing subgroup
+contains	object/tangible/wearables/armor/	armor	20	Armor wearables
+contains	object/tangible/wearables/clothing/	armor	25	Clothing treated as armor bucket
+contains	object/resource_container/	resource	30	Resource containers map to resource
+contains	object/resource_container/inorganic_	resource_inorganic	31	Inorganic resource subgroup
+contains	object/resource_container/organic_	resource_organic	32	Organic resource subgroup
+contains	/resource/	resource	35	Resource path fallback
+contains	object/tangible/food/	misc_consumable	40	Food consumables subgroup
+contains	object/tangible/drink/	misc_consumable	41	Drink consumables subgroup
+contains	object/tangible/component/	misc_component	42	Crafting component subgroup
+contains	weapon	weapon	60	Legacy substring fallback rule
+contains	melee	weapon_melee	61	Legacy melee subgroup fallback
+contains	ranged	weapon_ranged	62	Legacy ranged subgroup fallback
+contains	armor	armor	70	Legacy substring fallback rule
+contains	clothing	armor	75	Legacy substring fallback rule
+contains	clothing	armor_clothing	74	Legacy clothing subgroup fallback
+contains	resource	resource	80	Legacy substring fallback rule
+contains	ore	resource	85	Legacy substring fallback rule
+contains	gas	resource	90	Legacy substring fallback rule
+contains	consumable	misc_consumable	95	Legacy consumable subgroup fallback
+contains	component	misc_component	96	Legacy component subgroup fallback

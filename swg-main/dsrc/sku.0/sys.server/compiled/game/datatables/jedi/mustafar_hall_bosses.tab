@@ -1,0 +1,5 @@
+bossId	cardId	displayName	template	mechanicsProfile	rotationIndex	saberCadenceMod	forceCadenceMod	lavaCadenceMod	rewardMultiplier	influenceMultiplier	mutators
+s	s	s	s	s	i	f	f	f	f	f	s
+hall_initiate	trial_mustafar_hall_dark_jedi_master	Hall Initiate	dark_jedi_master	baseline	0	1.00	1.00	1.00	1.00	1.00	
+hall_warden	trial_mustafar_hall_warden	Hall Warden	dark_jedi_master	pressure	1	0.90	0.85	0.95	1.20	1.20	shorter_telegraphs
+hall_master_ascendant	trial_mustafar_hall_master_ascendant	Hall Master Ascendant	dark_jedi_master	ascendant	2	0.78	0.72	0.85	1.50	1.45	empowered_force_phase,shorter_telegraphs,add_waves

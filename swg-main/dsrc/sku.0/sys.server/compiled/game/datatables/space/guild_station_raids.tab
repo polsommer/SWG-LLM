@@ -1,0 +1,8 @@
+raidId	displayName	difficultyTier	stationTier	minFuel	minHealth	minGuildPoints	minMembersOnline	cooldownMinutes	durationSeconds	waveCount	waveDelaySeconds	shipList	shipListElite	shipsPerWaveMin	shipsPerWaveMax	rewardGuildPoints	upkeepDiscountHours	failureDisableMinutes	alertText
+s	s	s	i	i	i	i	i	i	i	i	i	s	s	i	i	i	i	i	s
+pirate_scouting	Pirate Scouting Run	Light	1	60	100000	0	1	120	600	2	90	pirate_tier1, pirate_tier2	pirate_tier2	2	3	15	2	15	Light raid: pirate scouts are probing the guild station defenses.
+pirate_ambush	Pirate Ambush	Medium	1	120	150000	10	2	180	900	3	90	pirate_tier2, pirate_tier3	pirate_tier3	3	5	25	4	30	Medium raid: pirate raiders are converging on the guild station. Scramble pilots to defend the perimeter!
+salvage_convoy_defense	Salvage Convoy Defense	Light	1	80	120000	0	1	150	800	2	150	pirate_tier1, pirate_tier2	pirate_tier2	2	4	20	3	20	Light raid: a salvage convoy is under attack near the guild station. Protect friendly vessels and repel raiders!
+mercenary_blockade	Mercenary Blockade	Medium	2	180	170000	30	3	220	1100	3	110	mercenary_tier2, mercenary_tier3	mercenary_tier3	3	5	35	5	40	Medium raid: mercenary corsairs are forming a blockade around the guild station.
+faction_strike	Faction Strike	Heavy	2	200	180000	40	4	240	1200	4	120	imperial_tier3, rebel_tier3, imperial_tier4, rebel_tier4	imperial_tier4, rebel_tier4	4	6	40	6	45	Heavy raid: a faction strike group is warping in near the guild station. Defensive response required.
+elite_warband	Elite Warband	Heavy	3	240	200000	60	6	300	1400	5	110	pirate_tier3, imperial_tier4, rebel_tier4	imperial_tier4, rebel_tier4	5	7	55	8	60	Heavy raid: elite warships are massing for a decisive strike on the guild station.

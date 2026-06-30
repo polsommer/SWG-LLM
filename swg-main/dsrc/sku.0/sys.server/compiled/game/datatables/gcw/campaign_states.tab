@@ -1,0 +1,11 @@
+planet	phaseOrder	phaseName	durationHours	supplyBaseline	spaceWeight	groundWeight	enclaveWeight
+s	i	s	i	i	f	f	f
+tatooine	1	Preparation	48	50	0.4	0.4	0.2
+tatooine	2	Assault	48	60	0.5	0.35	0.15
+tatooine	3	Occupation	48	55	0.3	0.45	0.25
+corellia	1	Preparation	48	45	0.35	0.45	0.2
+corellia	2	Assault	48	58	0.45	0.35	0.2
+corellia	3	Occupation	48	52	0.3	0.5	0.2
+talus	1	Preparation	48	40	0.3	0.45	0.25
+talus	2	Assault	48	54	0.45	0.35	0.2
+talus	3	Occupation	48	48	0.25	0.45	0.3

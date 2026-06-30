@@ -1,0 +1,15 @@
+category	base_target	player_factor	min_price	max_price	essential_flag	comment
+s	i	f	i	i	i	c
+weapon	60	0.45	500	25000	1	Core combat inventory
+weapon_melee	24	0.16	450	18000	1	Melee weapon subgroup demand
+weapon_ranged	28	0.18	550	26000	1	Ranged weapon subgroup demand
+weapon_heavy	10	0.08	1200	42000	1	Heavy weapon subgroup demand
+armor	45	0.35	400	22000	1	Protective gear and clothing
+armor_clothing	20	0.15	250	12000	1	Clothing subgroup demand
+armor_segment	22	0.17	450	26000	1	Armor segment subgroup demand
+resource	80	0.50	8	4000	1	Crafting fuel and materials
+resource_inorganic	34	0.24	10	4200	1	Inorganic resource subgroup demand
+resource_organic	30	0.20	8	3600	1	Organic resource subgroup demand
+misc	35	0.20	25	8000	0	Everything outside core categories
+misc_consumable	16	0.12	20	3500	0	Consumable goods subgroup demand
+misc_component	18	0.13	35	9000	0	Crafting component subgroup demand

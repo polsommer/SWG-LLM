@@ -1,0 +1,66 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+-1396413538	0	object/static/item/item_star_destroyer_starfield_box.iff	0	499.311	506.93791	993.73	1	0	0	0		$|
+-7089454637	0	object/building/general/space_dungeon_lost_star_destroyer.iff	0	500.624	625	741.579	1	0	0	0	systems.instance.instance_manager:systems.dungeon_sequencer.sequence_controller:structure.municipal.cloning_facility	instance.data_table|4|datatables/spawning/heroic/heroic_lost_star_destroyer.iff|instance_name|4|heroic_lost_star_destroyer|portalProperty.crc|0|-1433146206|travel.point_name|4|Blackguard|$|
+-207731573	-7089454637	object/cell/cell.iff	1	0	0	0	1	0	0	0		$|
+-207731572	-7089454637	object/cell/cell.iff	2	0	0	0	1	0	0	0		$|
+-207731571	-7089454637	object/cell/cell.iff	3	0	0	0	1	0	0	0		$|
+-207731570	-7089454637	object/cell/cell.iff	4	0	0	0	1	0	0	0		$|
+-207731569	-7089454637	object/cell/cell.iff	5	0	0	0	1	0	0	0		$|
+-207731568	-24202190	object/tangible/collection/dwartii_statue_sistros.iff	5	6.15478	170.772	391.014	0.921061	0	0.389418	0	systems.collections.consume_click	collection.slotName|4|col_dwartii_statue:dwartii_statue_sistros|$|
+-207731567	-7089454637	object/cell/cell.iff	6	0	0	0	1	0	0	0		$|
+-207731566	-7089454637	object/cell/cell.iff	7	0	0	0	1	0	0	0		$|
+-207731565	-7089454637	object/cell/cell.iff	8	0	0	0	1	0	0	0		$|
+-207731564	-7089454637	object/cell/cell.iff	9	0	0	0	1	0	0	0		$|
+-207731563	-7089454637	object/cell/cell.iff	10	0	0	0	1	0	0	0		$|
+-207731562	-7089454637	object/cell/cell.iff	11	0	0	0	1	0	0	0		$|
+-207731561	-7089454637	object/cell/cell.iff	12	0	0	0	1	0	0	0		$|
+-207731560	-7089454637	object/cell/cell.iff	13	0	0	0	1	0	0	0		$|
+-207731559	-7089454637	object/cell/cell.iff	14	0	0	0	1	0	0	0		$|
+-207731558	-856609890	object/tangible/collection/dwartii_statue_yanjon.iff	14	13.1372	192.335	196.819	0.898261	0	-0.439463	0	systems.collections.consume_click	collection.slotName|4|col_dwartii_statue:dwartii_statue_yanjon|$|
+-207731557	-7089454637	object/cell/cell.iff	15	0	0	0	1	0	0	0		$|
+-207731556	-7089454637	object/cell/cell.iff	16	0	0	0	1	0	0	0		$|
+-207731555	-7089454637	object/cell/cell.iff	17	0	0	0	1	0	0	0		$|
+-207731554	-7089454637	object/cell/cell.iff	18	0	0	0	1	0	0	0		$|
+-207731553	-7089454637	object/cell/cell.iff	19	0	0	0	1	0	0	0		$|
+-207731552	-7089454637	object/cell/cell.iff	20	0	0	0	1	0	0	0		$|
+-207731551	-7089454637	object/cell/cell.iff	21	0	0	0	1	0	0	0		$|
+-207731550	-7089454637	object/cell/cell.iff	22	0	0	0	1	0	0	0		$|
+-207731549	-7089454637	object/cell/cell.iff	23	0	0	0	1	0	0	0		$|
+-207731548	-7089454637	object/cell/cell.iff	24	0	0	0	1	0	0	0		$|
+-207731547	-7089454637	object/cell/cell.iff	25	0	0	0	1	0	0	0		$|
+-207731546	-7089454637	object/cell/cell.iff	26	0	0	0	1	0	0	0		$|
+-207731545	-7089454637	object/cell/cell.iff	27	0	0	0	1	0	0	0		$|
+-207731544	-7089454637	object/cell/cell.iff	28	0	0	0	1	0	0	0		$|
+-207731543	-7089454637	object/cell/cell.iff	29	0	0	0	1	0	0	0		$|
+-207731542	-1349786614	object/tangible/collection/dwartii_statue_braata.iff	29	11.5056	175.335	-30.4166	-0.362358	0	0.932039	0	systems.collections.consume_click	collection.slotName|4|col_dwartii_statue:dwartii_statue_braata|$|
+-207731541	-7089454637	object/cell/cell.iff	30	0	0	0	1	0	0	0		$|
+-207731540	-7089454637	object/cell/cell.iff	31	0	0	0	1	0	0	0		$|
+-207731539	-7089454637	object/cell/cell.iff	32	0	0	0	1	0	0	0		$|
+-207731538	-7089454637	object/cell/cell.iff	33	0	0	0	1	0	0	0		$|
+-207731537	-7089454637	object/cell/cell.iff	34	0	0	0	1	0	0	0		$|
+-207731536	-7089454637	object/cell/cell.iff	35	0	0	0	1	0	0	0		$|
+-207731535	-7089454637	object/cell/cell.iff	36	0	0	0	1	0	0	0		$|
+-207731534	-7089454637	object/cell/cell.iff	37	0	0	0	1	0	0	0		$|
+-207731533	-7089454637	object/cell/cell.iff	38	0	0	0	1	0	0	0		$|
+-207731532	-7089454637	object/cell/cell.iff	39	0	0	0	1	0	0	0		$|
+-207731531	-7089454637	object/cell/cell.iff	40	0	0	0	1	0	0	0		$|
+-207731530	-7089454637	object/cell/cell.iff	41	0	0	0	1	0	0	0		$|
+-207731529	-7089454637	object/cell/cell.iff	42	0	0	0	1	0	0	0		$|
+-207731528	-7089454637	object/cell/cell.iff	43	0	0	0	1	0	0	0		$|
+-207731527	-7089454637	object/cell/cell.iff	44	0	0	0	1	0	0	0		$|
+-207731526	-7089454637	object/cell/cell.iff	45	0	0	0	1	0	0	0		$|
+-207731525	-7089454637	object/cell/cell.iff	46	0	0	0	1	0	0	0		$|
+-207731524	-7089454637	object/cell/cell.iff	47	0	0	0	1	0	0	0		$|
+-207731523	-7089454637	object/cell/cell.iff	48	0	0	0	1	0	0	0		$|
+-207731522	-7089454637	object/cell/cell.iff	49	0	0	0	1	0	0	0		$|
+-207731521	-7089454637	object/cell/cell.iff	50	0	0	0	1	0	0	0		$|
+-207731520	-7089454637	object/cell/cell.iff	51	0	0	0	1	0	0	0		$|
+-207731519	-7089454637	object/cell/cell.iff	52	0	0	0	1	0	0	0		$|
+-207731518	-7089454637	object/cell/cell.iff	53	0	0	0	1	0	0	0		$|
+-207731517	-7089454637	object/cell/cell.iff	54	0	0	0	1	0	0	0		$|
+-207731516	-7089454637	object/cell/cell.iff	55	0	0	0	1	0	0	0		$|
+-207731515	-7089454637	object/cell/cell.iff	56	0	0	0	1	0	0	0		$|
+-207731514	-7089454637	object/cell/cell.iff	57	0	0	0	1	0	0	0		$|
+-207731513	-7089454637	object/cell/cell.iff	58	0	0	0	1	0	0	0		$|
+-207731512	0	object/ship/star_destroyer_bridge_exterior.iff	0	500.722	1079.397	1071.42	1	0	0	0	structure.filler.filler	$|

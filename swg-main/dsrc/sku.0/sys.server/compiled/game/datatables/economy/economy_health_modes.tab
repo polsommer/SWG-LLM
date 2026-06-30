@@ -1,0 +1,5 @@
+mode	minScore	maxScore	targetOnline	targetListingsPerPlayer	minCategoryShare	description
+s	i	i	i	i	i	s
+Recovery	0	39	120	4	8	Stimulate supply and demand when market depth is low.
+Balanced	40	74	200	6	10	Steady state with healthy listing flow and category mix.
+Inflation Control	75	100	260	8	12	Cool overheating listing velocity and oversupplied categories.

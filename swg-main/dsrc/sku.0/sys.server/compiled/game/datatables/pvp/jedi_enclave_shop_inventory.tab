@@ -1,0 +1,10 @@
+Council	RequiredRank	RequiredLevel	ItemTemplate	Cost	DisplayName
+i	i	i	s	i	s
+1	2	50	object/tangible/wearables/robe/robe_jedi_dark_s01.iff	150000	Dark Jedi Robe (Initiate)
+1	4	65	object/tangible/wearables/robe/robe_jedi_dark_s03.iff	300000	Dark Jedi Robe (Adept)
+1	7	80	object/tangible/ship/crafted/chassis/tieoppressor_deed.iff	2500000	TIE Oppressor Deed
+1	9	90	object/tangible/wearables/robe/robe_jedi_dark_s05.iff	1000000	Dark Jedi Master's Robe
+2	2	50	object/tangible/wearables/robe/robe_jedi_light_s01.iff	150000	Light Jedi Robe (Initiate)
+2	4	65	object/tangible/wearables/robe/robe_jedi_light_s03.iff	300000	Light Jedi Robe (Adept)
+2	7	80	object/tangible/ship/crafted/chassis/ywing_longprobe_deed.iff	2500000	Y-Wing Longprobe (Arbiter) Deed
+2	9	90	object/tangible/wearables/robe/robe_jedi_light_s05.iff	1000000	Light Jedi Master's Robe

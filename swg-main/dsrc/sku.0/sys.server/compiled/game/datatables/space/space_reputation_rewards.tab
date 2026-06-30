@@ -1,0 +1,6 @@
+rank	pointsRequired	title	unlock	perk	description
+s	i	s	s	s	s
+rookie	0	Spacer Initiate	title_spacer_initiate		Access to modular ship tutorials and salvage contacts.
+trailblazer	400	Astrogation Trailblazer	title_space_trailblazer	bonus_reward_salvage	Unlocks exploration contracts with bonus salvage yield.
+vanguard	900	Fleet Vanguard	title_space_vanguard	co_op_station_gunner	Allows assignment to capital ship support stations in raids.
+legend	1600	Galactic Navigator	title_space_legend	raid_loot_upgrade	Grants chance for improved loot rolls in capital ship encounters.

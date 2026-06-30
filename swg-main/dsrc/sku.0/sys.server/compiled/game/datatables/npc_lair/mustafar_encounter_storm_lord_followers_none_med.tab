@@ -1,0 +1,7 @@
+mobiles	spawnLimit	comments	buildingsToSpawn	veryEasy	easy	medium	hard	veryHard
+s	i[-1]	c	c	s	s	s	s	s
+som_storm_lord_minion	8	Mustafar dynamic humanoid encounter						
+som_storm_lord_touched	4							
+som_storm_lord_guard	2							
+som_storm_lord_high_priest	1							
+som_storm_lord_prophet	1							

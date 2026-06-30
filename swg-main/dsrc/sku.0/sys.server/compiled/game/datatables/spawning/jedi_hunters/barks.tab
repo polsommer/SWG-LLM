@@ -1,0 +1,10 @@
+namespace	key	line
+s	s	s
+hunter_barks	interrogate	Citizen, hold position for a compliance scan.
+hunter_barks	dismiss_non_jedi	No Jedi profile detected. You are dismissed.
+hunter_barks	fine_demand	Low-intensity force signature noted. Compliance fine may be issued.
+hunter_barks	alert_attack	Jedi activity logged. Command has been alerted.
+hunter_barks	alert_attack_2	Force signature locked. Engage and contain.
+hunter_barks	alert_attack_3	Hostile force user confirmed. Moving to intercept.
+hunter_barks	victory	Target neutralized. Sector secured.
+hunter_barks	disengage	You are released from this stop. Keep moving.

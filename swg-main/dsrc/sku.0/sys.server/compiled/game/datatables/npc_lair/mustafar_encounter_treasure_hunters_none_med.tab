@@ -1,0 +1,5 @@
+mobiles	spawnLimit	comments	buildingsToSpawn	veryEasy	easy	medium	hard	veryHard
+s	i[-1]	c	c	s	s	s	s	s
+som_crystal_flats_treasure_hunter_thug	8	Mustafar dynamic humanoid encounter						
+som_crystal_flats_treasure_hunter_merc	4							
+som_crystal_flats_treasure_hunter_commander	2							

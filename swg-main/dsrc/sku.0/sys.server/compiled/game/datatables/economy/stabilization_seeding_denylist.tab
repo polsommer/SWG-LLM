@@ -1,0 +1,7 @@
+deny_key	deny_type	deny_value	enabled	reason
+s	s	s	i	c
+rare_category	category	misc	0	Enable only if misc seeding must be globally disabled
+collector_tcg	template_contains	tcg_loot_reward	1	Collector and promotional TCG rewards should never be auto-seeded
+rare_collection_reward	template_contains	collectible_rewards	1	Collection-end reward objects are intentionally scarce
+endgame_weapon_series	template_contains	weapon_ranged_pistol_de_10	1	Endgame crafted/stat-locked weapon variants are excluded
+endgame_armor_set	template_contains	armor_heroic	1	Heroic/endgame armor should remain player supplied only

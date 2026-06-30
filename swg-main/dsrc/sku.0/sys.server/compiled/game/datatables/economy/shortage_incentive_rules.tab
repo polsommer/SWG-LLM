@@ -1,0 +1,15 @@
+category	label	fee_multiplier	npc_seed_fee_multiplier	seller_reward_pct	reward_enabled	daily_reward_cap	daily_reward_count_cap	account_daily_reward_cap	account_daily_reward_count_cap	repeat_trade_cooldown_seconds	essential_only	comment
+s	s	f	f	f	i	i	i	i	i	i	i	c
+weapon	Weapons Shortage	0.75	0.40	0.05	1	50000	20	75000	30	1800	1	Lower fees and reward completions while weapon supply is constrained
+weapon_melee	Melee Weapon Shortage	0.74	0.39	0.05	1	45000	18	70000	28	1800	1	Melee-specific shortage incentives
+weapon_ranged	Ranged Weapon Shortage	0.72	0.38	0.05	1	50000	20	75000	30	1800	1	Ranged-specific shortage incentives
+weapon_heavy	Heavy Weapon Shortage	0.70	0.36	0.06	1	55000	18	80000	28	2400	1	Heavy weapon relisting incentives
+armor	Armor Shortage	0.80	0.45	0.04	1	40000	20	60000	30	1800	1	Prioritize armor relisting and modest seller completion bonus
+armor_clothing	Clothing Shortage	0.84	0.50	0.03	1	30000	18	45000	26	1800	1	Clothing subgroup shortage incentives
+armor_segment	Armor Segment Shortage	0.78	0.44	0.04	1	42000	20	62000	30	1800	1	Armor segment subgroup shortage incentives
+resource	Resource Shortage	0.70	0.35	0.03	1	60000	30	90000	45	1200	1	Heaviest fee break to restore crafting material throughput
+resource_inorganic	Inorganic Resource Shortage	0.69	0.34	0.03	1	62000	30	92000	45	1200	1	Inorganic resource subgroup shortage incentives
+resource_organic	Organic Resource Shortage	0.71	0.36	0.03	1	58000	28	88000	42	1200	1	Organic resource subgroup shortage incentives
+misc	General Goods Shortage	0.90	0.60	0.02	0	20000	15	30000	20	3600	0	Soft incentives for non-essential demand spikes
+misc_consumable	Consumables Shortage	0.88	0.58	0.02	0	22000	16	32000	22	3000	0	Consumable subgroup shortage incentives
+misc_component	Components Shortage	0.87	0.56	0.02	0	23000	16	33000	22	3000	0	Component subgroup shortage incentives

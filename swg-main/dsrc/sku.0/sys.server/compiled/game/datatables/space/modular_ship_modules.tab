@@ -1,0 +1,14 @@
+chassisType	tier	slot	moduleId	massDelta	hpDelta	energyDelta	supplyDelta	abilityPackage	description
+s	i	s	s	f	f	f	i	s	s
+xwing	1	hull	xwing_hull_patrol	350.0	600.0	0.0	8	ability.package.xwing_patrol	Factory-reinforced hull bracing tuned for patrol skirmishes.
+xwing	1	engine	xwing_engine_balanced	0.0	0.0	150.0	6	ability.package.engine_efficiency	Refined thruster governor improves efficiency for long sorties.
+xwing	2	hardpoint	xwing_hardpoint_precision	150.0	0.0	0.0	12	ability.package.targeting_matrix	Targeting uplink adds precision bonuses for wingmates.
+xwing	3	bridge	xwing_bridge_command	0.0	950.0	200.0	15	ability.package.flight_command	Command avionics broadcast squad-wide defensive patterns.
+tie_in	1	hull	tie_hull_interceptor	250.0	400.0	0.0	7	ability.package.tie_resilience	Alloy ribbing stiffens the frame for aggressive dives.
+tie_in	1	engine	tie_engine_pursuit	0.0	0.0	180.0	6	ability.package.burst_booster	Modified fuel injectors grant brief pursuit bursts.
+tie_in	2	hardpoint	tie_hardpoint_jammer	120.0	0.0	0.0	10	ability.package.signal_jammer	Signal dampeners disrupt hostile target locks.
+tie_in	3	bridge	tie_bridge_warlord	0.0	800.0	240.0	16	ability.package.imperial_command	Imperial command suite issues focused fire priorities.
+yt1300	1	hull	yt_hull_trader	500.0	700.0	0.0	9	ability.package.freighter_hold	Extended cargo frame adds resilience for convoys.
+yt1300	1	engine	yt_engine_smuggler	0.0	0.0	220.0	8	ability.package.hyperlane_calibration	Hyperlane calibrator reduces nav computer drift.
+yt1300	2	hardpoint	yt_hardpoint_turret	200.0	0.0	0.0	13	ability.package.defense_matrix	Remote turret bus grants allies covering fire bonuses.
+yt1300	3	bridge	yt_bridge_coordinator	0.0	1100.0	260.0	18	ability.package.convoy_overwatch	Coordinator consoles unlock raid repair utilities.

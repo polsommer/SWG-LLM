@@ -1,0 +1,10 @@
+pool_id	family	primary_path	primary_index	secondary_path	secondary_index	rarity	weight
+s	s	s	i	s	i	s	i
+color_raider	dust	/private/index_color_1	35	/private/index_color_2	11	common	65
+color_raider	rust	/private/index_color_1	42	/private/index_color_2	17	uncommon	25
+color_raider	blood_oil	/private/index_color_1	9	/private/index_color_2	52	rare	6
+color_militia	uniform_blue	/private/index_color_1	21	/private/index_color_2	33	common	70
+color_militia	uniform_olive	/private/index_color_1	27	/private/index_color_2	41	uncommon	20
+color_civilian	muted_tan	/private/index_color_1	31	/private/index_color_2	14	common	75
+color_civilian	market_blue	/private/index_color_1	23	/private/index_color_2	37	uncommon	18
+color_civilian	festival	/private/index_color_1	4	/private/index_color_2	45	rare	5

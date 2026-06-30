@@ -1,0 +1,8 @@
+arcId	tier	faction	objectiveType	baseReward	supplyImpact	reputationImpact	astrogationReward	raidHook	requiresShipClass	trialCard	narrative
+s	i	s	s	i	i	i	i	s	s	s	s
+tatooine_salvage_run	1	neutral	salvage	120	6	20	1		light	trial_salvage_patrol	Pick through a derelict convoy near Tatooine and return alloys to the enclave quartermaster.
+corellian_escort	1	rebel	escort	140	8	30	1		fighter	trial_corellia_convoy	Protect Corellian engineers delivering shield prototypes to the resistance.
+imperial_blockade	2	imperial	blockade	190	12	40	2	star_destroyer_siege	interceptor	trial_imperial_pressure	Enforce an interdiction line above Talus to choke rebel supply lanes.
+wild_space_mapping	2	neutral	exploration	210	10	45	2		freighter	trial_explore_frontier	Chart unclaimed hyperlanes beyond Yavin 4 and gather astrogation data.
+kashyyyk_relief	3	rebel	raid_support	260	16	55	3	recusant_overrun	freighter	trial_relief_effort	Deliver covert aid to Wookiee partisans while capital ships engage Separatist holdouts.
+kuat_strike	3	imperial	strike	275	18	60	3	venator_breakin	gunship	trial_kuat_command	Lead a precision raid on a rebel drydock orbiting Kuat.

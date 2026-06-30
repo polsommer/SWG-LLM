@@ -1,0 +1,14 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+900000101	0	object/static/structure/general/tankfarm_s01.iff	0	-1484.0	18.2	-1820.0	0.81915	0	0.57358	0		$|
+900000102	0	object/static/structure/general/tankfarm_s01.iff	0	-1438.0	18.1	-1756.0	0.57358	0	0.81915	0		$|
+900000103	0	object/static/flora/flora_tree_rori_windswept_s00.iff	0	-1395.0	21.4	-1702.0	0.70711	0	0.7071	0		$|
+900000104	0	object/static/flora/flora_tree_rori_windswept_s00.iff	0	-1338.0	21.6	-1664.0	0.25882	0	0.96593	0		$|
+900000105	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	-1276.0	22.3	-1704.0	0.95106	0	0.30902	0		$|
+900000106	0	object/static/structure/general/campfire_fresh.iff	0	-1324.5	18.0	-1650.0	1	0	0	0		$|
+900000107	0	object/static/structure/general/streetlamp_medium_style_02.iff	0	-1308.0	18.0	-1672.0	0.92388	0	0.38268	0		$|
+900000108	0	object/static/structure/general/streetlamp_medium_style_02.iff	0	-1341.0	18.0	-1676.0	0.70711	0	0.7071	0		$|
+900000109	0	object/tangible/ground_spawning/area_spawner.iff	0	-1388.0	17.6	-1728.0	0.93969	0	0.34202	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|240.000000|fltMinSpawnTime|2|120.000000|fltRadius|2|16.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|6|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_meadow_hatchlings|strSpawnerType|4|area|strSpawns|4|taanab/wild_nuna|$|
+900000110	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	-1252.0	21.8	-1624.0	0.57358	0	-0.81915	0		$|
+900000111	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	-1214.0	22.5	-1588.0	0.38268	0	0.92388	0		$|
+900000112	0	object/static/structure/general/camp_lawn_chair_s01.iff	0	-1316.4	18.0	-1648.0	0.13053	0	0.99144	0		$|

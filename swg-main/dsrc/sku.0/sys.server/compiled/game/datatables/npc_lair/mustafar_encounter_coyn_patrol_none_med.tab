@@ -1,0 +1,7 @@
+mobiles	spawnLimit	comments	buildingsToSpawn	veryEasy	easy	medium	hard	veryHard
+s	i[-1]	c	c	s	s	s	s	s
+som_coyn_trooper	8	Mustafar dynamic humanoid encounter						
+som_coyn_commando	4							
+som_coyn_shock	3							
+som_coyn_captain	1							
+som_coyn_commander	1							

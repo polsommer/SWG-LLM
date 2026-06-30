@@ -1,0 +1,6 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+-43930000	0	object/tangible/buildout/buildout_placeholder_ring.iff	0	0	-195	0	1	0	0	0		$|
+-868970803	0	object/tangible/collection/plant_11.iff	0	1222.17	121	93.3105	1	0	0	0	systems.collections.consume_click	collection.slotName|4|col_plant_01:plant_11|$|
+-868970802	0	object/tangible/quest/township/nightsister_artifact5.iff	0	1202.17	121	99.3105	1	0	0	0	theme_park.dathomir.wod2.artifact	$|
+-868970801	0	object/tangible/quest/township/nightsister_artifact4.iff	0	1583	121	99.3105	0.0891	0.4454	0.8909	0	theme_park.dathomir.wod2.artifact	$|

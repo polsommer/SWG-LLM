@@ -1,0 +1,11 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+900004001	0	object/building/military/military_outpost_guard_tower_1.iff	0	620.0	18.0	-420.0	0.81915	0	0.57358	0		$|
+900004002	0	object/static/structure/general/tankfarm_s01.iff	0	704.0	15.5	-352.0	0.57358	0	0.81915	0		$|
+900004003	0	object/static/structure/general/tankfarm_s01.iff	0	668.0	15.5	-308.0	0.93969	0	0.34202	0		$|
+900004004	0	object/static/flora/flora_tree_rori_mkpodtree.iff	0	548.0	20.2	-492.0	0.38268	0	0.92388	0		$|
+900004005	0	object/static/flora/flora_tree_rori_windswept_s00.iff	0	588.0	19.6	-444.0	0.64279	0	0.76604	0		$|
+900004006	0	object/tangible/ground_spawning/area_spawner.iff	0	640.0	17.4	-360.0	0.92388	0	0.38268	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|180.000000|fltMinSpawnTime|2|90.000000|fltRadius|2|12.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|4|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_watch_line|strSpawnerType|4|area|strSpawns|4|taanab/ruin_cultists|$|
+900004007	0	object/tangible/ground_spawning/area_spawner.iff	0	704.0	15.0	-268.0	0.70711	0	0.7071	0	systems.spawning.spawner_area	fltMaxSpawnTime|2|200.000000|fltMinSpawnTime|2|100.000000|fltRadius|2|18.000000|intDefaultBehavior|0|2|intGoodLocationSpawner|0|0|intSpawnCount|0|5|intSpawnSystem|0|1|registerWithController|0|1|strName|4|taanab_border_grazer|strSpawnerType|4|area|strSpawns|4|taanab/wild_bol|$|
+900004008	0	object/static/structure/general/campfire_fresh.iff	0	600.0	18.2	-388.0	1	0	0	0		$|
+900004009	0	object/static/structure/general/camp_lawn_chair_s01.iff	0	603.4	18.1	-384.0	0.93969	0	0.34202	0		$|

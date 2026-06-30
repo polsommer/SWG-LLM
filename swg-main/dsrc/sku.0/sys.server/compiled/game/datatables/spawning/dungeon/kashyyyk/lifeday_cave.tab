@@ -1,0 +1,15 @@
+spawns	name	room	loc_x	loc_y	loc_z	yaw	script	mood	respawn_time	spawn_objvar	special_room	special_room_script	room_objvar	room_objvar_name	room_objvar_value
+s	s	s	f	f	f	f	s	s	i	s	s	s	s	s	s
+kashyyyk_lifeday_stormtrooper	lifeday_entry_1	r1	1.43691	-5.95885	7.81275	-4.08058			45						
+kashyyyk_lifeday_stormtrooper	lifeday_entry_2	r1	-6.92113	-7.65814	1.34856	22.4208			45						
+kashyyyk_lifeday_stormtrooper	lifeday_corridor_1	r3	-3.03102	-23.5842	-43.223	131.007			60						
+kashyyyk_lifeday_stormtrooper	lifeday_corridor_2	r3	-28.3843	-37.2069	-59.3443	32.1551			60						
+kashyyyk_lifeday_stormtrooper	lifeday_corridor_3	r3	-54.8755	-46.8209	-95.353	52.1263			70						
+kashyyyk_lifeday_stormtrooper	lifeday_gathering_a	rooma	8.45467	-52.6974	-166.28	-16.8054			70						
+kashyyyk_lifeday_stormtrooper	lifeday_gathering_b	rooma	-30.7817	-51.4715	-162.45	179.397			70						
+kashyyyk_lifeday_stormtrooper	lifeday_gathering_c	rooma	-58.147	-57.611	-170.4	-50.8809			70						
+kashyyyk_lifeday_stormtrooper	lifeday_gathering_d	rooma	-43.2092	-56.8892	-213.23	-175.884			70						
+lifeday_rebel_snow_trooper	lifeday_allies_1	r6	58.3268	-63.5826	-195.115	-67.3819	npc.static_ally		80						
+lifeday_rebel_snow_trooper	lifeday_allies_2	r7	39.955	-70.001	-220.599	31.3607	npc.static_ally		80						
+lifeday_rebel_snow_trooper	lifeday_allies_3	r7	45.2353	-78.6625	-251.345	-23.6914	npc.static_ally		80						
+kashyyyk_lifeday_stormtrooper	lifeday_commander	r12	-83.3716	-75.4911	-256.915	76.8411	npc.static_boss	angry	120						

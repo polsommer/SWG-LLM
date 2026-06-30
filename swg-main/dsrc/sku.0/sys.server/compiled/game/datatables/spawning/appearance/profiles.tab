@@ -1,0 +1,9 @@
+profile_id	species	gender	profession_fantasy	weight	hair_pool	face_pool	color_pool	outfit_pool	accessory_pool
+s	s	s	s	i	s	s	s	s	s
+human_raider_m	human	male	raider	65	hair_human_m_raider	face_human_m_raider	color_raider	outfit_raider_m	accessory_raider
+human_raider_f	human	female	raider	55	hair_human_f_raider	face_human_f_raider	color_raider	outfit_raider_f	accessory_raider
+human_militia_m	human	male	militia	35	hair_human_m_militia	face_human_m_militia	color_militia	outfit_militia_m	accessory_militia
+human_civilian_m	human	male	civilian	40	hair_human_m_civilian	face_human_m_civilian	color_civilian	outfit_civilian_m	accessory_civilian
+human_civilian_f	human	female	civilian	40	hair_human_f_civilian	face_human_f_civilian	color_civilian	outfit_civilian_f	accessory_civilian
+rodian_raider	rodian	*	raider	20	hair_none	face_rodian_generic	color_raider	outfit_raider_rodian	accessory_raider
+bothan_raider	bothan	*	raider	20	hair_none	face_bothan_generic	color_raider	outfit_raider_bothan	accessory_raider

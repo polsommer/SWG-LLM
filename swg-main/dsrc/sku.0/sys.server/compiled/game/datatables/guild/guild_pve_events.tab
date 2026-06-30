@@ -1,0 +1,11 @@
+event_id	display_name	description	target	window_start	window_end	reward_type	reward_value	perk_duration
+s	s	s	i	s	s	s	i	i
+gcw_invasion	GCW Invasion Push	Assist in GCW city invasion victories.	5000	Daily 18:00	Daily 23:00	resource	5	86400
+restuss_campaign	Restuss Front	Complete Restuss event objectives.	25	Weekend 18:00	Weekend 23:00	title	1	604800
+dungeon_clear	Dungeon Sweeps	Clear featured dungeons with guild groups.	15	Tue 19:00	Thu 23:00	cosmetic	1	604800
+space_mission	Space Patrol	Finish space dynamic missions.	30	Daily 00:00	Daily 23:59	buff	1	43200
+world_boss_defense	World Boss Defense	Defeat world bosses threatening guild territories.	5	Weekend 12:00	Weekend 23:00	resource	10	604800
+planetary_outpost_assault	Planetary Outpost Assault	Secure hostile planetary outposts for allied forces.	12	Daily 12:00	Daily 23:00	buff	1	43200
+convoy_escort	Convoy Escort	Protect allied supply convoys in hostile zones.	8	Daily 00:00	Daily 23:59	resource	4	43200
+space_boss_hunt	Space Boss Hunt	Destroy capital-grade space bosses.	3	Weekend 18:00	Weekend 23:00	cosmetic	1	604800
+asteroid_rescue	Asteroid Rescue	Recover stranded crews from asteroid fields.	6	Daily 06:00	Daily 23:00	buff	1	43200

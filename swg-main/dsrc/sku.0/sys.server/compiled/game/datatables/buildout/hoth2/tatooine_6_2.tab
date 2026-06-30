@@ -1,0 +1,4 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+-168814563	0	object/tangible/theme_park/invisible_object.iff	0	1470.97	4	1332.37	0.94441	0	0.328769	0	theme_park.controller_initialize	scriptString|4|theme_park.restuss_event.stage_two_crier|$|
+-198441656	0	object/tangible/planet_map_location/city.iff	0	1570.98	1	1342.91	0.938444	0	0.345432	0		$|

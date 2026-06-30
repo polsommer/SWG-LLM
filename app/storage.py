@@ -1,0 +1,165 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Iterable
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+UPLOADS_DIR = DATA_DIR / "uploads"
+GENERATED_DIR = DATA_DIR / "generated"
+MEMORY_DIR = DATA_DIR / "memory"
+SANDBOXES_DIR = DATA_DIR / "sandboxes"
+PROJECT_INDEX_DIR = DATA_DIR / "project_index"
+LESSONS_FILE = MEMORY_DIR / "lessons.json"
+RUN_LOG_FILE = MEMORY_DIR / "runs.json"
+OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
+SWG_MAIN_DIR = BASE_DIR / "swg-main"
+PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
+
+
+def ensure_dirs() -> None:
+    for path in (UPLOADS_DIR, GENERATED_DIR, MEMORY_DIR, SANDBOXES_DIR, PROJECT_INDEX_DIR):
+        path.mkdir(parents=True, exist_ok=True)
+    for file_path in (LESSONS_FILE, RUN_LOG_FILE, OBSERVABILITY_FILE):
+        if not file_path.exists():
+            file_path.write_text("[]", encoding="utf-8")
+
+
+def load_json_list(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except json.JSONDecodeError:
+        return []
+
+
+def save_json_list(path: Path, rows: list[dict]) -> None:
+    path.write_text(json.dumps(rows, indent=2, ensure_ascii=True), encoding="utf-8")
+
+
+def append_json_row(path: Path, row: dict) -> None:
+    rows = load_json_list(path)
+    rows.append(row)
+    save_json_list(path, rows)
+
+
+def list_text_files(root: Path) -> list[Path]:
+    allowed = {
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".html",
+        ".css",
+        ".csv",
+        ".xml",
+        ".ini",
+        ".log",
+    }
+    return [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in allowed]
+
+
+def read_snippet(path: Path, max_chars: int = 2500) -> str:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n...[truncated]"
+
+
+def read_text_file(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+
+
+def collect_workspace_context(limit: int = 6) -> list[dict]:
+    files = list_text_files(UPLOADS_DIR) + list_text_files(GENERATED_DIR)
+    items: list[dict] = []
+    for file_path in files[:limit]:
+        try:
+            relative = file_path.relative_to(DATA_DIR).as_posix()
+        except ValueError:
+            relative = file_path.name
+        items.append(
+            {
+                "path": relative,
+                "snippet": read_snippet(file_path),
+            }
+        )
+    return items
+
+
+def load_recent_lessons(limit: int = 5) -> list[str]:
+    lessons = load_json_list(LESSONS_FILE)
+    values = [row.get("lesson", "").strip() for row in lessons if row.get("lesson")]
+    return values[-limit:]
+
+
+def save_uploaded_file(name: str, content: bytes) -> Path:
+    safe_name = Path(name).name
+    target = UPLOADS_DIR / safe_name
+    target.write_bytes(content)
+    return target
+
+
+def resolve_workspace_file(location: str) -> Path:
+    normalized = location.strip().replace("\\", "/")
+    if normalized.startswith("uploads/"):
+        base = UPLOADS_DIR.resolve()
+        relative = normalized.removeprefix("uploads/")
+    elif normalized.startswith("generated/"):
+        base = GENERATED_DIR.resolve()
+        relative = normalized.removeprefix("generated/")
+    else:
+        raise ValueError("Path must start with uploads/ or generated/")
+
+    target = (base / relative).resolve()
+    if not str(target).startswith(str(base)):
+        raise ValueError("Refusing to access outside workspace area")
+    return target
+
+
+def save_generated_file(relative_path: str, content: str) -> Path:
+    target = (GENERATED_DIR / relative_path).resolve()
+    base = GENERATED_DIR.resolve()
+    if not str(target).startswith(str(base)):
+        raise ValueError("Refusing to write outside generated directory")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return target
+
+
+def save_generated_bytes(relative_path: str, content: bytes) -> Path:
+    target = (GENERATED_DIR / relative_path).resolve()
+    base = GENERATED_DIR.resolve()
+    if not str(target).startswith(str(base)):
+        raise ValueError("Refusing to write outside generated directory")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    return target
+
+
+def summarize_paths(paths: Iterable[Path]) -> list[str]:
+    base = GENERATED_DIR.resolve()
+    items: list[str] = []
+    for path in paths:
+        try:
+            items.append(path.resolve().relative_to(base).as_posix())
+        except ValueError:
+            items.append(path.name)
+    return items

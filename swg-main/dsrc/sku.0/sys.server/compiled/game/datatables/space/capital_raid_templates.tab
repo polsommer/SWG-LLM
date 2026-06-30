@@ -1,0 +1,5 @@
+raidId	bossTemplate	minPlayers	maxPlayers	durationMinutes	supplyReward	lootGroup	spaceScene	entryPoint	exitPoint	notes
+s	s	i	i	i	i	s	s	s	s	s
+star_destroyer_siege	object/ship/spacestation/imperial_star_destroyer.iff	8	12	35	24	loot_space_capital_empire	space_talus	-1200 200 450	245 45 -90	Imperial task force with subsystem targeting and boarding pods.
+recusant_overrun	object/ship/spacestation/cis_recusant.iff	10	12	40	28	loot_space_capital_cis	space_kashyyyk	775 -30 -640	150 25 220	Separatist holdout supported by drone swarms and shield harmonics.
+venator_breakin	object/ship/spacestation/rebel_venator.iff	12	16	45	32	loot_space_capital_rebel	space_kuat	-340 75 980	-50 60 -310	Rebel flagship fortified with coordinated fighter wings and reactor puzzles.

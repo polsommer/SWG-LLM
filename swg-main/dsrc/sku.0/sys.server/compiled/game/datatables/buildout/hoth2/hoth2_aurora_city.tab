@@ -1,0 +1,34 @@
+objid	container	server_template_crc	cell_index	px	py	pz	qw	qx	qy	qz	scripts	objvars
+i	i	h	i	f	f	f	f	f	f	f	s	p
+-800000001	0	object/tangible/planet_map_location/city.iff	0	525.000	2.000	500.000	0.984808	0.000000	0.173648	0.000000	planet_map.map_loc	$|
+-800000010	0	object/building/tatooine/cloning_facility_tatooine.iff	0	450.000	0.000	550.000	1.000000	0.000000	0.000000	0.000000	structure.municipal.cloning_facility:planet_map.map_loc	healing.canhealshock|0|1|safeLogout|0|1|$|
+-800000011	-800000010	object/cell/cell.iff	1	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000012	-800000010	object/cell/cell.iff	2	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000013	-800000010	object/cell/cell.iff	3	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000014	-800000010	object/cell/cell.iff	4	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000015	-800000010	object/cell/cell.iff	5	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000016	-800000010	object/cell/cell.iff	6	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000100	0	object/building/tatooine/cantina_tatooine.iff	0	550.000	0.000	400.000	0.707107	0.000000	0.707107	0.000000	planet_map.map_loc:structure.municipal.cantina:theme_park.dungeon.generic_spawner	spawn_table|4|datatables/spawning/building_spawns/mos_eisley_cantina.iff|healing.canhealshock|0|1|safeLogout|0|1|$|
+-800000101	-800000100	object/cell/cell.iff	1	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000102	-800000100	object/cell/cell.iff	2	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000103	-800000100	object/cell/cell.iff	3	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000104	-800000100	object/cell/cell.iff	4	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000105	-800000100	object/cell/cell.iff	5	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000106	-800000100	object/cell/cell.iff	6	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000107	-800000100	object/cell/cell.iff	7	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000108	-800000100	object/cell/cell.iff	8	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000109	-800000100	object/cell/cell.iff	9	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000110	-800000100	object/cell/cell.iff	10	0.000	0.000	0.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000200	0	object/tangible/terminal/terminal_bank.iff	0	480.000	0.500	580.000	0.923880	0.000000	0.382683	0.000000	terminal.bank:planet_map.map_loc	banking_bankid|4|aurora_city|$|
+-800000210	0	object/tangible/terminal/terminal_bazaar.iff	0	500.000	0.500	580.000	1.000000	0.000000	0.000000	0.000000	terminal.bazaar:planet_map.map_loc	$|
+-800000220	0	object/soundobject/soundobject_city_crowd_medium.iff	0	500.000	1.000	500.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000221	0	object/soundobject/soundobject_city_crowd_small.iff	0	600.000	1.000	450.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000230	0	object/static/worldbuilding/building/echo_base_cannons.iff	0	500.000	5.000	700.000	0.000000	0.000000	1.000000	0.000000		$|
+-800000231	0	object/static/worldbuilding/building/echo_base_tubes_04.iff	0	425.000	0.000	650.000	0.923880	0.000000	0.382683	0.000000		$|
+-800000232	0	object/static/worldbuilding/building/echo_base_tubes_02.iff	0	575.000	0.000	650.000	0.923880	0.000000	-0.382683	0.000000		$|
+-800000240	0	object/static/structure/general/cave_column_snow_style_03.iff	0	200.000	0.000	400.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000241	0	object/static/structure/general/cave_column_snow_style_03.iff	0	200.000	0.000	600.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000242	0	object/static/structure/general/cave_stalagmite_snow_style_08.iff	0	800.000	0.000	400.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000243	0	object/static/structure/general/cave_wall_snow_style_01.iff	0	800.000	0.000	600.000	-0.707107	0.000000	0.707107	0.000000		$|
+-800000244	0	object/static/structure/general/streetlamp_small_style_01.iff	0	500.000	0.000	300.000	1.000000	0.000000	0.000000	0.000000		$|
+-800000245	0	object/static/structure/general/streetlamp_small_style_01.iff	0	400.000	0.000	300.000	0.707107	0.000000	0.707107	0.000000		$|

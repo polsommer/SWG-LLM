@@ -1,0 +1,26 @@
+section	key	metric1	metric2	metric3
+descending_check	pirate	98	0
+descending_check	blacksun	22	0
+descending_check	rebel	8	0
+descending_check	imperial	20	0
+descending_check	civilian	16	0
+lookup_mix	pirate_tier4	equipment_pirate_tier2:1; equipment_pirate_tier3:1; equipment_pirate_tier4:2; equipment_pirate_tier5:2
+lookup_mix	pirate_tier5	equipment_pirate_tier3:1; equipment_pirate_tier4:2; equipment_pirate_tier5:3
+lookup_mix	blacksun_tier4	equipment_blacksun_tier2:1; equipment_blacksun_tier3:1; equipment_blacksun_tier4:2; equipment_blacksun_tier5:2
+lookup_mix	blacksun_tier5	equipment_blacksun_tier3:1; equipment_blacksun_tier4:2; equipment_blacksun_tier5:3
+lookup_mix	rebel_tier4	equipment_rebel_tier2:1; equipment_rebel_tier3:1; equipment_rebel_tier4:2; equipment_rebel_tier5:2
+lookup_mix	rebel_tier5	equipment_rebel_tier3:1; equipment_rebel_tier4:2; equipment_rebel_tier5:3
+lookup_mix	imperial_tier4	equipment_imperial_tier2:1; equipment_imperial_tier3:1; equipment_imperial_tier4:2; equipment_imperial_tier5:2
+lookup_mix	imperial_tier5	equipment_imperial_tier3:1; equipment_imperial_tier4:2; equipment_imperial_tier5:3
+lookup_mix	civilian_tier4	equipment_civilian_tier2:1; equipment_civilian_tier3:1; equipment_civilian_tier4:2; equipment_civilian_tier5:2
+lookup_mix	civilian_tier5	equipment_civilian_tier3:1; equipment_civilian_tier4:2; equipment_civilian_tier5:3
+desirable_share	equipment_pirate_tier4	140	62	0.4429
+desirable_share	equipment_pirate_tier5	153	73	0.4771
+desirable_share	equipment_blacksun_tier4	151	70	0.4636
+desirable_share	equipment_blacksun_tier5	159	77	0.4843
+desirable_share	equipment_rebel_tier4	149	69	0.4631
+desirable_share	equipment_rebel_tier5	158	76	0.481
+desirable_share	equipment_imperial_tier4	141	64	0.4539
+desirable_share	equipment_imperial_tier5	149	72	0.4832
+desirable_share	equipment_civilian_tier4	136	58	0.4265
+desirable_share	equipment_civilian_tier5	143	65	0.4545

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalAgent 1660</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop-grid"></div>
+    <div class="backdrop-orb backdrop-orb-a"></div>
+    <div class="backdrop-orb backdrop-orb-b"></div>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-topline">
+          <p class="eyebrow">Autonomous Local Agent</p>
+          <div class="status-row">
+            <span class="status-pill">GTX 1660 Super Ready</span>
+            <span class="status-pill">Ollama Linked</span>
+            <span class="status-pill">Repo Inference</span>
+          </div>
+        </div>
+        <h1>LocalAgent 1660<span class="cursor">_</span></h1>
+        <p class="lede">
+          A cyber-agent command deck for local chat, codebase ingestion, generated
+          files, and structured agent reasoning on a GTX 1660 Super.
+        </p>
+        <p class="note">
+          Python execution uses a guarded local runner for trusted tasks. It is not a hardened boundary for untrusted code.
+        </p>
+        <div id="backendStatus" class="backend-status backend-status-pending">
+          Connecting to local backend...
+        </div>
+        <div id="heroMetrics" class="hero-metrics">
+          <div class="metric-card">
+            <span class="metric-label">Session</span>
+            <strong id="heroSession">Booting</strong>
+            <p>Per-browser runtime state</p>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Project Index</span>
+            <strong id="heroIndex">Waiting</strong>
+            <p>Repo-aware retrieval status</p>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Execution</span>
+            <strong id="heroBoundary">Guarded</strong>
+            <p>Trusted local tasks only</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-main">
+        <div class="panel panel-console">
+          <div class="panel-head">
+            <h2>Agent Console</h2>
+            <span class="panel-tag">Live Prompt Channel</span>
+          </div>
+          <div class="composer-toolbar">
+            <label class="field field-inline">
+              <span>Model</span>
+              <input id="model" value="qwen2.5:7b-instruct-q4_K_M" />
+            </label>
+            <div class="composer-actions">
+              <button id="clearPromptBtn" class="button-secondary" type="button">Clear Prompt</button>
+              <button id="samplePromptBtn" class="button-ghost" type="button">Use Sample</button>
+            </div>
+          </div>
+          <label class="field field-grow">
+            <span>Ask the agent</span>
+            <textarea id="message" rows="9" placeholder="Create a landing page from my uploaded notes."></textarea>
+          </label>
+          <div class="inline-status-row">
+            <span id="promptHint" class="micro-pill">Repo-aware search available</span>
+            <span id="sessionHint" class="micro-pill">Session scoped</span>
+          </div>
+          <button id="chatBtn">Transmit To Agent</button>
+        </div>
+
+        <div class="panel panel-ops">
+          <div class="panel-head">
+            <h2>Operations</h2>
+            <span class="panel-tag">Ingest And Build</span>
+          </div>
+          <div class="ops-stack">
+            <section class="ops-card">
+              <div class="ops-card-head">
+                <h3 class="section-label">Upload Files</h3>
+                <span class="micro-pill">Context</span>
+              </div>
+              <p class="note">Add notes, code, and reference docs for grounded answers and generated artifacts.</p>
+              <input id="fileInput" type="file" multiple />
+              <button id="uploadBtn" class="button-secondary">Upload Assets</button>
+            </section>
+
+            <section class="ops-card">
+              <div class="ops-card-head">
+                <h3 class="section-label">Project Ingest</h3>
+                <span class="micro-pill">Index</span>
+              </div>
+              <p class="note">Indexes `swg-main/src` and `swg-main/dsrc` for repo-aware inference.</p>
+              <button id="reindexBtn" class="button-secondary">Rebuild Project Index</button>
+            </section>
+
+            <section class="ops-card">
+              <div class="ops-card-head">
+                <h3 class="section-label">Create File</h3>
+                <span class="micro-pill">Artifact</span>
+              </div>
+              <label class="field">
+                <span>Filename</span>
+                <input id="filename" value="drafts/output.md" />
+              </label>
+              <label class="field">
+                <span>Instruction</span>
+                <textarea id="instruction" rows="5" placeholder="Write a product brief using the uploaded files."></textarea>
+              </label>
+              <button id="generateBtn">Generate Artifact</button>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-bottom">
+        <div class="panel panel-output">
+          <div class="panel-head">
+            <h2>Agent Output</h2>
+            <span class="panel-tag">Reasoning Trace</span>
+          </div>
+          <div class="output-toolbar">
+            <div class="inline-status-row">
+              <span id="outputState" class="micro-pill">Idle</span>
+              <span id="outputMeta" class="micro-pill">Awaiting request</span>
+            </div>
+            <div class="toolbar-actions">
+              <button id="copyOutputBtn" class="button-ghost" type="button">Copy Output</button>
+              <button id="clearOutputBtn" class="button-secondary" type="button">Clear Output</button>
+            </div>
+          </div>
+          <div id="trustPanel"></div>
+          <div class="output-shell">
+            <pre id="output">Waiting for your first prompt.</pre>
+          </div>
+          <div id="approvalBox"></div>
+          <div id="insights"></div>
+        </div>
+        <div class="panel panel-intel">
+          <div class="panel-head">
+            <h2>Workspace Intel</h2>
+            <span class="panel-tag">Index Monitor</span>
+          </div>
+          <div id="workspaceHighlights" class="workspace-highlights"></div>
+          <div id="files"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>

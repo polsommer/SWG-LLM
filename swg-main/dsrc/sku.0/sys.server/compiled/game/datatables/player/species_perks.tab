@@ -1,0 +1,10 @@
+templateToken	buffName	commandName	cooldownSeconds	cooldownGroup	abilityData	dailyUseLimit
+s	s	s	f	s	s	i
+togruta	species_togruta_pack_insight	packfocus	60	species_packfocus	range=10;effect=clienteffect/ui_medic_scan.cef	0
+chiss	species_chiss_ascendancy	marktarget	45	species_marktarget	debuff=species_marktarget_debuff;duration=15;range=30	0
+kel_dor	species_kel_dor_resilience		0			0
+nautolan	species_nautolan_aquatic	hydrostaticleap	45	species_hydrostatic	distance=12;effect=clienteffect/combat_pt_jump.cef	0
+devaronian	species_devaronian_wile	impishgrin	90	species_impishgrin	reduction=0.85;effect=clienteffect/combat_pt_escape.cef	0
+mirialan		forcesymmetry	1800	species_forcesymmetry	buff=species_mirialan_meditation;duration=1800	0
+cathar	species_cathar_predator	stalk	30	species_stalk	buff=species_cathar_stalk;duration=3	0
+bothan		slicerintuition	60	species_slicerintuition	buff=species_bothan_slicer_focus;duration=600	3

@@ -1,0 +1,5 @@
+planet	min_group	max_group	scan_radius	fine_threshold	taunt_cooldown	respawn_delay	bark_namespace
+s	i	i	f	i	i	i	s
+default	2	6	80	45	24	300	hunter_barks
+naboo	3	6	95	50	20	240	hunter_barks
+tatooine	2	5	90	42	22	270	hunter_barks
