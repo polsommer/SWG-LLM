@@ -9,6 +9,7 @@ This repository provides a starter scaffold for a multi-node LLM workflow that c
 - `ingestion/` - repository cloning, parsing, embedding, and indexing pipeline hooks.
 - `consensus/` - debate/refinement orchestration and disagreement resolution flow.
 - `sync/` - output publishing and synchronization with a target Git repository.
+- `domain_adaptation/` - supervised fine-tune/LoRA data curation, benchmark comparison, canary rollout, and refresh pipeline utilities.
 - `config/cluster.yaml` - cluster topology, roles, retry policy, and debate rounds.
 
 ## Startup
@@ -120,15 +121,44 @@ python -m unittest discover -s tests
 If you want an end-to-end, copy/paste walkthrough (ingest data, validate retrieval, and connect your LLM with a simple RAG flow), use:
 
 - `docs/GETTING_STARTED_INGESTION_AND_LLM.md`
+- `docs/FULLY_AUTOMATED_CLUSTER_GUIDE.md` (cluster mode + automatic ingest/review/learn/repeat runbook)
 
-Quick command to run ingestion immediately:
+Quick commands to start ingestion and learning context immediately:
 
 ```bash
-python - <<'PY'
-from ingestion.query_interface import KnowledgeQueryService
-print(KnowledgeQueryService().refresh())
-PY
+python -m ingestion ingest
+python -m ingestion ask "How does orchestration and consensus work?" --top-k 3
+python -m ingestion auto-ingest --interval-seconds 300
 ```
+
+Optional convenience targets:
+
+```bash
+make ingest
+make ask Q="How does orchestration and consensus work?"
+make auto-ingest INTERVAL=300
+```
+
+## Web Chat Deployment
+
+Use the lightweight web chat server to expose retrieval + LLM responses on your LAN:
+
+```bash
+python -m webapp
+```
+
+For a full deployment runbook (environment variables, LAN/firewall guidance, reverse proxy options, and health checks), see:
+
+- `docs/WEB_CHAT_DEPLOY.md`
+
+Convenience targets:
+
+```bash
+make web-chat
+make web-auto INTERVAL=60
+```
+
+`make web-auto` starts the auto-ingest loop in the background and then launches the web chat server in the foreground.
 
 ## Environment Variables
 
@@ -151,3 +181,33 @@ The scaffold is organized to make failures explicit and recoverable:
 - **Auditability:** each module should emit structured logs with run IDs to support root-cause analysis.
 
 Implement production-specific alerting, checkpointing, and rollback behavior as a next step.
+
+## Train and Ship a Domain-Adapted Variant
+
+Use the `domain_adaptation` module to execute an end-to-end workflow:
+
+1. Curate high-signal reviewed prompt/response pairs (`DatasetCurator`).
+2. Remove noisy/contradictory entries and standardize response prefix format (`Answer:`).
+3. Train a supervised variant (`FineTuneTrainer`) with `method="lora"` or full fine-tune metadata.
+4. Build benchmark suites for correctness, tone, policy adherence, and task completion (`BenchmarkSuite`).
+5. Compare base vs tuned variants offline and gate rollout on improvement (`OfflineComparator`).
+6. Deploy through canary routing plus rollback triggers (`CanaryDeploymentManager`).
+7. Periodically refresh training data from reviewed production interactions (`DataRefreshScheduler`).
+
+Run coverage for this flow:
+
+```bash
+python -m unittest tests/test_domain_adaptation_pipeline.py
+```
+
+### Closed-loop quality system (production -> training -> release gate)
+
+The `domain_adaptation.pipeline` module includes a reference closed-loop quality workflow:
+
+1. Track per-interaction core metrics: `answer_correctness`, `task_success`, `latency_ms`, `tool_success_rate`, and `user_satisfaction` via `InteractionQualityMetrics`.
+2. Apply standardized failure labels with `FailureTaxonomy`: `hallucination`, `missed_context`, `wrong_tool_choice`, and `incomplete_action`.
+3. Route only high-impact or low-confidence outputs to human review using `HumanReviewRouter`.
+4. Automatically route reviewed examples to both training and regression datasets with `ReviewedExampleRouter`.
+5. Run segmented nightly regression checks and block release on metric drops with `NightlyRegressionEvaluator`.
+6. Segment all reporting by `use_case` to avoid aggregate-only blind spots.
+7. Publish a shared quality snapshot with `QualityDashboardPublisher` for engineering and product teams.

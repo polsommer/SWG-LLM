@@ -12,4 +12,6 @@ Typical flow:
 2. `ConflictDetector` computes claim-level semantic alignment + contradiction score.
 3. `RefinementLoop` triggers additional rounds when disagreement exceeds threshold.
 4. Run stops when agreement threshold is met or max rounds is reached.
-5. `DebateEngine.persist_conclusion` stores merged conclusion, confidence, and provenance.
+5. Before final merge, `DebateEngine` builds retrieval context under a strict token budget and enforces grounded output (or abstains when evidence is missing).
+6. `DebateEngine.persist_conclusion` stores merged conclusion, confidence, provenance, and grounded status.
+7. Retrieval usage telemetry is appended to `retrieval_usage.jsonl` to track hit/miss behavior.

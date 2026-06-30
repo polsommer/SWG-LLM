@@ -34,15 +34,13 @@ export SWG_SOURCE_REPO=https://github.com/SWG-Source/dsrc.git
 Run this one-off ingestion command:
 
 ```bash
-python - <<'PY'
-from ingestion.query_interface import KnowledgeQueryService
+python -m ingestion ingest
+```
 
-service = KnowledgeQueryService()
-summary = service.refresh()
-print("Ingestion summary:")
-for k, v in summary.items():
-    print(f"- {k}: {v}")
-PY
+Or with Make:
+
+```bash
+make ingest
 ```
 
 What `refresh()` does under the hood:
@@ -60,21 +58,43 @@ If nothing changed in the source repo revision, it returns `status: unchanged` a
 Test semantic retrieval directly:
 
 ```bash
-python - <<'PY'
-from ingestion.query_interface import KnowledgeQueryService
+python -m ingestion ask "How does orchestration and consensus work?" --top-k 3
+```
 
-service = KnowledgeQueryService()
-results = service.query("How does orchestration and consensus work?", top_k=3)
-for i, r in enumerate(results, 1):
-    print(f"\n[{i}] {r.file_path}:{r.start_line}-{r.end_line} score={r.score:.4f}")
-    print(r.text[:500])
-PY
+Or with Make:
+
+```bash
+make ask Q="How does orchestration and consensus work?"
 ```
 
 If results are empty or weak:
 - run `refresh()` again,
 - confirm your source repo has supported file types,
 - increase `top_k`.
+
+---
+
+
+## 3.5) Keep auto-updating with git pull + re-ingest
+
+`refresh()` already performs `git fetch` + `git pull --ff-only` through `RepositoryIngestor.sync()`.
+Use auto-ingest mode to keep learning from new commits continuously:
+
+```bash
+python -m ingestion auto-ingest --interval-seconds 300
+```
+
+Or with Make:
+
+```bash
+make auto-ingest INTERVAL=300
+```
+
+Use `--max-cycles` for bounded runs/tests:
+
+```bash
+python -m ingestion auto-ingest --interval-seconds 30 --max-cycles 5
+```
 
 ---
 
