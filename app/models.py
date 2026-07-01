@@ -29,6 +29,15 @@ class GenerateRequest(BaseModel):
     model: str = Field(default="qwen2.5:7b-instruct-q4_K_M")
 
 
+class TestRequest(BaseModel):
+    instruction: str = Field(min_length=1)
+    model: str = Field(default="qwen2.5:7b-instruct-q4_K_M")
+
+
 class FeedbackRequest(BaseModel):
     feedback: str = Field(min_length=1)
     successful: bool = True
+
+
+class ProjectRootsUpdateRequest(BaseModel):
+    project_roots: list[str] = Field(min_length=1)

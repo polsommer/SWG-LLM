@@ -96,6 +96,45 @@ class LocalAgent:
         )
         return prompt, lessons
 
+    def _build_micro_test_prompt(self, instruction: str) -> tuple[str, list[str]]:
+        context_items = collect_workspace_context()
+        lessons = load_recent_lessons()
+        project_status = self.indexer.get_status()
+        repo_plan = self._build_repo_plan(instruction, project_status)
+
+        context_lines = []
+        for item in context_items:
+            context_lines.append(f"FILE: {item['path']}\n{item['snippet']}")
+
+        lessons_block = "\n".join(f"- {lesson}" for lesson in lessons) or "- No saved lessons yet."
+        workspace_block = "\n\n".join(context_lines) or "No uploaded or generated files yet."
+
+        prompt = (
+            f"{SYSTEM_PROMPT.strip()}\n\n"
+            "Testing mode instructions:\n"
+            "- Treat this as a small experiment, check, or validation task.\n"
+            "- Prefer tiny safe checks over broad speculation.\n"
+            "- Use indexed project search before guessing about code behavior.\n"
+            "- If a guarded Python check would materially help, keep it small and explain what it is testing.\n"
+            "- End with a concise conclusion that states what the test showed, what remains uncertain, and the next best action.\n\n"
+            f"{self._tool_spec()}\n\n"
+            f"Project index status:\n"
+            f"- indexed_at: {project_status.get('indexed_at')}\n"
+            f"- file_count: {project_status.get('file_count')}\n"
+            f"- chunk_count: {project_status.get('chunk_count')}\n"
+            f"- roots: {', '.join(project_status.get('roots', []))}\n\n"
+            f"{repo_plan}\n\n"
+            f"Saved lessons:\n{lessons_block}\n\n"
+            f"Workspace context:\n{workspace_block}\n\n"
+            "Respond in this shape when you finish:\n"
+            "1. What I tested\n"
+            "2. What I observed\n"
+            "3. Conclusion\n"
+            "4. Follow-up\n\n"
+            f"Test request:\n{instruction.strip()}\n"
+        )
+        return prompt, lessons
+
     def _is_repo_question(self, user_message: str, project_status: dict[str, Any]) -> bool:
         if project_status.get("file_count", 0) <= 0:
             return False
@@ -881,6 +920,68 @@ class LocalAgent:
                     updates,
                     figured_out,
                     ideas,
+                    loop_result["requires_approval"],
+                ),
+                "requires_approval": loop_result["requires_approval"],
+                "approval_request": loop_result["approval_request"],
+                "session": self.sessions.snapshot(session_id),
+                "memory": memory_stats(),
+            }
+
+    def run_micro_test(self, instruction: str, model: str, session_id: str) -> dict[str, Any]:
+        with self.sessions.request_scope(session_id):
+            prompt, lessons = self._build_micro_test_prompt(instruction)
+            loop_result = self._run_tool_loop(model, prompt, session_id=session_id)
+            cleaned_reply = loop_result["reply"]
+            created_files = loop_result["created_files"]
+            tool_events = loop_result["tool_events"]
+            updates, figured_out, ideas = self._build_progress_notes(created_files, tool_events)
+
+            updates = ["Ran a focused micro-test workflow."] + updates
+            if not any("run_python" in event or "run_python_script" in event for event in tool_events):
+                ideas = ["If you want a stronger result, ask for a test that can use a tiny guarded Python check."] + ideas
+
+            append_json_row(
+                RUN_LOG_FILE,
+                {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "session_id": session_id,
+                    "message": instruction,
+                    "model": model,
+                    "mode": "micro_test",
+                    "created_files": created_files,
+                    "tool_events": tool_events,
+                    "updates": updates,
+                    "figured_out": figured_out,
+                    "ideas": ideas,
+                    "reply_preview": cleaned_reply[:400],
+                },
+            )
+
+            self._record_auto_learning(
+                session_id=session_id,
+                message=instruction,
+                created_files=created_files,
+                tool_events=tool_events,
+                figured_out=figured_out,
+                reply=cleaned_reply,
+            )
+
+            return {
+                "reply": cleaned_reply,
+                "created_files": created_files,
+                "lessons_used": lessons,
+                "tool_events": tool_events,
+                "updates": updates[:6],
+                "figured_out": figured_out,
+                "ideas": ideas[:6],
+                "trust_report": self._build_trust_report(
+                    cleaned_reply,
+                    created_files,
+                    tool_events,
+                    updates[:6],
+                    figured_out,
+                    ideas[:6],
                     loop_result["requires_approval"],
                 ),
                 "requires_approval": loop_result["requires_approval"],

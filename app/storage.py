@@ -18,6 +18,7 @@ RUN_LOG_FILE = MEMORY_DIR / "runs.json"
 OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
 PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
+PROJECT_SETTINGS_FILE = DATA_DIR / "project_settings.json"
 
 
 def ensure_dirs() -> None:
@@ -26,6 +27,17 @@ def ensure_dirs() -> None:
     for file_path in (LESSONS_FILE, KNOWLEDGE_FILE, RUN_LOG_FILE, OBSERVABILITY_FILE):
         if not file_path.exists():
             file_path.write_text("[]", encoding="utf-8")
+    if not PROJECT_SETTINGS_FILE.exists():
+        PROJECT_SETTINGS_FILE.write_text(
+            json.dumps(
+                {
+                    "project_roots": [str(path) for path in PROJECT_ROOTS],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
 
 
 def load_json_list(path: Path) -> list[dict]:
@@ -40,6 +52,31 @@ def load_json_list(path: Path) -> list[dict]:
 
 def save_json_list(path: Path, rows: list[dict]) -> None:
     path.write_text(json.dumps(rows, indent=2, ensure_ascii=True), encoding="utf-8")
+
+
+def load_project_settings() -> dict:
+    if not PROJECT_SETTINGS_FILE.exists():
+        return {"project_roots": [str(path) for path in PROJECT_ROOTS]}
+    try:
+        data = json.loads(PROJECT_SETTINGS_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            roots = data.get("project_roots")
+            if isinstance(roots, list):
+                cleaned = [str(item).strip() for item in roots if str(item).strip()]
+                return {"project_roots": cleaned or [str(path) for path in PROJECT_ROOTS]}
+    except json.JSONDecodeError:
+        pass
+    return {"project_roots": [str(path) for path in PROJECT_ROOTS]}
+
+
+def save_project_settings(settings: dict) -> dict:
+    cleaned = {
+        "project_roots": [str(item).strip() for item in settings.get("project_roots", []) if str(item).strip()],
+    }
+    if not cleaned["project_roots"]:
+        cleaned["project_roots"] = [str(path) for path in PROJECT_ROOTS]
+    PROJECT_SETTINGS_FILE.write_text(json.dumps(cleaned, indent=2, ensure_ascii=True), encoding="utf-8")
+    return cleaned
 
 
 def append_json_row(path: Path, row: dict) -> None:

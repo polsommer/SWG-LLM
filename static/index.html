@@ -211,7 +211,15 @@
                   <span class="micro-pill">Repo Memory</span>
                 </div>
                 <p class="note">Refresh SWG repo understanding, including fast-mode indexing on large trees.</p>
-                <button id="reindexBtn" class="button-secondary">Rebuild Project Index</button>
+                <label class="field">
+                  <span>Project Roots To Ingest</span>
+                  <textarea id="projectRootsInput" rows="5" placeholder="swg-main/src&#10;swg-main/dsrc"></textarea>
+                </label>
+                <p class="note">One folder per line. Relative paths are resolved from this project and must stay inside the workspace.</p>
+                <div class="ops-inline-actions">
+                  <button id="saveRootsBtn" class="button-ghost" type="button">Save Roots</button>
+                  <button id="reindexBtn" class="button-secondary">Save And Rebuild Index</button>
+                </div>
               </section>
 
               <section class="ops-card">
@@ -228,6 +236,19 @@
                   <textarea id="instruction" rows="5" placeholder="Write a technical note from the latest repo findings."></textarea>
                 </label>
                 <button id="generateBtn">Generate Artifact</button>
+              </section>
+
+              <section class="ops-card">
+                <div class="ops-card-head">
+                  <h4>Run Small Test</h4>
+                  <span class="micro-pill">Checks</span>
+                </div>
+                <p class="note">Ask the workspace to run a small guarded check, inspect results, and give you a conclusion.</p>
+                <label class="field">
+                  <span>Test Instruction</span>
+                  <textarea id="testInstruction" rows="5" placeholder="Test whether the indexed repo has multiple login-related handlers and conclude which path looks primary."></textarea>
+                </label>
+                <button id="testBtn" class="button-secondary" type="button">Run Micro Test</button>
               </section>
             </div>
           </div>

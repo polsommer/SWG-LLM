@@ -46,6 +46,10 @@ class BackgroundIndexer:
         with self._status_lock:
             self._status.update(updates)
 
+    def reset_signature(self) -> None:
+        self._last_signature = None
+        self._set_status(last_change_at=datetime.now(UTC).isoformat())
+
     def _run_loop(self) -> None:
         while not self._stop_event.is_set():
             now = datetime.now(UTC).isoformat()

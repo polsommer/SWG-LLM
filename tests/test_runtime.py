@@ -75,6 +75,40 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(result["chunk_count"], 2)
             self.assertGreaterEqual(result["truncated_file_count"], 1)
 
+    def test_project_roots_can_be_reconfigured_inside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory(dir="D:/SWG-LLM") as tmp:
+            workspace_temp = Path(tmp)
+            root_a = workspace_temp / "alpha"
+            root_b = workspace_temp / "beta"
+            root_a.mkdir(parents=True, exist_ok=True)
+            root_b.mkdir(parents=True, exist_ok=True)
+
+            indexer = ProjectIndexer()
+            with patch("app.indexer.save_project_settings", side_effect=lambda settings: settings):
+                result = indexer.configure_project_roots([str(root_a), str(root_b), str(root_a)])
+
+            self.assertEqual(result["project_root_count"], 2)
+            self.assertEqual(indexer.project_roots, [root_a.resolve(), root_b.resolve()])
+
+    def test_micro_test_workflow_returns_conclusions_payload(self) -> None:
+        agent = LocalAgent()
+        fake_loop_result = {
+            "reply": "1. What I tested\nA tiny repo check.\n2. What I observed\nIt found one likely path.\n3. Conclusion\nThe primary path appears stable.\n4. Follow-up\nInspect one more file if needed.",
+            "created_files": [],
+            "tool_events": ["Tool call: search_project {\"query\": \"login handler\"}"],
+            "requires_approval": False,
+            "approval_request": None,
+        }
+        with patch.object(agent, "_build_micro_test_prompt", return_value=("prompt", [])):
+            with patch.object(agent, "_run_tool_loop", return_value=fake_loop_result):
+                result = agent.run_micro_test("check login path", "demo", "session-1")
+
+        self.assertIn("Conclusion", result["reply"])
+        self.assertIn("updates", result)
+        self.assertIn("figured_out", result)
+        self.assertIn("ideas", result)
+        self.assertFalse(result["requires_approval"])
+
 
 if __name__ == "__main__":
     unittest.main()

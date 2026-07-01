@@ -291,6 +291,7 @@ a {
 .status-row,
 .inline-status-row,
 .composer-actions,
+.ops-inline-actions,
 .toolbar-actions,
 .ops-card-head,
 .panel-head {
@@ -676,6 +677,7 @@ li {
   .ops-card-head,
   .hero-badges,
   .composer-actions,
+  .ops-inline-actions,
   .toolbar-actions,
   .approval-actions {
     flex-direction: column;

@@ -8,7 +8,16 @@ from dataclasses import dataclass
 from datetime import datetime, UTC
 from pathlib import Path
 
-from .storage import PROJECT_INDEX_DIR, PROJECT_ROOTS, load_json_list, read_text_file, save_json_list
+from .storage import (
+    BASE_DIR,
+    PROJECT_INDEX_DIR,
+    PROJECT_ROOTS,
+    load_json_list,
+    load_project_settings,
+    read_text_file,
+    save_json_list,
+    save_project_settings,
+)
 
 
 MANIFEST_FILE = PROJECT_INDEX_DIR / "manifest.json"
@@ -59,8 +68,53 @@ class Chunk:
 
 class ProjectIndexer:
     def __init__(self) -> None:
-        self.project_roots = PROJECT_ROOTS
+        self.project_roots = self._load_project_roots()
         self._lock = threading.Lock()
+
+    def _load_project_roots(self) -> list[Path]:
+        settings = load_project_settings()
+        roots = settings.get("project_roots", [])
+        if not isinstance(roots, list):
+            return PROJECT_ROOTS[:]
+        resolved = [Path(str(item)).expanduser().resolve() for item in roots if str(item).strip()]
+        return resolved or PROJECT_ROOTS[:]
+
+    def _normalize_project_root(self, raw_path: str) -> Path:
+        text = raw_path.strip()
+        if not text:
+            raise ValueError("Project root paths cannot be blank")
+        candidate = Path(text).expanduser()
+        if not candidate.is_absolute():
+            candidate = (BASE_DIR / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
+        workspace_root = BASE_DIR.resolve()
+        if not str(candidate).startswith(str(workspace_root)):
+            raise ValueError(f"Project root must stay inside the workspace: {candidate}")
+        if not candidate.exists():
+            raise ValueError(f"Project root does not exist: {candidate}")
+        if not candidate.is_dir():
+            raise ValueError(f"Project root is not a directory: {candidate}")
+        return candidate
+
+    def configure_project_roots(self, raw_roots: list[str]) -> dict:
+        normalized: list[Path] = []
+        seen: set[str] = set()
+        for raw_root in raw_roots:
+            root = self._normalize_project_root(raw_root)
+            key = str(root).lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized.append(root)
+        if not normalized:
+            raise ValueError("At least one valid project root is required")
+        self.project_roots = normalized
+        settings = save_project_settings({"project_roots": [str(root) for root in normalized]})
+        return {
+            "project_roots": settings["project_roots"],
+            "project_root_count": len(settings["project_roots"]),
+        }
 
     def _iter_project_files(self) -> list[Path]:
         files: list[Path] = []
@@ -73,7 +127,12 @@ class ProjectIndexer:
         return sorted(files)
 
     def _project_relative(self, path: Path) -> str:
-        return path.relative_to(path.parents[2]).as_posix()
+        for root in self.project_roots:
+            try:
+                return path.relative_to(root.parent).as_posix()
+            except ValueError:
+                continue
+        return path.name
 
     def build_file_signature(self) -> list[dict]:
         signature: list[dict] = []
@@ -95,9 +154,11 @@ class ProjectIndexer:
         normalized = relative_path.strip().replace("\\", "/")
         for root in self.project_roots:
             candidates = []
-            if normalized.startswith("swg-main/"):
+            root_prefix = root.parent.name.replace("\\", "/")
+            if normalized.startswith(f"{root_prefix}/"):
                 candidates.append((root.parent.parent / normalized).resolve())
             candidates.append((root / normalized).resolve())
+            candidates.append((root.parent / normalized).resolve())
 
             for candidate in candidates:
                 allowed_root = root.parent.resolve()
@@ -721,6 +782,7 @@ class ProjectIndexer:
             }
         try:
             status = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+            status["roots"] = [str(root) for root in self.project_roots]
             if "summary" not in status:
                 status["summary"] = self.summarize_index()
             if "graph" not in status:

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from .agent import LocalAgent
 from .background_indexer import BackgroundIndexer
 from .indexer import ProjectIndexer
-from .models import ChatRequest, ChatResponse, FeedbackRequest, GenerateRequest
+from .models import ChatRequest, ChatResponse, FeedbackRequest, GenerateRequest, ProjectRootsUpdateRequest, TestRequest
 from .storage import (
     BASE_DIR,
     GENERATED_DIR,
@@ -25,6 +25,7 @@ ensure_dirs()
 app = FastAPI(title="LocalAgent 1660")
 agent = LocalAgent()
 indexer = ProjectIndexer()
+agent.indexer = indexer
 background_indexer = BackgroundIndexer(indexer=indexer)
 static_dir = BASE_DIR / "static"
 
@@ -106,6 +107,22 @@ def rebuild_project_index() -> dict:
     }
 
 
+@app.post("/api/project-index/roots")
+def update_project_roots(payload: ProjectRootsUpdateRequest) -> dict:
+    try:
+        result = indexer.configure_project_roots(payload.project_roots)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    background_indexer.reset_signature()
+    status = indexer.get_status()
+    status["roots"] = result["project_roots"]
+    status["project_root_count"] = result["project_root_count"]
+    return {
+        **status,
+        "background_reindex": background_indexer.get_status(),
+    }
+
+
 @app.get("/api/approval")
 def get_approval(request: Request) -> dict:
     session_id = get_session_id(request)
@@ -147,6 +164,15 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
 def generate(payload: GenerateRequest, request: Request) -> ChatResponse:
     try:
         result = agent.generate_file(payload.instruction, payload.filename, payload.model, get_session_id(request))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return ChatResponse(**result)
+
+
+@app.post("/api/test", response_model=ChatResponse)
+def run_micro_test(payload: TestRequest, request: Request) -> ChatResponse:
+    try:
+        result = agent.run_micro_test(payload.instruction, payload.model, get_session_id(request))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return ChatResponse(**result)

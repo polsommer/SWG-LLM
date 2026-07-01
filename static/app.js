@@ -11,6 +11,8 @@ async function fetchJson(url, options = {}) {
 
 let backendRetryTimer = null;
 let backendConnected = false;
+let autoRefreshTimer = null;
+let lastAutoRefreshSignature = "";
 const SESSION_STORAGE_KEY = "localAgentSessionId";
 
 function getSessionId() {
@@ -40,6 +42,49 @@ function renderBackendStatus(state, message) {
   el.textContent = message;
 }
 
+function computeWorkspaceSignature(data) {
+  const projectIndex = data.project_index || {};
+  const backgroundReindex = data.background_reindex || {};
+  const memory = data.memory || {};
+  const session = data.session || {};
+  return JSON.stringify({
+    indexedAt: projectIndex.indexed_at || null,
+    fileCount: projectIndex.file_count || 0,
+    chunkCount: projectIndex.chunk_count || 0,
+    roots: projectIndex.roots || [],
+    changeAt: backgroundReindex.last_change_at || null,
+    reindexAt: backgroundReindex.last_reindex_at || null,
+    knowledgeCount: memory.knowledge_count || 0,
+    lessonCount: memory.lesson_count || 0,
+    requestCount: session.request_count || 0,
+    activeRequests: session.active_requests || 0,
+  });
+}
+
+function ensureAutoRefresh() {
+  if (autoRefreshTimer) {
+    return;
+  }
+  autoRefreshTimer = window.setInterval(async () => {
+    if (!backendConnected) {
+      return;
+    }
+    try {
+      const data = await refreshFiles({ silent: true, auto: true });
+      if (!data) {
+        return;
+      }
+      const nextSignature = computeWorkspaceSignature(data);
+      if (lastAutoRefreshSignature && nextSignature !== lastAutoRefreshSignature) {
+        setOutputStatus("Ready", "Workspace auto-updated");
+      }
+      lastAutoRefreshSignature = nextSignature;
+    } catch (error) {
+      // refreshFiles already handles UI fallback and retry state.
+    }
+  }, 5000);
+}
+
 function setOutputStatus(state, meta) {
   const stateEl = document.getElementById("outputState");
   const metaEl = document.getElementById("outputMeta");
@@ -58,6 +103,25 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function parseProjectRootsInput() {
+  return document.getElementById("projectRootsInput").value
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+async function saveProjectRoots() {
+  const roots = parseProjectRootsInput();
+  if (!roots.length) {
+    throw new Error("Add at least one project folder to ingest.");
+  }
+  return fetchJson("/api/project-index/roots", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_roots: roots }),
+  });
 }
 
 function renderModelStatus(data) {
@@ -199,6 +263,10 @@ function renderFiles(data) {
   renderWorkspaceHighlights(data);
   renderModelStatus(data);
   renderMemoryDeck(data);
+  const projectRootsInput = document.getElementById("projectRootsInput");
+  if (projectRootsInput && document.activeElement !== projectRootsInput) {
+    projectRootsInput.value = (projectIndex.roots || []).join("\n");
+  }
 
   files.innerHTML = `
     <h3>Session</h3>
@@ -398,14 +466,20 @@ function formatResponse(data) {
 }
 
 async function refreshFiles(options = {}) {
-  const { silent = false } = options;
+  const { silent = false, auto = false } = options;
   try {
     const data = await fetchJson("/api/files");
     backendConnected = true;
     renderBackendStatus("online", "Local backend connected");
-    setOutputStatus("Ready", data.approval_request ? "Approval waiting" : "Awaiting request");
+    if (!auto) {
+      setOutputStatus("Ready", data.approval_request ? "Approval waiting" : "Awaiting request");
+    }
     renderFiles(data);
     renderApproval(data);
+    const nextSignature = computeWorkspaceSignature(data);
+    if (!lastAutoRefreshSignature) {
+      lastAutoRefreshSignature = nextSignature;
+    }
     return data;
   } catch (error) {
     backendConnected = false;
@@ -536,6 +610,40 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
   }
 });
 
+document.getElementById("testBtn").addEventListener("click", async () => {
+  const output = document.getElementById("output");
+  if (!backendConnected) {
+    output.textContent = "Backend is offline. Waiting to reconnect before running a test...";
+    scheduleBackendRetry();
+    return;
+  }
+  output.textContent = "Running micro test...";
+  setOutputStatus("Working", "Running micro test");
+
+  try {
+    const data = await fetchJson("/api/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: document.getElementById("model").value,
+        instruction: document.getElementById("testInstruction").value,
+      }),
+    });
+
+    output.textContent = formatResponse(data);
+    renderApproval(data);
+    renderTrust(data);
+    renderInsights(data);
+    setOutputStatus("Ready", data.requires_approval ? "Approval waiting" : "Micro test complete");
+    await refreshFiles();
+  } catch (error) {
+    output.textContent = backendConnected ? error.message : "Backend is offline. Waiting to reconnect...";
+    renderBackendStatus("offline", "Local backend offline. Retrying automatically...");
+    setOutputStatus("Offline", "Retrying backend");
+    scheduleBackendRetry();
+  }
+});
+
 document.getElementById("uploadBtn").addEventListener("click", async () => {
   const output = document.getElementById("output");
   if (!backendConnected) {
@@ -579,10 +687,11 @@ document.getElementById("reindexBtn").addEventListener("click", async () => {
     scheduleBackendRetry();
     return;
   }
-  output.textContent = "Rebuilding project index...";
-  setOutputStatus("Working", "Rebuilding index");
+  output.textContent = "Saving project roots and rebuilding index...";
+  setOutputStatus("Working", "Saving roots and rebuilding index");
 
   try {
+    await saveProjectRoots();
     const data = await fetchJson("/api/project-index", {
       method: "POST",
     });
@@ -637,6 +746,29 @@ document.getElementById("reindexBtn").addEventListener("click", async () => {
   }
 });
 
+document.getElementById("saveRootsBtn").addEventListener("click", async () => {
+  const output = document.getElementById("output");
+  if (!backendConnected) {
+    output.textContent = "Backend is offline. Waiting to reconnect before saving roots...";
+    scheduleBackendRetry();
+    return;
+  }
+  output.textContent = "Saving project roots...";
+  setOutputStatus("Working", "Saving project roots");
+
+  try {
+    const data = await saveProjectRoots();
+    output.textContent = `Project roots updated.\n\nRoots:\n- ${(data.roots || []).join("\n- ")}`;
+    setOutputStatus("Ready", "Project roots saved");
+    await refreshFiles();
+  } catch (error) {
+    output.textContent = backendConnected ? error.message : "Backend is offline. Waiting to reconnect...";
+    renderBackendStatus("offline", "Local backend offline. Retrying automatically...");
+    setOutputStatus("Offline", "Retrying backend");
+    scheduleBackendRetry();
+  }
+});
+
 document.getElementById("clearPromptBtn").addEventListener("click", () => {
   document.getElementById("message").value = "";
   document.getElementById("message").focus();
@@ -666,3 +798,4 @@ document.getElementById("clearOutputBtn").addEventListener("click", () => {
 
 setOutputStatus("Idle", "Awaiting request");
 refreshFiles();
+ensureAutoRefresh();
