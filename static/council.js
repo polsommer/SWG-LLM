@@ -51,6 +51,9 @@ function renderCouncil(snapshot) {
   const publish = decision.git_publish || null;
   const transcript = snapshot.transcript || [];
   const votes = snapshot.votes || [];
+  const context = snapshot.context || {};
+  const intelligence = context.intelligence || {};
+  const workspaceLearning = context.workspace_learning || {};
 
   document.getElementById("councilEnabled").checked = !!settings.enabled;
   document.getElementById("councilAutoCommit").checked = !!settings.auto_commit_enabled;
@@ -80,6 +83,16 @@ function renderCouncil(snapshot) {
       <span class="metric-label">Git Publish</span>
       <strong>${publish ? (publish.pushed ? "Pushed" : publish.committed ? "Committed" : "No Commit") : "Idle"}</strong>
       <p>${escapeHtml(publish ? publish.message || "Council attempted Git publish." : "No Git publish action recorded yet.")}</p>
+    </div>
+    <div class="highlight-card">
+      <span class="metric-label">Inference Inputs</span>
+      <strong>${(intelligence.suggested_tasks || []).length}</strong>
+      <p>${escapeHtml(intelligence.last_run_at ? "Council is using background focus areas and suggested tasks." : "No background inference snapshot yet.")}</p>
+    </div>
+    <div class="highlight-card">
+      <span class="metric-label">Learning Inputs</span>
+      <strong>${(workspaceLearning.recent_items || []).length}</strong>
+      <p>${escapeHtml(workspaceLearning.last_run_at ? "Council is reading recent learned-file conclusions." : "No learned-file snapshot yet.")}</p>
     </div>
   `;
 
@@ -112,6 +125,14 @@ function renderCouncil(snapshot) {
     <div class="memory-item">
       <span>Worktree Entries</span>
       <ul>${entries || "<li>No worktree changes detected</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Focus Areas</span>
+      <ul>${(intelligence.focus_areas || []).map((item) => `<li>${escapeHtml(item.title || "Focus area")}</li>`).join("") || "<li>No inferred focus areas yet</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Learned Files</span>
+      <ul>${(workspaceLearning.recent_items || []).map((item) => `<li>${escapeHtml(item.source_path || "workspace file")}</li>`).join("") || "<li>No learned files available yet</li>"}</ul>
     </div>
   `;
 
