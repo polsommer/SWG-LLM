@@ -54,6 +54,11 @@ function renderCouncil(snapshot) {
   const context = snapshot.context || {};
   const intelligence = context.intelligence || {};
   const workspaceLearning = context.workspace_learning || {};
+  const proposals = context.proposals || {};
+  const autopilot = context.autopilot || {};
+  const proposal = proposals.active_proposal || autopilot.active_proposal || null;
+  const autopilotSafety = autopilot.safety || {};
+  const autopilotExecution = autopilot.execution || {};
 
   document.getElementById("councilEnabled").checked = !!settings.enabled;
   document.getElementById("councilAutoCommit").checked = !!settings.auto_commit_enabled;
@@ -94,6 +99,16 @@ function renderCouncil(snapshot) {
       <strong>${(workspaceLearning.recent_items || []).length}</strong>
       <p>${escapeHtml(workspaceLearning.last_run_at ? "Council is reading recent learned-file conclusions." : "No learned-file snapshot yet.")}</p>
     </div>
+    <div class="highlight-card">
+      <span class="metric-label">Active Proposal</span>
+      <strong>${escapeHtml(proposal ? proposal.title || "Proposal" : "None")}</strong>
+      <p>${escapeHtml(proposal ? proposal.suggested_change || "A structured improvement is ready for debate." : "No structured proposal is active yet.")}</p>
+    </div>
+    <div class="highlight-card">
+      <span class="metric-label">Autopilot Safety</span>
+      <strong>${autopilotSafety.approved ? "Pass" : "Blocked"}</strong>
+      <p>${escapeHtml((autopilotSafety.reasons || [])[0] || "No autopilot safety verdict recorded yet.")}</p>
+    </div>
   `;
 
   document.getElementById("councilTests").innerHTML = `
@@ -133,6 +148,53 @@ function renderCouncil(snapshot) {
     <div class="memory-item">
       <span>Learned Files</span>
       <ul>${(workspaceLearning.recent_items || []).map((item) => `<li>${escapeHtml(item.source_path || "workspace file")}</li>`).join("") || "<li>No learned files available yet</li>"}</ul>
+    </div>
+  `;
+
+  document.getElementById("councilProposal").innerHTML = proposal ? `
+    <div class="memory-item">
+      <span>Title</span>
+      <strong>${escapeHtml(proposal.title || "Proposal")}</strong>
+      <p>${escapeHtml(proposal.suspected_problem || "No suspected problem recorded.")}</p>
+    </div>
+    <div class="memory-item">
+      <span>Target Files</span>
+      <ul>${(proposal.target_files || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>No target files listed</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Suggested Change</span>
+      <p>${escapeHtml(proposal.suggested_change || "No suggested change recorded.")}</p>
+    </div>
+    <div class="memory-item">
+      <span>Expected Test Impact</span>
+      <p>${escapeHtml(proposal.expected_test_impact || "No expected test impact recorded.")}</p>
+    </div>
+  ` : '<div class="memory-item"><span>Proposal</span><strong>None yet</strong><p>Learning and inference have not published an active structured proposal yet.</p></div>';
+
+  document.getElementById("councilLearning").innerHTML = `
+    <div class="memory-item">
+      <span>Briefing</span>
+      <ul>${(intelligence.briefing || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>No briefing yet</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Latest Learned Conclusions</span>
+      <ul>${(workspaceLearning.recent_items || []).map((item) => `<li>${escapeHtml(item.conclusion || item.summary || item.source_path || "learned item")}</li>`).join("") || "<li>No learned conclusions yet</li>"}</ul>
+    </div>
+  `;
+
+  document.getElementById("councilSafety").innerHTML = `
+    <div class="memory-item">
+      <span>Chosen Tests</span>
+      <ul>${(autopilotExecution.tests || {}).selected_tests?.map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>No focused tests selected yet</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Approval Reason</span>
+      <strong>${decision.approved ? "Approved" : "Needs revision"}</strong>
+      <p>${escapeHtml(decision.rationale || "No council rationale recorded yet.")}</p>
+    </div>
+    <div class="memory-item">
+      <span>Safety Reasons</span>
+      <ul>${(autopilotSafety.reasons || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>No safety blockers were recorded</li>"}</ul>
     </div>
   `;
 

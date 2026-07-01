@@ -1,0 +1,140 @@
+{
+  "proposal": {
+    "id": "intel:demo",
+    "title": "Improve demo",
+    "target_files": [
+      "src/demo.py"
+    ],
+    "suspected_problem": "Needs a small tweak.",
+    "suggested_change": "Adjust the value safely.",
+    "expected_test_impact": "A focused test should validate the new value."
+  },
+  "plan": {
+    "summary": "Small update",
+    "rationale": "Safe test patch",
+    "selected_tests": [
+      "tests/test_demo.py"
+    ],
+    "file_edits": [
+      {
+        "path": "src/demo.py",
+        "search": "VALUE = 1",
+        "replace": "VALUE = 2"
+      }
+    ]
+  },
+  "execution": {
+    "changed_files": [
+      "src/demo.py"
+    ],
+    "applied_edits": [
+      {
+        "path": "src/demo.py",
+        "search_preview": "VALUE = 1",
+        "replace_preview": "VALUE = 2"
+      }
+    ],
+    "tests": {
+      "command": "py -m unittest tests.test_demo",
+      "selected_tests": [
+        "tests/test_demo.py"
+      ],
+      "success": true,
+      "return_code": 0,
+      "stdout_tail": "",
+      "stderr_tail": ""
+    },
+    "diff": {
+      "total_lines": 568,
+      "files": [
+        {
+          "path": "app/background_council.py",
+          "added": 33,
+          "deleted": 2
+        },
+        {
+          "path": "app/background_intelligence.py",
+          "added": 37,
+          "deleted": 2
+        },
+        {
+          "path": "app/background_workspace_learning.py",
+          "added": 123,
+          "deleted": 2
+        },
+        {
+          "path": "app/main.py",
+          "added": 9,
+          "deleted": 0
+        },
+        {
+          "path": "app/storage.py",
+          "added": 163,
+          "deleted": 0
+        },
+        {
+          "path": "data/memory/intelligence.json",
+          "added": 60,
+          "deleted": 1
+        },
+        {
+          "path": "data/memory/knowledge.json",
+          "added": 24,
+          "deleted": 0
+        },
+        {
+          "path": "static/council.html",
+          "added": 33,
+          "deleted": 0
+        },
+        {
+          "path": "static/council.js",
+          "added": 62,
+          "deleted": 0
+        },
+        {
+          "path": "tests/test_background_intelligence.py",
+          "added": 5,
+          "deleted": 1
+        },
+        {
+          "path": "tests/test_background_workspace_learning.py",
+          "added": 7,
+          "deleted": 4
+        }
+      ]
+    }
+  },
+  "safety": {
+    "approved": false,
+    "scope_ok": false,
+    "relevant_tests_ok": false,
+    "large_diff_blocked": true,
+    "too_many_files_blocked": true,
+    "risky_paths": [
+      "data/memory/intelligence.json",
+      "data/memory/knowledge.json"
+    ],
+    "reasons": [
+      "Changed files drifted outside the proposal scope.",
+      "No clearly relevant tests were selected for the touched files.",
+      "Diff size exceeded the autopilot safety limit.",
+      "Too many files changed for a narrow autopilot pass.",
+      "Risky paths were touched and require manual approval."
+    ],
+    "changed_paths": [
+      "app/background_council.py",
+      "app/background_intelligence.py",
+      "app/background_workspace_learning.py",
+      "app/main.py",
+      "app/storage.py",
+      "data/memory/intelligence.json",
+      "data/memory/knowledge.json",
+      "static/council.html",
+      "static/council.js",
+      "tests/test_background_intelligence.py",
+      "tests/test_background_workspace_learning.py"
+    ],
+    "total_changed_lines": 568
+  }
+}

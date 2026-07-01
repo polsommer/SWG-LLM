@@ -11,8 +11,10 @@ from .git_publisher import GitPublisher
 from .storage import (
     KNOWLEDGE_FILE,
     append_json_row,
+    load_autopilot_snapshot,
     load_council_snapshot,
     load_intelligence_snapshot,
+    load_proposals_snapshot,
     load_workspace_learning_snapshot,
     save_council_snapshot,
 )
@@ -61,6 +63,8 @@ class BackgroundCouncil:
                     "branch": git_status.get("branch"),
                     "intelligence_run_at": context["intelligence"].get("last_run_at"),
                     "learning_run_at": context["workspace_learning"].get("last_run_at"),
+                    "proposal_updated_at": (context["proposals"].get("active_proposal") or {}).get("updated_at"),
+                    "autopilot_run_at": context["autopilot"].get("last_run_at"),
                     "learning_sources": [item.get("source_path") for item in context["workspace_learning"].get("recent_items", [])[:4]],
                 },
                 ensure_ascii=True,
@@ -193,19 +197,34 @@ class BackgroundCouncil:
         return {
             "intelligence": intelligence,
             "workspace_learning": workspace_learning,
+            "proposals": load_proposals_snapshot(),
+            "autopilot": load_autopilot_snapshot(),
         }
 
     def _has_advisory_inputs(self, context: dict[str, Any]) -> bool:
         intelligence = context.get("intelligence", {})
         workspace_learning = context.get("workspace_learning", {})
-        return bool(intelligence.get("focus_areas") or intelligence.get("suggested_tasks") or workspace_learning.get("recent_items"))
+        proposals = context.get("proposals", {})
+        autopilot = context.get("autopilot", {})
+        return bool(
+            intelligence.get("focus_areas")
+            or intelligence.get("suggested_tasks")
+            or workspace_learning.get("recent_items")
+            or proposals.get("active_proposal")
+            or autopilot.get("execution")
+        )
 
     def _format_context_digest(self, context: dict[str, Any]) -> str:
         intelligence = context.get("intelligence", {})
         workspace_learning = context.get("workspace_learning", {})
+        proposals = context.get("proposals", {})
+        autopilot = context.get("autopilot", {})
         focus_areas = intelligence.get("focus_areas", [])[:3]
         tasks = intelligence.get("suggested_tasks", [])[:3]
         learned_items = workspace_learning.get("recent_items", [])[:4]
+        active_proposal = proposals.get("active_proposal") or {}
+        autopilot_safety = autopilot.get("safety", {})
+        autopilot_execution = autopilot.get("execution", {})
 
         focus_lines = [
             f"- {item.get('title', 'Focus area')}: {item.get('reason', 'No reason provided.')}"
@@ -222,12 +241,24 @@ class BackgroundCouncil:
         return (
             f"Background intelligence last run: {intelligence.get('last_run_at') or 'never'}\n"
             f"Background workspace learning last run: {workspace_learning.get('last_run_at') or 'never'}\n"
+            f"Autopilot last run: {autopilot.get('last_run_at') or 'never'}\n"
             "Focus areas:\n"
             f"{chr(10).join(focus_lines) if focus_lines else '- None'}\n\n"
             "Suggested tasks:\n"
             f"{chr(10).join(task_lines) if task_lines else '- None'}\n\n"
             "Learned file conclusions:\n"
-            f"{chr(10).join(learned_lines) if learned_lines else '- None'}"
+            f"{chr(10).join(learned_lines) if learned_lines else '- None'}\n\n"
+            "Active proposal:\n"
+            f"- Title: {active_proposal.get('title', 'None')}\n"
+            f"- Targets: {', '.join(active_proposal.get('target_files', [])) or 'None'}\n"
+            f"- Problem: {active_proposal.get('suspected_problem', 'None')}\n"
+            f"- Change: {active_proposal.get('suggested_change', 'None')}\n"
+            f"- Expected test impact: {active_proposal.get('expected_test_impact', 'None')}\n\n"
+            "Autopilot execution:\n"
+            f"- Selected tests: {', '.join(autopilot_execution.get('tests', {}).get('selected_tests', [])) or 'None'}\n"
+            f"- Safety approved: {autopilot_safety.get('approved')}\n"
+            f"- Safety reasons: {', '.join(autopilot_safety.get('reasons', [])) or 'None'}\n"
+            f"- Changed paths: {', '.join(autopilot_safety.get('changed_paths', [])) or 'None'}"
         )
 
     def _deliberate(

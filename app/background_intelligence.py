@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import threading
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
-from .storage import KNOWLEDGE_FILE, append_json_row, load_intelligence_snapshot, save_intelligence_snapshot
+from .storage import KNOWLEDGE_FILE, append_json_row, load_intelligence_snapshot, merge_proposals, save_intelligence_snapshot
 
 
 class BackgroundIntelligence:
@@ -135,6 +136,36 @@ class BackgroundIntelligence:
             )
         return tasks[:5]
 
+    def _build_proposals(self, summary: dict[str, Any], focus_areas: list[dict[str, str]], tasks: list[dict[str, str]]) -> list[dict[str, Any]]:
+        proposals: list[dict[str, Any]] = []
+        largest_files = [str(item.get("path", "")).strip() for item in summary.get("largest_files", []) if str(item.get("path", "")).strip()]
+        default_target = largest_files[:1]
+
+        for index, area in enumerate(focus_areas[:4]):
+            target_files = [area["path"]] if area.get("path") else default_target
+            if not target_files:
+                continue
+            task = tasks[index] if index < len(tasks) else {}
+            query = area.get("query") or Path(target_files[0]).stem
+            proposals.append(
+                {
+                    "id": f"intel:{query.replace(' ', '_').replace('/', '_')}",
+                    "title": area["title"],
+                    "target_files": target_files[:3],
+                    "suspected_problem": area["reason"],
+                    "suggested_change": f"Inspect {query} and make one narrow improvement that reduces risk or complexity.",
+                    "expected_test_impact": str(task.get("test_prompt") or "A focused test should validate the touched hotspot."),
+                    "confidence": 0.62 if index < 2 else 0.5,
+                    "priority": "high" if index < 2 else "medium",
+                    "proposed_tests": [str(task.get("title", "")).strip()] if task.get("title") else [],
+                    "rationale": f"Derived from repo inference around {query}.",
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "updated_at": datetime.now(UTC).isoformat(),
+                    "status": "proposed",
+                }
+            )
+        return proposals[:5]
+
     def _build_signals(self, status: dict[str, Any], summary: dict[str, Any]) -> list[str]:
         signals: list[str] = []
         file_count = int(status.get("file_count", 0))
@@ -183,17 +214,21 @@ class BackgroundIntelligence:
         status = self.indexer.get_status()
         summary = status.get("summary", {})
         focus_areas = self._infer_focus_areas(summary)
+        suggested_tasks = self._build_suggested_tasks(summary, focus_areas)
+        proposals = self._build_proposals(summary, focus_areas, suggested_tasks)
         snapshot = {
             "last_run_at": datetime.now(UTC).isoformat(),
             "source_indexed_at": status.get("indexed_at"),
             "status": "ready" if status.get("file_count", 0) else "waiting_for_index",
             "briefing": self._build_briefing(status, summary),
             "focus_areas": focus_areas,
-            "suggested_tasks": self._build_suggested_tasks(summary, focus_areas),
+            "suggested_tasks": suggested_tasks,
             "repo_hypotheses": self._infer_repo_hypotheses(summary),
             "signals": self._build_signals(status, summary),
+            "proposals": proposals,
         }
         save_intelligence_snapshot(snapshot)
+        merge_proposals("background-intelligence", proposals)
 
         for line in snapshot["briefing"][:2]:
             append_json_row(

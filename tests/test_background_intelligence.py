@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from app.background_intelligence import BackgroundIntelligence
 
@@ -29,7 +30,8 @@ class FakeIndexer:
 class BackgroundIntelligenceTests(unittest.TestCase):
     def test_run_analysis_builds_workboard_snapshot(self) -> None:
         intelligence = BackgroundIntelligence(indexer=FakeIndexer(), poll_seconds=999)
-        snapshot = intelligence._run_analysis()
+        with patch("app.background_intelligence.merge_proposals") as merge_proposals:
+            snapshot = intelligence._run_analysis()
 
         self.assertEqual(snapshot["status"], "ready")
         self.assertTrue(snapshot["briefing"])
@@ -37,6 +39,8 @@ class BackgroundIntelligenceTests(unittest.TestCase):
         self.assertTrue(snapshot["suggested_tasks"])
         self.assertTrue(snapshot["repo_hypotheses"])
         self.assertTrue(snapshot["signals"])
+        self.assertTrue(snapshot["proposals"])
+        merge_proposals.assert_called_once()
 
 
 if __name__ == "__main__":

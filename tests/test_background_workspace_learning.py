@@ -24,8 +24,9 @@ class BackgroundWorkspaceLearningTests(unittest.TestCase):
                 with patch("app.background_workspace_learning.GENERATED_DIR", generated):
                     with patch("app.background_workspace_learning.save_workspace_learning_snapshot", side_effect=lambda snapshot: snapshot):
                         with patch("app.background_workspace_learning.append_json_row"):
-                            with patch("app.background_workspace_learning.save_generated_file"):
-                                result = learner._run_once()
+                            with patch("app.background_workspace_learning.merge_proposals"):
+                                with patch("app.background_workspace_learning.save_generated_file"):
+                                    result = learner._run_once()
 
         self.assertEqual(result["state"], "ready")
         self.assertTrue(result["recent_items"])
@@ -51,12 +52,14 @@ class BackgroundWorkspaceLearningTests(unittest.TestCase):
             )
             with patch("app.background_workspace_learning.save_workspace_learning_snapshot", side_effect=lambda snapshot: snapshot):
                 with patch("app.background_workspace_learning.append_json_row"):
-                    with patch("app.background_workspace_learning.save_generated_file"):
-                        result = learner._run_once()
+                    with patch("app.background_workspace_learning.merge_proposals"):
+                        with patch("app.background_workspace_learning.save_generated_file"):
+                            result = learner._run_once()
 
         self.assertEqual(result["state"], "ready")
         self.assertTrue(result["recent_items"])
         self.assertEqual(result["recent_items"][0]["source_path"], "repo/src/Example.java")
+        self.assertIn("proposal", result["recent_items"][0])
 
 
 if __name__ == "__main__":

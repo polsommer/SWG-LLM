@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,7 +13,10 @@ from .storage import (
     UPLOADS_DIR,
     append_json_row,
     list_text_files,
+    load_council_snapshot,
+    load_proposals_snapshot,
     load_workspace_learning_snapshot,
+    merge_proposals,
     read_text_file,
     save_generated_file,
     save_workspace_learning_snapshot,
@@ -106,7 +110,107 @@ class BackgroundWorkspaceLearning:
         relative, path = item
         suffix_rank = PRIORITY_EXTENSIONS.get(path.suffix.lower(), 99)
         is_repo = 0 if relative.startswith("repo/") else 1
-        return (is_repo, suffix_rank, relative.lower())
+        score = self._priority_score(relative, path)
+        return (is_repo, -score, suffix_rank, relative.lower())
+
+    def _priority_score(self, relative_path: str, path: Path) -> int:
+        score = 0
+        churn = self._recent_git_churn_scores()
+        normalized = relative_path.removeprefix("repo/")
+        score += churn.get(normalized, 0) * 4
+
+        council = load_council_snapshot()
+        if not bool(council.get("tests", {}).get("success", True)):
+            changed_paths = council.get("git", {}).get("changed_paths", [])
+            if normalized in changed_paths:
+                score += 14
+            if any(Path(candidate).stem == path.stem for candidate in changed_paths):
+                score += 8
+
+        score += self._graph_priority_scores().get(normalized, 0)
+        score += self._proposal_mentions().get(relative_path, 0) * 3
+        score += self._proposal_mentions().get(normalized, 0) * 3
+        return score
+
+    def _recent_git_churn_scores(self) -> dict[str, int]:
+        if self.indexer is None:
+            return {}
+        repo_root = self.indexer.project_roots[0].parent.parent if self.indexer.project_roots else None
+        if repo_root is None:
+            return {}
+        try:
+            completed = subprocess.run(
+                ["git", "-c", f"safe.directory={repo_root}", "log", "--name-only", "--pretty=format:", "-n", "20"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+        except Exception:
+            return {}
+        if completed.returncode != 0:
+            return {}
+        scores: dict[str, int] = {}
+        for line in completed.stdout.splitlines():
+            path = line.strip().replace("\\", "/")
+            if not path:
+                continue
+            scores[path] = scores.get(path, 0) + 1
+        return scores
+
+    def _graph_priority_scores(self) -> dict[str, int]:
+        if self.indexer is None or not hasattr(self.indexer, "get_status") or not hasattr(self.indexer, "inspect_graph"):
+            return {}
+        scores: dict[str, int] = {}
+        summary = self.indexer.get_status().get("summary", {})
+        for item in summary.get("top_connected_symbols", [])[:4]:
+            name = str(item.get("name", "")).strip()
+            if not name:
+                continue
+            try:
+                graph = self.indexer.inspect_graph(name, limit=3)
+            except Exception:
+                continue
+            for row in graph.get("file_matches", []):
+                path = str(row.get("path", "")).strip()
+                if path:
+                    scores[path] = scores.get(path, 0) + 10
+        return scores
+
+    def _proposal_mentions(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        snapshot = load_proposals_snapshot()
+        for proposal in snapshot.get("recent_proposals", [])[:12]:
+            for target in proposal.get("target_files", []):
+                target_text = str(target).strip()
+                if not target_text:
+                    continue
+                counts[target_text] = counts.get(target_text, 0) + 1
+                counts[f"repo/{target_text}"] = counts.get(f"repo/{target_text}", 0) + 1
+        return counts
+
+    def _proposal_from_learning(self, relative_path: str, result: dict[str, Any]) -> dict[str, Any]:
+        normalized_target = relative_path.removeprefix("repo/")
+        target_files = [normalized_target] if relative_path.startswith("repo/") else []
+        title = f"Improve {Path(normalized_target or relative_path).name}"
+        proposal = result.get("proposal")
+        if not isinstance(proposal, dict):
+            proposal = {}
+        return {
+            "id": str(proposal.get("id") or f"learning:{self._safe_artifact_name(relative_path)}"),
+            "title": str(proposal.get("title") or title)[:140],
+            "target_files": [str(item).strip() for item in proposal.get("target_files", target_files) if str(item).strip()][:4] or target_files,
+            "suspected_problem": str(proposal.get("suspected_problem") or result.get("skeptical_view") or result.get("summary") or "")[:280],
+            "suggested_change": str(proposal.get("suggested_change") or result.get("conclusion") or "")[:320],
+            "expected_test_impact": str(proposal.get("expected_test_impact") or "Add or tighten a focused regression test around the touched behavior.")[:220],
+            "confidence": max(0.05, min(0.98, float(proposal.get("confidence", 0.58) or 0.58))),
+            "priority": "high" if relative_path.startswith("repo/") else "medium",
+            "proposed_tests": [str(item).strip() for item in proposal.get("proposed_tests", []) if str(item).strip()][:4],
+            "rationale": str(proposal.get("rationale") or result.get("supporting_view") or "")[:320],
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
+            "status": "proposed",
+        }
 
     def _signature(self, items: list[tuple[str, Path]]) -> str:
         rows = []
@@ -132,6 +236,16 @@ class BackgroundWorkspaceLearning:
                 f"Ask the workspace to relate {relative_path} to current SWG repo questions.",
                 "Promote the file into a generated note if it should drive future edits or tests.",
             ],
+            "proposal": {
+                "title": f"Review {Path(relative_path).name} for a small improvement",
+                "target_files": [relative_path.removeprefix("repo/")] if relative_path.startswith("repo/") else [],
+                "suspected_problem": concern,
+                "suggested_change": "Tighten the most obvious implementation or test weakness revealed by this file.",
+                "expected_test_impact": "A narrow regression check should become easier to define.",
+                "confidence": 0.45,
+                "proposed_tests": [],
+                "rationale": f"Derived from automatic fallback learning on {relative_path}.",
+            },
         }
 
     def _learn_file(self, model: str, relative_path: str, path: Path) -> dict[str, Any]:
@@ -141,8 +255,9 @@ class BackgroundWorkspaceLearning:
         else:
             prompt = (
                 "You are part of an automatic file-learning pipeline for a SWG workspace.\n"
-                "Read the file excerpt and return strict JSON with keys: summary, supporting_view, skeptical_view, conclusion, next_actions.\n"
+                "Read the file excerpt and return strict JSON with keys: summary, supporting_view, skeptical_view, conclusion, next_actions, proposal.\n"
                 "next_actions must be an array of short strings.\n"
+                "proposal must be an object with keys: title, target_files, suspected_problem, suggested_change, expected_test_impact, confidence, proposed_tests, rationale.\n"
                 "Make this useful for future repo work, improvement ideas, and debate.\n"
                 "If the file is code, identify likely refactor, test, or automation opportunities.\n\n"
                 f"File: {relative_path}\n\n"
@@ -159,6 +274,7 @@ class BackgroundWorkspaceLearning:
                     "skeptical_view": str(parsed.get("skeptical_view", "")).strip()[:400],
                     "conclusion": str(parsed.get("conclusion", "")).strip()[:500] or f"The file {relative_path} should stay in learned workspace context.",
                     "next_actions": [str(item).strip()[:180] for item in parsed.get("next_actions", []) if str(item).strip()][:4],
+                    "proposal": parsed.get("proposal", {}),
                 }
             except Exception:
                 result = self._fallback_learning(relative_path, text)
@@ -190,6 +306,7 @@ class BackgroundWorkspaceLearning:
         return {
             "source_path": relative_path,
             "artifact_path": f"generated/{artifact_path}",
+            "proposal": self._proposal_from_learning(relative_path, result),
             **result,
         }
 
@@ -212,6 +329,10 @@ class BackgroundWorkspaceLearning:
         recent_items: list[dict[str, Any]] = []
         for relative_path, path in selected_files:
             recent_items.append(self._learn_file(model, relative_path, path))
+        merge_proposals(
+            "background-workspace-learning",
+            [item.get("proposal", {}) for item in recent_items if isinstance(item.get("proposal"), dict)],
+        )
 
         now = datetime.now(UTC).isoformat()
         snapshot.update(

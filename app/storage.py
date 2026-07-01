@@ -19,6 +19,8 @@ OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
 INTELLIGENCE_FILE = MEMORY_DIR / "intelligence.json"
 COUNCIL_FILE = MEMORY_DIR / "council.json"
 WORKSPACE_LEARNING_FILE = MEMORY_DIR / "workspace_learning.json"
+PROPOSALS_FILE = MEMORY_DIR / "proposals.json"
+AUTOPILOT_FILE = MEMORY_DIR / "autopilot.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
 PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
 PROJECT_SETTINGS_FILE = DATA_DIR / "project_settings.json"
@@ -90,6 +92,44 @@ def ensure_dirs() -> None:
                     "last_signature": "",
                     "last_error": None,
                     "recent_items": [],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
+    if not PROPOSALS_FILE.exists():
+        PROPOSALS_FILE.write_text(
+            json.dumps(
+                {
+                    "last_run_at": None,
+                    "active_proposal": None,
+                    "recent_proposals": [],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
+    if not AUTOPILOT_FILE.exists():
+        AUTOPILOT_FILE.write_text(
+            json.dumps(
+                {
+                    "settings": {
+                        "enabled": True,
+                        "poll_seconds": 90,
+                        "model": "qwen2.5:7b-instruct-q4_K_M",
+                        "max_changed_lines": 240,
+                        "max_changed_files": 3,
+                    },
+                    "state": "idle",
+                    "last_run_at": None,
+                    "last_signature": "",
+                    "last_error": None,
+                    "active_proposal": None,
+                    "plan": {},
+                    "execution": {},
+                    "safety": {},
                 },
                 indent=2,
                 ensure_ascii=True,
@@ -364,9 +404,130 @@ def save_workspace_learning_snapshot(snapshot: dict) -> dict:
     return snapshot
 
 
+def load_proposals_snapshot() -> dict:
+    if not PROPOSALS_FILE.exists():
+        return {
+            "last_run_at": None,
+            "active_proposal": None,
+            "recent_proposals": [],
+        }
+    try:
+        data = json.loads(PROPOSALS_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return {
+        "last_run_at": None,
+        "active_proposal": None,
+        "recent_proposals": [],
+    }
+
+
+def save_proposals_snapshot(snapshot: dict) -> dict:
+    PROPOSALS_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
+    return snapshot
+
+
+def load_autopilot_snapshot() -> dict:
+    if not AUTOPILOT_FILE.exists():
+        return {
+            "settings": {
+                "enabled": True,
+                "poll_seconds": 90,
+                "model": "qwen2.5:7b-instruct-q4_K_M",
+                "max_changed_lines": 240,
+                "max_changed_files": 3,
+            },
+            "state": "idle",
+            "last_run_at": None,
+            "last_signature": "",
+            "last_error": None,
+            "active_proposal": None,
+            "plan": {},
+            "execution": {},
+            "safety": {},
+        }
+    try:
+        data = json.loads(AUTOPILOT_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return {
+        "settings": {
+            "enabled": True,
+            "poll_seconds": 90,
+            "model": "qwen2.5:7b-instruct-q4_K_M",
+            "max_changed_lines": 240,
+            "max_changed_files": 3,
+        },
+        "state": "idle",
+        "last_run_at": None,
+        "last_signature": "",
+        "last_error": None,
+        "active_proposal": None,
+        "plan": {},
+        "execution": {},
+        "safety": {},
+    }
+
+
+def save_autopilot_snapshot(snapshot: dict) -> dict:
+    AUTOPILOT_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
+    return snapshot
+
+
+def merge_proposals(source: str, proposals: list[dict]) -> dict:
+    snapshot = load_proposals_snapshot()
+    current = snapshot.get("recent_proposals", [])
+    by_id: dict[str, dict] = {}
+    if isinstance(current, list):
+        for item in current:
+            if isinstance(item, dict) and str(item.get("id", "")).strip():
+                by_id[str(item["id"])] = dict(item)
+
+    for item in proposals:
+        if not isinstance(item, dict):
+            continue
+        proposal_id = str(item.get("id", "")).strip()
+        if not proposal_id:
+            continue
+        merged = dict(by_id.get(proposal_id, {}))
+        merged.update(item)
+        merged["source"] = source
+        merged["status"] = str(merged.get("status", "proposed")).strip() or "proposed"
+        by_id[proposal_id] = merged
+
+    rows = list(by_id.values())
+    rows.sort(
+        key=lambda item: (
+            0 if str(item.get("priority", "")).lower() == "high" else 1,
+            -float(item.get("confidence", 0.0) or 0.0),
+            str(item.get("updated_at") or item.get("created_at") or ""),
+        ),
+        reverse=False,
+    )
+    snapshot["recent_proposals"] = rows[:18]
+    snapshot["active_proposal"] = next(
+        (item for item in snapshot["recent_proposals"] if str(item.get("status", "proposed")) in {"proposed", "planned", "executed"}),
+        snapshot["recent_proposals"][0] if snapshot["recent_proposals"] else None,
+    )
+    snapshot["last_run_at"] = datetime_now_iso()
+    return save_proposals_snapshot(snapshot)
+
+
+def datetime_now_iso() -> str:
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).isoformat()
+
+
 def memory_stats() -> dict:
     intelligence = load_intelligence_snapshot()
     workspace_learning = load_workspace_learning_snapshot()
+    proposals = load_proposals_snapshot()
+    autopilot = load_autopilot_snapshot()
     return {
         "lesson_count": len(load_json_list(LESSONS_FILE)),
         "knowledge_count": len(load_json_list(KNOWLEDGE_FILE)),
@@ -377,6 +538,8 @@ def memory_stats() -> dict:
         "automation_focus_count": len(intelligence.get("focus_areas", [])),
         "workspace_learning_last_run_at": workspace_learning.get("last_run_at"),
         "workspace_learning_count": len(workspace_learning.get("recent_items", [])),
+        "proposal_count": len(proposals.get("recent_proposals", [])),
+        "autopilot_last_run_at": autopilot.get("last_run_at"),
     }
 
 

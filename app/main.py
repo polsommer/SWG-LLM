@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .agent import LocalAgent
+from .background_autopilot import BackgroundAutopilot
 from .background_intelligence import BackgroundIntelligence
 from .background_indexer import BackgroundIndexer
 from .background_council import BackgroundCouncil
@@ -33,6 +34,7 @@ agent.indexer = indexer
 background_indexer = BackgroundIndexer(indexer=indexer)
 background_intelligence = BackgroundIntelligence(indexer=indexer)
 background_workspace_learning = BackgroundWorkspaceLearning(generate_text=agent._ollama_generate, indexer=indexer)
+background_autopilot = BackgroundAutopilot(generate_text=agent._ollama_generate, indexer=indexer)
 consensus_service = ConsensusService(indexer=indexer, generate_text=agent._ollama_generate)
 council = BackgroundCouncil(generate_text=agent._ollama_generate)
 static_dir = BASE_DIR / "static"
@@ -48,6 +50,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 background_indexer.start()
 background_intelligence.start()
 background_workspace_learning.start()
+background_autopilot.start()
 council.start()
 
 
@@ -80,6 +83,7 @@ def health() -> dict:
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
         "background_workspace_learning": background_workspace_learning.get_status(),
+        "background_autopilot": background_autopilot.get_status(),
         "background_council": council.get_status(),
     }
 
@@ -99,6 +103,7 @@ def list_files(request: Request) -> dict:
         "memory": memory_stats(),
         "background_intelligence": background_intelligence.get_status(),
         "background_workspace_learning": background_workspace_learning.get_status(),
+        "background_autopilot": background_autopilot.get_status(),
         "background_council": council.get_status(),
         "approval_request": agent.get_pending_approval(session_id),
         "session": agent.get_session_snapshot(session_id),
@@ -117,6 +122,7 @@ def get_project_index() -> dict:
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
         "background_workspace_learning": background_workspace_learning.get_status(),
+        "background_autopilot": background_autopilot.get_status(),
         "background_council": council.get_status(),
         "model_status": agent.get_model_status(),
         "memory": memory_stats(),
@@ -131,6 +137,7 @@ def rebuild_project_index() -> dict:
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
         "background_workspace_learning": background_workspace_learning.get_status(),
+        "background_autopilot": background_autopilot.get_status(),
         "background_council": council.get_status(),
     }
 
@@ -150,6 +157,7 @@ def update_project_roots(payload: ProjectRootsUpdateRequest) -> dict:
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
         "background_workspace_learning": background_workspace_learning.get_status(),
+        "background_autopilot": background_autopilot.get_status(),
         "background_council": council.get_status(),
     }
 
@@ -178,6 +186,7 @@ def run_council_now(request: Request) -> dict:
     result = council.run_once(manual=True)
     return {
         "background_council": result,
+        "background_autopilot": background_autopilot.get_status(),
     }
 
 
