@@ -228,7 +228,7 @@ function renderAutomationDeck(data) {
     <div class="memory-item">
       <span>Learned Files</span>
       <strong>${learnedItems.length}</strong>
-      <ul>${learnedList || "<li>No uploaded/generated files learned yet</li>"}</ul>
+      <ul>${learnedList || "<li>No repo or workspace files learned yet</li>"}</ul>
     </div>
   `;
 }
@@ -274,7 +274,7 @@ function renderWorkspaceHighlights(data) {
     <div class="highlight-card">
       <span class="metric-label">File Learning</span>
       <strong>${(workspaceLearning.recent_items || []).length}</strong>
-      <p>${workspaceLearning.last_run_at ? "Uploaded and generated files are being debated into reusable notes." : "No file-learning pass has completed yet."}</p>
+      <p>${workspaceLearning.last_run_at ? "Repo code and workspace files are being debated into reusable notes." : "No file-learning pass has completed yet."}</p>
     </div>
   `;
 

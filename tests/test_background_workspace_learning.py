@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -29,6 +30,33 @@ class BackgroundWorkspaceLearningTests(unittest.TestCase):
         self.assertEqual(result["state"], "ready")
         self.assertTrue(result["recent_items"])
         self.assertEqual(result["recent_items"][0]["source_path"], "uploads/note.txt")
+
+    def test_repo_java_files_are_learned_from_project_roots(self) -> None:
+        with tempfile.TemporaryDirectory(dir="D:/SWG-LLM") as tmp:
+            repo_root = Path(tmp) / "swg-main" / "src"
+            repo_root.mkdir(parents=True, exist_ok=True)
+            java_file = repo_root / "Example.java"
+            java_file.write_text(
+                "public class Example {\n"
+                "  public void improve() {\n"
+                "    System.out.println(\"hello\");\n"
+                "  }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            learner = BackgroundWorkspaceLearning(
+                generate_text=lambda *_: "{}",
+                indexer=SimpleNamespace(project_roots=[repo_root]),
+            )
+            with patch("app.background_workspace_learning.save_workspace_learning_snapshot", side_effect=lambda snapshot: snapshot):
+                with patch("app.background_workspace_learning.append_json_row"):
+                    with patch("app.background_workspace_learning.save_generated_file"):
+                        result = learner._run_once()
+
+        self.assertEqual(result["state"], "ready")
+        self.assertTrue(result["recent_items"])
+        self.assertEqual(result["recent_items"][0]["source_path"], "repo/src/Example.java")
 
 
 if __name__ == "__main__":

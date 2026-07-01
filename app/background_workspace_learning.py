@@ -4,7 +4,7 @@ import json
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from .storage import (
     GENERATED_DIR,
@@ -18,11 +18,35 @@ from .storage import (
     save_workspace_learning_snapshot,
 )
 
+if TYPE_CHECKING:
+    from .indexer import ProjectIndexer
+
+
+PRIORITY_EXTENSIONS = {
+    ".java": 0,
+    ".js": 1,
+    ".ts": 2,
+    ".tsx": 3,
+    ".jsx": 4,
+    ".py": 5,
+    ".cs": 6,
+    ".cpp": 7,
+    ".hpp": 8,
+    ".h": 9,
+    ".lua": 10,
+}
+
 
 class BackgroundWorkspaceLearning:
-    def __init__(self, generate_text: Callable[[str, str], str], poll_seconds: int = 25) -> None:
+    def __init__(
+        self,
+        generate_text: Callable[[str, str], str],
+        poll_seconds: int = 25,
+        indexer: ProjectIndexer | None = None,
+    ) -> None:
         self.generate_text = generate_text
         self.poll_seconds = poll_seconds
+        self.indexer = indexer
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
@@ -48,7 +72,41 @@ class BackgroundWorkspaceLearning:
                 if root_name == "generated" and relative.startswith("learned/"):
                     continue
                 paths.append((f"{root_name}/{relative}", path))
-        return sorted(paths, key=lambda item: item[0])
+        paths.extend(self._tracked_repo_files())
+        return sorted(paths, key=self._sort_key)
+
+    def _tracked_repo_files(self) -> list[tuple[str, Path]]:
+        if self.indexer is None:
+            return []
+        candidates: list[tuple[str, Path]] = []
+        seen: set[str] = set()
+        for root in self.indexer.project_roots:
+            if not root.exists():
+                continue
+            for path in root.rglob("*"):
+                if not path.is_file():
+                    continue
+                suffix = path.suffix.lower()
+                if suffix not in PRIORITY_EXTENSIONS:
+                    continue
+                try:
+                    relative = path.relative_to(root.parent).as_posix()
+                except ValueError:
+                    relative = path.relative_to(root).as_posix()
+                if relative.startswith(".git/"):
+                    continue
+                key = str(path.resolve()).lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                candidates.append((f"repo/{relative}", path))
+        return candidates
+
+    def _sort_key(self, item: tuple[str, Path]) -> tuple[int, int, str]:
+        relative, path = item
+        suffix_rank = PRIORITY_EXTENSIONS.get(path.suffix.lower(), 99)
+        is_repo = 0 if relative.startswith("repo/") else 1
+        return (is_repo, suffix_rank, relative.lower())
 
     def _signature(self, items: list[tuple[str, Path]]) -> str:
         rows = []
@@ -64,7 +122,7 @@ class BackgroundWorkspaceLearning:
         lines = [line.strip() for line in text.splitlines() if line.strip()]
         summary = lines[0][:220] if lines else "No meaningful content was extracted."
         concern = lines[1][:220] if len(lines) > 1 else "The file may need deeper inspection to validate assumptions."
-        conclusion = f"This file appears worth keeping in reusable workspace context because it contains actionable text from {relative_path}."
+        conclusion = f"This file appears worth keeping in reusable workspace context because it contains actionable material from {relative_path}."
         return {
             "summary": summary,
             "supporting_view": f"The file provides concrete workspace material from {relative_path}.",
@@ -72,7 +130,7 @@ class BackgroundWorkspaceLearning:
             "conclusion": conclusion,
             "next_actions": [
                 f"Ask the workspace to relate {relative_path} to current SWG repo questions.",
-                "Promote the file into a generated note if it should drive future edits.",
+                "Promote the file into a generated note if it should drive future edits or tests.",
             ],
         }
 
@@ -85,7 +143,8 @@ class BackgroundWorkspaceLearning:
                 "You are part of an automatic file-learning pipeline for a SWG workspace.\n"
                 "Read the file excerpt and return strict JSON with keys: summary, supporting_view, skeptical_view, conclusion, next_actions.\n"
                 "next_actions must be an array of short strings.\n"
-                "Make this useful for future repo work and debate.\n\n"
+                "Make this useful for future repo work, improvement ideas, and debate.\n"
+                "If the file is code, identify likely refactor, test, or automation opportunities.\n\n"
                 f"File: {relative_path}\n\n"
                 f"Excerpt:\n{text}"
             )
@@ -149,8 +208,9 @@ class BackgroundWorkspaceLearning:
             return save_workspace_learning_snapshot(snapshot)
 
         model = str(settings.get("model") or "qwen2.5:7b-instruct-q4_K_M")
+        selected_files = files[:8]
         recent_items: list[dict[str, Any]] = []
-        for relative_path, path in files[-8:]:
+        for relative_path, path in selected_files:
             recent_items.append(self._learn_file(model, relative_path, path))
 
         now = datetime.now(UTC).isoformat()
@@ -160,12 +220,12 @@ class BackgroundWorkspaceLearning:
                 "last_run_at": now,
                 "last_signature": signature,
                 "last_error": None,
-                "recent_items": recent_items[-8:],
+                "recent_items": recent_items,
             }
         )
         save_workspace_learning_snapshot(snapshot)
 
-        for item in recent_items[-4:]:
+        for item in recent_items[:4]:
             append_json_row(
                 KNOWLEDGE_FILE,
                 {

@@ -32,7 +32,7 @@ indexer = ProjectIndexer()
 agent.indexer = indexer
 background_indexer = BackgroundIndexer(indexer=indexer)
 background_intelligence = BackgroundIntelligence(indexer=indexer)
-background_workspace_learning = BackgroundWorkspaceLearning(generate_text=agent._ollama_generate)
+background_workspace_learning = BackgroundWorkspaceLearning(generate_text=agent._ollama_generate, indexer=indexer)
 consensus_service = ConsensusService(indexer=indexer, generate_text=agent._ollama_generate)
 council = BackgroundCouncil(generate_text=agent._ollama_generate)
 static_dir = BASE_DIR / "static"
