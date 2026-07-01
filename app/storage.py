@@ -18,6 +18,7 @@ RUN_LOG_FILE = MEMORY_DIR / "runs.json"
 OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
 INTELLIGENCE_FILE = MEMORY_DIR / "intelligence.json"
 COUNCIL_FILE = MEMORY_DIR / "council.json"
+WORKSPACE_LEARNING_FILE = MEMORY_DIR / "workspace_learning.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
 PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
 PROJECT_SETTINGS_FILE = DATA_DIR / "project_settings.json"
@@ -69,6 +70,26 @@ def ensure_dirs() -> None:
                     "decision": {},
                     "transcript": [],
                     "votes": [],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
+    if not WORKSPACE_LEARNING_FILE.exists():
+        WORKSPACE_LEARNING_FILE.write_text(
+            json.dumps(
+                {
+                    "settings": {
+                        "enabled": True,
+                        "poll_seconds": 25,
+                        "model": "qwen2.5:7b-instruct-q4_K_M",
+                    },
+                    "state": "idle",
+                    "last_run_at": None,
+                    "last_signature": "",
+                    "last_error": None,
+                    "recent_items": [],
                 },
                 indent=2,
                 ensure_ascii=True,
@@ -304,8 +325,48 @@ def save_council_snapshot(snapshot: dict) -> dict:
     return snapshot
 
 
+def load_workspace_learning_snapshot() -> dict:
+    if not WORKSPACE_LEARNING_FILE.exists():
+        return {
+            "settings": {
+                "enabled": True,
+                "poll_seconds": 25,
+                "model": "qwen2.5:7b-instruct-q4_K_M",
+            },
+            "state": "idle",
+            "last_run_at": None,
+            "last_signature": "",
+            "last_error": None,
+            "recent_items": [],
+        }
+    try:
+        data = json.loads(WORKSPACE_LEARNING_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return {
+        "settings": {
+            "enabled": True,
+            "poll_seconds": 25,
+            "model": "qwen2.5:7b-instruct-q4_K_M",
+        },
+        "state": "idle",
+        "last_run_at": None,
+        "last_signature": "",
+        "last_error": None,
+        "recent_items": [],
+    }
+
+
+def save_workspace_learning_snapshot(snapshot: dict) -> dict:
+    WORKSPACE_LEARNING_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
+    return snapshot
+
+
 def memory_stats() -> dict:
     intelligence = load_intelligence_snapshot()
+    workspace_learning = load_workspace_learning_snapshot()
     return {
         "lesson_count": len(load_json_list(LESSONS_FILE)),
         "knowledge_count": len(load_json_list(KNOWLEDGE_FILE)),
@@ -314,6 +375,8 @@ def memory_stats() -> dict:
         "recent_lessons": load_recent_lessons(),
         "automation_last_run_at": intelligence.get("last_run_at"),
         "automation_focus_count": len(intelligence.get("focus_areas", [])),
+        "workspace_learning_last_run_at": workspace_learning.get("last_run_at"),
+        "workspace_learning_count": len(workspace_learning.get("recent_items", [])),
     }
 
 

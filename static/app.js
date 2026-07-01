@@ -46,6 +46,7 @@ function computeWorkspaceSignature(data) {
   const projectIndex = data.project_index || {};
   const backgroundReindex = data.background_reindex || {};
   const backgroundIntelligence = data.background_intelligence || {};
+  const backgroundWorkspaceLearning = data.background_workspace_learning || {};
   const memory = data.memory || {};
   const session = data.session || {};
   return JSON.stringify({
@@ -57,6 +58,8 @@ function computeWorkspaceSignature(data) {
     reindexAt: backgroundReindex.last_reindex_at || null,
     analystRunAt: backgroundIntelligence.last_run_at || null,
     analystSourceIndexedAt: (backgroundIntelligence.snapshot || {}).source_indexed_at || null,
+    learnedRunAt: backgroundWorkspaceLearning.last_run_at || null,
+    learnedCount: (backgroundWorkspaceLearning.recent_items || []).length,
     knowledgeCount: memory.knowledge_count || 0,
     lessonCount: memory.lesson_count || 0,
     requestCount: session.request_count || 0,
@@ -201,8 +204,11 @@ function renderAutomationDeck(data) {
   }
   const automation = data.background_intelligence || {};
   const snapshot = automation.snapshot || {};
+  const workspaceLearning = data.background_workspace_learning || {};
+  const learnedItems = workspaceLearning.recent_items || [];
   const signals = (snapshot.signals || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const focusAreas = (snapshot.focus_areas || []).map((item) => `<li>${escapeHtml(item.title || "Focus area")}</li>`).join("");
+  const learnedList = learnedItems.map((item) => `<li>${escapeHtml(item.source_path || "learned file")}</li>`).join("");
 
   container.innerHTML = `
     <div class="memory-item">
@@ -219,6 +225,11 @@ function renderAutomationDeck(data) {
       <span>Signals</span>
       <ul>${signals || "<li>No background signals yet</li>"}</ul>
     </div>
+    <div class="memory-item">
+      <span>Learned Files</span>
+      <strong>${learnedItems.length}</strong>
+      <ul>${learnedList || "<li>No uploaded/generated files learned yet</li>"}</ul>
+    </div>
   `;
 }
 
@@ -232,6 +243,7 @@ function renderWorkspaceHighlights(data) {
   const memory = data.memory || {};
   const automation = data.background_intelligence || {};
   const automationSnapshot = automation.snapshot || {};
+  const workspaceLearning = data.background_workspace_learning || {};
 
   highlights.innerHTML = `
     <div class="highlight-card">
@@ -258,6 +270,11 @@ function renderWorkspaceHighlights(data) {
       <span class="metric-label">Autopilot</span>
       <strong>${(automationSnapshot.suggested_tasks || []).length}</strong>
       <p>${automation.last_run_at || automationSnapshot.last_run_at ? "Background repo analyst is feeding a workboard." : "Waiting for the first inferred workboard pass."}</p>
+    </div>
+    <div class="highlight-card">
+      <span class="metric-label">File Learning</span>
+      <strong>${(workspaceLearning.recent_items || []).length}</strong>
+      <p>${workspaceLearning.last_run_at ? "Uploaded and generated files are being debated into reusable notes." : "No file-learning pass has completed yet."}</p>
     </div>
   `;
 
@@ -386,6 +403,8 @@ function renderWorkboard(data) {
   }
   const automation = data.background_intelligence || {};
   const snapshot = automation.snapshot || {};
+  const workspaceLearning = data.background_workspace_learning || {};
+  const learnedItems = workspaceLearning.recent_items || [];
   const briefing = snapshot.briefing || [];
   const tasks = snapshot.suggested_tasks || [];
   const hypotheses = snapshot.repo_hypotheses || [];
@@ -408,6 +427,20 @@ function renderWorkboard(data) {
 
   const briefingList = briefing.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const hypothesisList = hypotheses.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const learnedCards = learnedItems.map((item) => `
+    <article class="work-card">
+      <div class="work-card-head">
+        <div>
+          <span class="work-priority">learned</span>
+          <h4>${escapeHtml(item.source_path || "workspace file")}</h4>
+        </div>
+      </div>
+      <p>${escapeHtml(item.conclusion || item.summary || "This file was automatically learned into reusable workspace context.")}</p>
+      <div class="work-card-actions">
+        <button class="button-ghost workboard-chat-btn" type="button" data-prompt="${escapeHtml(`Use learned file ${item.source_path || ""} and summarize how it should influence our next SWG work.`)}">Use In Chat</button>
+      </div>
+    </article>
+  `).join("");
 
   container.innerHTML = `
     <div class="trust-card">
@@ -430,6 +463,9 @@ function renderWorkboard(data) {
       </div>
       <div class="work-grid">
         ${taskCards || '<article class="work-card"><h4>No workboard tasks yet</h4><p>Rebuild the project index or wait for the background analyst to process the repo.</p></article>'}
+      </div>
+      <div class="work-grid">
+        ${learnedCards || '<article class="work-card"><h4>No learned file reviews yet</h4><p>Upload files or create generated artifacts and the background learner will process them automatically.</p></article>'}
       </div>
     </div>
   `;
