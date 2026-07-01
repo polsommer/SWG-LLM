@@ -140,6 +140,12 @@ Best default:
 
 - `qwen2.5:7b-instruct-q4_K_M`
 
+## Platform guides
+
+- Ubuntu/Linux: [docs/UBUNTU_INSTALL.md](docs/UBUNTU_INSTALL.md)
+- Retrieval and ingestion setup: [docs/GETTING_STARTED_INGESTION_AND_LLM.md](docs/GETTING_STARTED_INGESTION_AND_LLM.md)
+- Web chat deployment: [docs/WEB_CHAT_DEPLOY.md](docs/WEB_CHAT_DEPLOY.md)
+
 ## Quick start
 
 1. Install Python 3.11+
