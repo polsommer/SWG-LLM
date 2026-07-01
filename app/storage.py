@@ -16,6 +16,7 @@ LESSONS_FILE = MEMORY_DIR / "lessons.json"
 KNOWLEDGE_FILE = MEMORY_DIR / "knowledge.json"
 RUN_LOG_FILE = MEMORY_DIR / "runs.json"
 OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
+INTELLIGENCE_FILE = MEMORY_DIR / "intelligence.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
 PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
 PROJECT_SETTINGS_FILE = DATA_DIR / "project_settings.json"
@@ -27,6 +28,24 @@ def ensure_dirs() -> None:
     for file_path in (LESSONS_FILE, KNOWLEDGE_FILE, RUN_LOG_FILE, OBSERVABILITY_FILE):
         if not file_path.exists():
             file_path.write_text("[]", encoding="utf-8")
+    if not INTELLIGENCE_FILE.exists():
+        INTELLIGENCE_FILE.write_text(
+            json.dumps(
+                {
+                    "last_run_at": None,
+                    "source_indexed_at": None,
+                    "status": "idle",
+                    "briefing": [],
+                    "focus_areas": [],
+                    "suggested_tasks": [],
+                    "repo_hypotheses": [],
+                    "signals": [],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
     if not PROJECT_SETTINGS_FILE.exists():
         PROJECT_SETTINGS_FILE.write_text(
             json.dumps(
@@ -166,13 +185,51 @@ def load_recent_knowledge(limit: int = 8) -> list[dict]:
     return cleaned
 
 
+def load_intelligence_snapshot() -> dict:
+    if not INTELLIGENCE_FILE.exists():
+        return {
+            "last_run_at": None,
+            "source_indexed_at": None,
+            "status": "idle",
+            "briefing": [],
+            "focus_areas": [],
+            "suggested_tasks": [],
+            "repo_hypotheses": [],
+            "signals": [],
+        }
+    try:
+        data = json.loads(INTELLIGENCE_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return {
+        "last_run_at": None,
+        "source_indexed_at": None,
+        "status": "idle",
+        "briefing": [],
+        "focus_areas": [],
+        "suggested_tasks": [],
+        "repo_hypotheses": [],
+        "signals": [],
+    }
+
+
+def save_intelligence_snapshot(snapshot: dict) -> dict:
+    INTELLIGENCE_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
+    return snapshot
+
+
 def memory_stats() -> dict:
+    intelligence = load_intelligence_snapshot()
     return {
         "lesson_count": len(load_json_list(LESSONS_FILE)),
         "knowledge_count": len(load_json_list(KNOWLEDGE_FILE)),
         "run_count": len(load_json_list(RUN_LOG_FILE)),
         "recent_knowledge": load_recent_knowledge(),
         "recent_lessons": load_recent_lessons(),
+        "automation_last_run_at": intelligence.get("last_run_at"),
+        "automation_focus_count": len(intelligence.get("focus_areas", [])),
     }
 
 

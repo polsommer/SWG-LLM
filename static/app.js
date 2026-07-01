@@ -45,6 +45,7 @@ function renderBackendStatus(state, message) {
 function computeWorkspaceSignature(data) {
   const projectIndex = data.project_index || {};
   const backgroundReindex = data.background_reindex || {};
+  const backgroundIntelligence = data.background_intelligence || {};
   const memory = data.memory || {};
   const session = data.session || {};
   return JSON.stringify({
@@ -54,6 +55,8 @@ function computeWorkspaceSignature(data) {
     roots: projectIndex.roots || [],
     changeAt: backgroundReindex.last_change_at || null,
     reindexAt: backgroundReindex.last_reindex_at || null,
+    analystRunAt: backgroundIntelligence.last_run_at || null,
+    analystSourceIndexedAt: (backgroundIntelligence.snapshot || {}).source_indexed_at || null,
     knowledgeCount: memory.knowledge_count || 0,
     lessonCount: memory.lesson_count || 0,
     requestCount: session.request_count || 0,
@@ -191,6 +194,34 @@ function renderMemoryDeck(data) {
   feed.innerHTML = recentKnowledge || "<p>No persistent knowledge notes captured yet.</p>";
 }
 
+function renderAutomationDeck(data) {
+  const container = document.getElementById("automationDeck");
+  if (!container) {
+    return;
+  }
+  const automation = data.background_intelligence || {};
+  const snapshot = automation.snapshot || {};
+  const signals = (snapshot.signals || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const focusAreas = (snapshot.focus_areas || []).map((item) => `<li>${escapeHtml(item.title || "Focus area")}</li>`).join("");
+
+  container.innerHTML = `
+    <div class="memory-item">
+      <span>State</span>
+      <strong>${escapeHtml(automation.state || "idle")}</strong>
+      <p>Last run: ${escapeHtml(automation.last_run_at || snapshot.last_run_at || "Not run yet")}</p>
+    </div>
+    <div class="memory-item">
+      <span>Focus Areas</span>
+      <strong>${(snapshot.focus_areas || []).length}</strong>
+      <ul>${focusAreas || "<li>No focus areas inferred yet</li>"}</ul>
+    </div>
+    <div class="memory-item">
+      <span>Signals</span>
+      <ul>${signals || "<li>No background signals yet</li>"}</ul>
+    </div>
+  `;
+}
+
 function renderWorkspaceHighlights(data) {
   const highlights = document.getElementById("workspaceHighlights");
   const projectIndex = data.project_index || {};
@@ -199,6 +230,8 @@ function renderWorkspaceHighlights(data) {
   const pendingApproval = data.approval_request || null;
   const modelStatus = data.model_status || {};
   const memory = data.memory || {};
+  const automation = data.background_intelligence || {};
+  const automationSnapshot = automation.snapshot || {};
 
   highlights.innerHTML = `
     <div class="highlight-card">
@@ -220,6 +253,11 @@ function renderWorkspaceHighlights(data) {
       <span class="metric-label">Memory Deck</span>
       <strong>${memory.knowledge_count || 0}</strong>
       <p>${pendingApproval ? `Approval waiting for ${escapeHtml(pendingApproval.tool_name || "tool")}` : `${executionBoundary.mode || "guarded-local"} execution`}</p>
+    </div>
+    <div class="highlight-card">
+      <span class="metric-label">Autopilot</span>
+      <strong>${(automationSnapshot.suggested_tasks || []).length}</strong>
+      <p>${automation.last_run_at || automationSnapshot.last_run_at ? "Background repo analyst is feeding a workboard." : "Waiting for the first inferred workboard pass."}</p>
     </div>
   `;
 
@@ -263,6 +301,7 @@ function renderFiles(data) {
   renderWorkspaceHighlights(data);
   renderModelStatus(data);
   renderMemoryDeck(data);
+  renderAutomationDeck(data);
   const projectRootsInput = document.getElementById("projectRootsInput");
   if (projectRootsInput && document.activeElement !== projectRootsInput) {
     projectRootsInput.value = (projectIndex.roots || []).join("\n");
@@ -337,6 +376,62 @@ function renderFiles(data) {
     <ul>${generated || "<li>No generated files yet</li>"}</ul>
     <h3>Recent Lessons</h3>
     <ul>${lessons || "<li>No lessons yet</li>"}</ul>
+  `;
+}
+
+function renderWorkboard(data) {
+  const container = document.getElementById("workboardPanel");
+  if (!container) {
+    return;
+  }
+  const automation = data.background_intelligence || {};
+  const snapshot = automation.snapshot || {};
+  const briefing = snapshot.briefing || [];
+  const tasks = snapshot.suggested_tasks || [];
+  const hypotheses = snapshot.repo_hypotheses || [];
+
+  const taskCards = tasks.map((task, index) => `
+    <article class="work-card">
+      <div class="work-card-head">
+        <div>
+          <span class="work-priority">${escapeHtml(task.priority || "medium")}</span>
+          <h4>${escapeHtml(task.title || `Suggested task ${index + 1}`)}</h4>
+        </div>
+      </div>
+      <p>${escapeHtml(task.reason || "Background analyst suggested this next step.")}</p>
+      <div class="work-card-actions">
+        <button class="button-ghost workboard-chat-btn" type="button" data-prompt="${escapeHtml(task.prompt || "")}">Load In Chat</button>
+        <button class="button-secondary workboard-test-btn" type="button" data-prompt="${escapeHtml(task.test_prompt || "")}">Load As Test</button>
+      </div>
+    </article>
+  `).join("");
+
+  const briefingList = briefing.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const hypothesisList = hypotheses.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+
+  container.innerHTML = `
+    <div class="trust-card">
+      <div class="panel-head">
+        <div>
+          <p class="section-kicker">Autonomous Workboard</p>
+          <h3>Background Repo Briefing</h3>
+        </div>
+        <span class="panel-badge">Self-Improving</span>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-block">
+          <h4>Briefing</h4>
+          <ul>${briefingList || "<li>Waiting for inferred repo briefing.</li>"}</ul>
+        </div>
+        <div class="trust-block">
+          <h4>Hypotheses</h4>
+          <ul>${hypothesisList || "<li>No repo hypotheses inferred yet.</li>"}</ul>
+        </div>
+      </div>
+      <div class="work-grid">
+        ${taskCards || '<article class="work-card"><h4>No workboard tasks yet</h4><p>Rebuild the project index or wait for the background analyst to process the repo.</p></article>'}
+      </div>
+    </div>
   `;
 }
 
@@ -476,6 +571,7 @@ async function refreshFiles(options = {}) {
     }
     renderFiles(data);
     renderApproval(data);
+    renderWorkboard(data);
     const nextSignature = computeWorkspaceSignature(data);
     if (!lastAutoRefreshSignature) {
       lastAutoRefreshSignature = nextSignature;
@@ -773,6 +869,25 @@ document.getElementById("clearPromptBtn").addEventListener("click", () => {
   document.getElementById("message").value = "";
   document.getElementById("message").focus();
   setOutputStatus("Ready", "Prompt cleared");
+});
+
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  if (target.classList.contains("workboard-chat-btn")) {
+    document.getElementById("message").value = target.dataset.prompt || "";
+    document.getElementById("message").focus();
+    setOutputStatus("Ready", "Loaded workboard prompt");
+  }
+
+  if (target.classList.contains("workboard-test-btn")) {
+    document.getElementById("testInstruction").value = target.dataset.prompt || "";
+    document.getElementById("testInstruction").focus();
+    setOutputStatus("Ready", "Loaded workboard test");
+  }
 });
 
 document.getElementById("samplePromptBtn").addEventListener("click", () => {
