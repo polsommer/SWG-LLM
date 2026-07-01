@@ -8,8 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from .agent import LocalAgent
 from .background_intelligence import BackgroundIntelligence
 from .background_indexer import BackgroundIndexer
+from .consensus_service import ConsensusService
 from .indexer import ProjectIndexer
-from .models import ChatRequest, ChatResponse, FeedbackRequest, GenerateRequest, ProjectRootsUpdateRequest, TestRequest
+from .models import ChatRequest, ChatResponse, ConsensusRequest, FeedbackRequest, GenerateRequest, ProjectRootsUpdateRequest, TestRequest
 from .storage import (
     BASE_DIR,
     GENERATED_DIR,
@@ -29,6 +30,7 @@ indexer = ProjectIndexer()
 agent.indexer = indexer
 background_indexer = BackgroundIndexer(indexer=indexer)
 background_intelligence = BackgroundIntelligence(indexer=indexer)
+consensus_service = ConsensusService(indexer=indexer, generate_text=agent._ollama_generate)
 static_dir = BASE_DIR / "static"
 
 app.add_middleware(
@@ -184,6 +186,27 @@ def run_micro_test(payload: TestRequest, request: Request) -> ChatResponse:
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return ChatResponse(**result)
+
+
+@app.post("/api/consensus")
+def run_consensus(payload: ConsensusRequest, request: Request) -> dict:
+    get_session_id(request)
+    try:
+        result = consensus_service.run(
+            prompt=payload.prompt,
+            model=payload.model,
+            filename=payload.filename,
+            top_k=payload.top_k,
+            commit_to_git=payload.commit_to_git,
+            push_to_remote=payload.push_to_remote,
+            commit_message=payload.commit_message,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {
+        **result,
+        "background_intelligence": background_intelligence.get_status(),
+    }
 
 
 @app.post("/api/feedback")

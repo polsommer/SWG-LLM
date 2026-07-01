@@ -34,6 +34,16 @@ class TestRequest(BaseModel):
     model: str = Field(default="qwen2.5:7b-instruct-q4_K_M")
 
 
+class ConsensusRequest(BaseModel):
+    prompt: str = Field(min_length=1)
+    model: str = Field(default="qwen2.5:7b-instruct-q4_K_M")
+    filename: str = Field(default="consensus/latest_consensus.json")
+    top_k: int = Field(default=5, ge=1, le=12)
+    commit_to_git: bool = False
+    push_to_remote: bool = False
+    commit_message: str = Field(default="Add consensus artifact")
+
+
 class FeedbackRequest(BaseModel):
     feedback: str = Field(min_length=1)
     successful: bool = True

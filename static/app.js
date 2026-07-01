@@ -740,6 +740,45 @@ document.getElementById("testBtn").addEventListener("click", async () => {
   }
 });
 
+document.getElementById("consensusBtn").addEventListener("click", async () => {
+  const output = document.getElementById("output");
+  if (!backendConnected) {
+    output.textContent = "Backend is offline. Waiting to reconnect before running consensus...";
+    scheduleBackendRetry();
+    return;
+  }
+  output.textContent = "Running consensus workflow...";
+  setOutputStatus("Working", "Running consensus workflow");
+
+  try {
+    const data = await fetchJson("/api/consensus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: document.getElementById("model").value,
+        prompt: document.getElementById("consensusPrompt").value,
+        filename: document.getElementById("consensusFilename").value,
+        commit_message: document.getElementById("consensusCommitMessage").value,
+        commit_to_git: document.getElementById("consensusCommitToggle").checked,
+        push_to_remote: document.getElementById("consensusPushToggle").checked,
+      }),
+    });
+
+    const git = data.git || null;
+    output.textContent = `Consensus complete.\n\nArtifact: generated/${data.artifact_relative_path}\nConfidence: ${data.confidence}\nAgreement: ${data.agreement_score}\nRounds: ${data.rounds_used}\nGrounded: ${data.grounded ? "Yes" : "No"}\n\n${data.conclusion || ""}`;
+    if (git) {
+      output.textContent += `\n\nGit:\n- Committed: ${git.committed ? "Yes" : "No"}\n- Pushed: ${git.pushed ? "Yes" : "No"}\n- Branch: ${git.branch || "unknown"}\n- Origin: ${git.origin_url || "not configured"}\n- Expected remote: ${git.expected_remote || "https://github.com/polsommer/SWG-LLM"}\n- Message: ${git.message || ""}`;
+    }
+    setOutputStatus("Ready", git ? "Consensus and git workflow complete" : "Consensus complete");
+    await refreshFiles();
+  } catch (error) {
+    output.textContent = backendConnected ? error.message : "Backend is offline. Waiting to reconnect...";
+    renderBackendStatus("offline", "Local backend offline. Retrying automatically...");
+    setOutputStatus("Offline", "Retrying backend");
+    scheduleBackendRetry();
+  }
+});
+
 document.getElementById("uploadBtn").addEventListener("click", async () => {
   const output = document.getElementById("output");
   if (!backendConnected) {

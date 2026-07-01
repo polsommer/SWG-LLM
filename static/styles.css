@@ -424,6 +424,25 @@ button {
   font: inherit;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.checkbox-row input {
+  width: auto;
+  margin: 0;
+}
+
+.checkbox-row span {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.95rem;
+}
+
 input,
 textarea {
   background: rgba(7, 12, 19, 0.92);

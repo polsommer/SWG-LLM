@@ -263,6 +263,35 @@
                 </label>
                 <button id="testBtn" class="button-secondary" type="button">Run Micro Test</button>
               </section>
+
+              <section class="ops-card">
+                <div class="ops-card-head">
+                  <h4>Consensus + Git</h4>
+                  <span class="micro-pill">Publish</span>
+                </div>
+                <p class="note">Run a grounded consensus pass, save the artifact, and optionally commit or push it toward `polsommer/SWG-LLM`.</p>
+                <label class="field">
+                  <span>Consensus Prompt</span>
+                  <textarea id="consensusPrompt" rows="5" placeholder="Reach consensus on the current SWG hotspot and produce a grounded summary with evidence."></textarea>
+                </label>
+                <label class="field">
+                  <span>Consensus File</span>
+                  <input id="consensusFilename" value="consensus/latest_consensus.json" />
+                </label>
+                <label class="field">
+                  <span>Commit Message</span>
+                  <input id="consensusCommitMessage" value="Add consensus artifact" />
+                </label>
+                <label class="checkbox-row">
+                  <input id="consensusCommitToggle" type="checkbox" />
+                  <span>Commit consensus artifact to git</span>
+                </label>
+                <label class="checkbox-row">
+                  <input id="consensusPushToggle" type="checkbox" />
+                  <span>Push current branch to `origin` after commit</span>
+                </label>
+                <button id="consensusBtn" class="button-secondary" type="button">Run Consensus Workflow</button>
+              </section>
             </div>
           </div>
         </section>
