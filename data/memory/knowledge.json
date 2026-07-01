@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "timestamp": "2026-07-01T13:42:45.605048+00:00",
+    "session_id": "background-intelligence",
+    "kind": "background_briefing",
+    "summary": "The workspace background service is tracking 120 indexed files and 480 searchable chunks from the configured SWG roots."
+  },
+  {
+    "timestamp": "2026-07-01T13:42:45.605048+00:00",
+    "session_id": "background-intelligence",
+    "kind": "background_briefing",
+    "summary": "Frequently recurring symbols right now include CreatureObject."
+  }
+]

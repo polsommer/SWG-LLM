@@ -1,0 +1,71 @@
+{
+  "last_run_at": "2026-07-01T13:42:45.605048+00:00",
+  "source_indexed_at": "2026-07-01T12:00:00+00:00",
+  "status": "ready",
+  "briefing": [
+    "The workspace background service is tracking 120 indexed files and 480 searchable chunks from the configured SWG roots.",
+    "Frequently recurring symbols right now include CreatureObject.",
+    "The largest indexed files worth reviewing first are swg-main/src/server/game/CreatureObject.cpp.",
+    "Semantic retrieval is currently orbiting concepts like combat."
+  ],
+  "focus_areas": [
+    {
+      "title": "Large file hotspot: CreatureObject.cpp",
+      "path": "swg-main/src/server/game/CreatureObject.cpp",
+      "reason": "Large indexed files tend to hide broad responsibilities and are good candidates for decomposition or targeted review.",
+      "query": "CreatureObject.cpp"
+    },
+    {
+      "title": "High-traffic symbol: CreatureObject",
+      "path": "",
+      "reason": "Cross-file graph connectivity suggests this symbol influences multiple flows and is worth tracing.",
+      "query": "CreatureObject"
+    },
+    {
+      "title": "Semantic theme: combat",
+      "path": "",
+      "reason": "Frequent semantic concepts can point to active gameplay or infrastructure concerns in the repo.",
+      "query": "combat"
+    }
+  ],
+  "suggested_tasks": [
+    {
+      "title": "Large file hotspot: CreatureObject.cpp",
+      "priority": "high",
+      "prompt": "Search the SWG repo for CreatureObject.cpp, inspect the strongest files, and summarize responsibilities, risks, and likely next edits.",
+      "test_prompt": "Run a small test around CreatureObject.cpp and conclude whether it looks like a core gameplay or infrastructure hotspot.",
+      "reason": "Large indexed files tend to hide broad responsibilities and are good candidates for decomposition or targeted review."
+    },
+    {
+      "title": "High-traffic symbol: CreatureObject",
+      "priority": "high",
+      "prompt": "Search the SWG repo for CreatureObject, inspect the strongest files, and summarize responsibilities, risks, and likely next edits.",
+      "test_prompt": "Run a small test around CreatureObject and conclude whether it looks like a core gameplay or infrastructure hotspot.",
+      "reason": "Cross-file graph connectivity suggests this symbol influences multiple flows and is worth tracing."
+    },
+    {
+      "title": "Semantic theme: combat",
+      "priority": "medium",
+      "prompt": "Search the SWG repo for combat, inspect the strongest files, and summarize responsibilities, risks, and likely next edits.",
+      "test_prompt": "Run a small test around combat and conclude whether it looks like a core gameplay or infrastructure hotspot.",
+      "reason": "Frequent semantic concepts can point to active gameplay or infrastructure concerns in the repo."
+    },
+    {
+      "title": "Audit dominant file type .cpp",
+      "priority": "medium",
+      "prompt": "Review what responsibilities are concentrated in .cpp files and identify where repo complexity is clustering.",
+      "test_prompt": "Run a small test that checks whether .cpp files dominate the repo enough to justify a specialized workflow.",
+      "reason": "Dominant file types often signal where tooling or indexing improvements will pay off first."
+    }
+  ],
+  "repo_hypotheses": [
+    "CreatureObject likely acts as a coordination point because it appears heavily connected in the cross-file graph.",
+    "Repeated dependency on server/game/CreatureObject.h suggests a reusable subsystem that may deserve a dedicated work pass.",
+    "Function patterns around handleLogin may reveal a dominant execution flow worth validating with a targeted search."
+  ],
+  "signals": [
+    "Indexed 120 files into 480 chunks using deep mode.",
+    "3 files were truncated for indexing speed, which may hide details in very large sources.",
+    "The code graph currently tracks 32 cross-file edges, which is enough to support hotspot inference."
+  ]
+}

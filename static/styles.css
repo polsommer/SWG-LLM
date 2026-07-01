@@ -91,6 +91,10 @@ a {
   z-index: 1;
 }
 
+.council-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .panel-shell {
   background: linear-gradient(180deg, rgba(12, 19, 30, 0.96), rgba(8, 14, 22, 0.92));
   border: 1px solid var(--panel-border);
@@ -302,7 +306,8 @@ a {
 
 .status-pill,
 .micro-pill,
-.panel-badge {
+.panel-badge,
+.status-link {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
@@ -311,7 +316,8 @@ a {
 }
 
 .status-pill,
-.micro-pill {
+.micro-pill,
+.status-link {
   padding: 7px 11px;
   font-size: 0.74rem;
 }
@@ -320,6 +326,13 @@ a {
   color: var(--accent-2);
   background: rgba(180, 225, 79, 0.08);
   border: 1px solid rgba(180, 225, 79, 0.18);
+}
+
+.status-link {
+  color: var(--text);
+  background: rgba(255, 195, 107, 0.12);
+  border: 1px solid rgba(255, 195, 107, 0.28);
+  text-decoration: none;
 }
 
 .micro-pill,

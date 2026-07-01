@@ -51,6 +51,25 @@ class GitPublisher:
         normalized = origin_url.strip().lower().replace(".git", "")
         return normalized.endswith(self.EXPECTED_REMOTE.lower())
 
+    def worktree_status(self) -> dict[str, Any]:
+        status_result = self._git("status", "--short")
+        if status_result.returncode != 0:
+            raise RuntimeError(status_result.stderr.strip() or "git status failed")
+        diff_stat_result = self._git("diff", "--stat")
+        name_only_result = self._git("diff", "--name-only")
+        origin_url = self._origin_url()
+        entries = [line.rstrip() for line in status_result.stdout.splitlines() if line.strip()]
+        changed_paths = [line.strip() for line in name_only_result.stdout.splitlines() if line.strip()]
+        return {
+            "branch": self._current_branch(),
+            "origin_url": origin_url,
+            "origin_matches_expected": self._origin_matches_expected(origin_url),
+            "entries": entries,
+            "changed_paths": changed_paths,
+            "diff_stat": diff_stat_result.stdout.strip(),
+            "has_changes": bool(entries),
+        }
+
     def publish_files(
         self,
         *,
@@ -103,5 +122,70 @@ class GitPublisher:
             "message": (commit_result.stdout or commit_result.stderr).strip(),
             "push_output": push_output,
             "paths": relative_paths,
+            "expected_remote": f"https://github.com/{self.EXPECTED_REMOTE}",
+        }
+
+    def publish_worktree(
+        self,
+        *,
+        commit_message: str,
+        push_to_remote: bool = False,
+    ) -> dict[str, Any]:
+        status = self.worktree_status()
+        if not status["has_changes"]:
+            return {
+                "committed": False,
+                "pushed": False,
+                "branch": status["branch"],
+                "origin_url": status["origin_url"],
+                "message": "No worktree changes were detected.",
+                "paths": [],
+                "expected_remote": f"https://github.com/{self.EXPECTED_REMOTE}",
+            }
+
+        add_result = self._git("add", "-A")
+        if add_result.returncode != 0:
+            raise RuntimeError(add_result.stderr.strip() or "git add -A failed")
+
+        commit_result = self._git("commit", "-m", commit_message)
+        if commit_result.returncode != 0:
+            combined = (commit_result.stdout + "\n" + commit_result.stderr).strip()
+            if "nothing to commit" in combined.lower():
+                return {
+                    "committed": False,
+                    "pushed": False,
+                    "branch": self._current_branch(),
+                    "origin_url": self._origin_url(),
+                    "message": "No worktree changes were left to commit after staging.",
+                    "paths": status["changed_paths"],
+                    "expected_remote": f"https://github.com/{self.EXPECTED_REMOTE}",
+                }
+            raise RuntimeError(combined or "git commit failed")
+
+        branch = self._current_branch()
+        origin_url = self._origin_url()
+        pushed = False
+        push_output = ""
+
+        if push_to_remote:
+            if not self._origin_matches_expected(origin_url):
+                raise RuntimeError(
+                    f"Refusing to push because origin does not match the expected repo `{self.EXPECTED_REMOTE}`. "
+                    f"Current origin: {origin_url or 'not configured'}"
+                )
+            push_result = self._git("push", "origin", branch)
+            if push_result.returncode != 0:
+                raise RuntimeError(push_result.stderr.strip() or push_result.stdout.strip() or "git push failed")
+            pushed = True
+            push_output = (push_result.stdout or push_result.stderr).strip()
+
+        return {
+            "committed": True,
+            "pushed": pushed,
+            "branch": branch,
+            "origin_url": origin_url,
+            "message": (commit_result.stdout or commit_result.stderr).strip(),
+            "push_output": push_output,
+            "paths": status["changed_paths"],
             "expected_remote": f"https://github.com/{self.EXPECTED_REMOTE}",
         }

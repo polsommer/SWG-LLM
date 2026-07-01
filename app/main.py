@@ -8,9 +8,10 @@ from fastapi.staticfiles import StaticFiles
 from .agent import LocalAgent
 from .background_intelligence import BackgroundIntelligence
 from .background_indexer import BackgroundIndexer
+from .background_council import BackgroundCouncil
 from .consensus_service import ConsensusService
 from .indexer import ProjectIndexer
-from .models import ChatRequest, ChatResponse, ConsensusRequest, FeedbackRequest, GenerateRequest, ProjectRootsUpdateRequest, TestRequest
+from .models import ChatRequest, ChatResponse, ConsensusRequest, CouncilSettingsRequest, FeedbackRequest, GenerateRequest, ProjectRootsUpdateRequest, TestRequest
 from .storage import (
     BASE_DIR,
     GENERATED_DIR,
@@ -31,6 +32,7 @@ agent.indexer = indexer
 background_indexer = BackgroundIndexer(indexer=indexer)
 background_intelligence = BackgroundIntelligence(indexer=indexer)
 consensus_service = ConsensusService(indexer=indexer, generate_text=agent._ollama_generate)
+council = BackgroundCouncil(generate_text=agent._ollama_generate)
 static_dir = BASE_DIR / "static"
 
 app.add_middleware(
@@ -43,6 +45,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 background_indexer.start()
 background_intelligence.start()
+council.start()
 
 
 def get_session_id(request: Request) -> str:
@@ -57,6 +60,11 @@ def index() -> FileResponse:
     return FileResponse(static_dir / "index.html")
 
 
+@app.get("/council")
+def council_page() -> FileResponse:
+    return FileResponse(static_dir / "council.html")
+
+
 @app.get("/api/health")
 def health() -> dict:
     return {
@@ -68,6 +76,7 @@ def health() -> dict:
         "project_index": indexer.get_status(),
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
+        "background_council": council.get_status(),
     }
 
 
@@ -85,6 +94,7 @@ def list_files(request: Request) -> dict:
         "model_status": agent.get_model_status(),
         "memory": memory_stats(),
         "background_intelligence": background_intelligence.get_status(),
+        "background_council": council.get_status(),
         "approval_request": agent.get_pending_approval(session_id),
         "session": agent.get_session_snapshot(session_id),
         "execution_boundary": {
@@ -101,6 +111,7 @@ def get_project_index() -> dict:
         "project_index": indexer.get_status(),
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
+        "background_council": council.get_status(),
         "model_status": agent.get_model_status(),
         "memory": memory_stats(),
     }
@@ -113,6 +124,7 @@ def rebuild_project_index() -> dict:
         **result,
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
+        "background_council": council.get_status(),
     }
 
 
@@ -130,6 +142,34 @@ def update_project_roots(payload: ProjectRootsUpdateRequest) -> dict:
         **status,
         "background_reindex": background_indexer.get_status(),
         "background_intelligence": background_intelligence.get_status(),
+        "background_council": council.get_status(),
+    }
+
+
+@app.get("/api/council")
+def get_council_status(request: Request) -> dict:
+    get_session_id(request)
+    return {
+        "background_council": council.get_status(),
+        "model_status": agent.get_model_status(),
+    }
+
+
+@app.post("/api/council/settings")
+def update_council_settings(payload: CouncilSettingsRequest, request: Request) -> dict:
+    get_session_id(request)
+    snapshot = council.update_settings(payload.model_dump())
+    return {
+        "background_council": snapshot,
+    }
+
+
+@app.post("/api/council/run")
+def run_council_now(request: Request) -> dict:
+    get_session_id(request)
+    result = council.run_once(manual=True)
+    return {
+        "background_council": result,
     }
 
 

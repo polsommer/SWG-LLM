@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SWG Council Chamber</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="nebula nebula-a"></div>
+    <div class="nebula nebula-b"></div>
+    <div class="grid-haze"></div>
+
+    <main class="workspace-shell council-shell">
+      <section class="studio">
+        <header class="hero panel-shell">
+          <div class="hero-copy">
+            <p class="eyebrow">Council Chamber</p>
+            <h2>Watch the agents test, argue, and decide.</h2>
+            <p class="lede">
+              This chamber shows the background council workflow: worktree detection, test runs, agent votes, approval decisions, and Git publishing outcomes.
+            </p>
+          </div>
+          <div class="hero-badges">
+            <a class="status-link" href="/" rel="noreferrer">Back To Workspace</a>
+          </div>
+        </header>
+
+        <section class="middle-grid">
+          <div class="panel-shell console-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Council Controls</p>
+                <h3>Automation Settings</h3>
+              </div>
+              <span class="panel-badge">Background</span>
+            </div>
+
+            <label class="checkbox-row">
+              <input id="councilEnabled" type="checkbox" />
+              <span>Enable background council reviews</span>
+            </label>
+            <label class="checkbox-row">
+              <input id="councilAutoCommit" type="checkbox" />
+              <span>Auto-commit approved worktree changes</span>
+            </label>
+            <label class="checkbox-row">
+              <input id="councilAutoPush" type="checkbox" />
+              <span>Auto-push approved commits to `origin`</span>
+            </label>
+            <label class="field">
+              <span>Poll Seconds</span>
+              <input id="councilPollSeconds" value="45" />
+            </label>
+            <label class="field">
+              <span>Auto-Approve Threshold</span>
+              <input id="councilThreshold" value="2" />
+            </label>
+            <label class="field">
+              <span>Council Model</span>
+              <input id="councilModel" value="qwen2.5:7b-instruct-q4_K_M" />
+            </label>
+            <label class="field">
+              <span>Test Command</span>
+              <textarea id="councilTestCommand" rows="3">py -m unittest discover -s tests -p "test_*.py"</textarea>
+            </label>
+
+            <div class="ops-inline-actions">
+              <button id="saveCouncilSettingsBtn" class="button-secondary" type="button">Save Council Settings</button>
+              <button id="runCouncilBtn" class="button-ghost" type="button">Run Council Now</button>
+            </div>
+          </div>
+
+          <div class="panel-shell ops-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Latest Decision</p>
+                <h3>Approval And Shipping</h3>
+              </div>
+              <span class="panel-badge">Outcome</span>
+            </div>
+            <div id="councilSummary"></div>
+          </div>
+        </section>
+
+        <section class="bottom-grid">
+          <div class="panel-shell output-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Council Transcript</p>
+                <h3>What The Agents Said</h3>
+              </div>
+              <span class="panel-badge">Debate</span>
+            </div>
+            <div id="councilTranscript" class="work-grid"></div>
+          </div>
+
+          <div class="intel-column">
+            <div class="panel-shell intel-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Test Run</p>
+                  <h3>Execution Evidence</h3>
+                </div>
+                <span class="panel-badge">Verification</span>
+              </div>
+              <div id="councilTests"></div>
+            </div>
+
+            <div class="panel-shell compact-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Git Worktree</p>
+                  <h3>Change Surface</h3>
+                </div>
+                <span class="panel-badge">Publish</span>
+              </div>
+              <div class="compact-content" id="councilGit"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/council.js"></script>
+  </body>
+</html>

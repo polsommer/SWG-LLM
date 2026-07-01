@@ -17,6 +17,7 @@ KNOWLEDGE_FILE = MEMORY_DIR / "knowledge.json"
 RUN_LOG_FILE = MEMORY_DIR / "runs.json"
 OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
 INTELLIGENCE_FILE = MEMORY_DIR / "intelligence.json"
+COUNCIL_FILE = MEMORY_DIR / "council.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
 PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
 PROJECT_SETTINGS_FILE = DATA_DIR / "project_settings.json"
@@ -40,6 +41,34 @@ def ensure_dirs() -> None:
                     "suggested_tasks": [],
                     "repo_hypotheses": [],
                     "signals": [],
+                },
+                indent=2,
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
+    if not COUNCIL_FILE.exists():
+        COUNCIL_FILE.write_text(
+            json.dumps(
+                {
+                    "settings": {
+                        "enabled": True,
+                        "auto_commit_enabled": False,
+                        "auto_push_enabled": False,
+                        "poll_seconds": 45,
+                        "test_command": 'py -m unittest discover -s tests -p "test_*.py"',
+                        "model": "qwen2.5:7b-instruct-q4_K_M",
+                        "auto_approve_threshold": 2,
+                    },
+                    "state": "idle",
+                    "last_run_at": None,
+                    "last_signature": "",
+                    "last_error": None,
+                    "git": {},
+                    "tests": {},
+                    "decision": {},
+                    "transcript": [],
+                    "votes": [],
                 },
                 indent=2,
                 ensure_ascii=True,
@@ -217,6 +246,61 @@ def load_intelligence_snapshot() -> dict:
 
 def save_intelligence_snapshot(snapshot: dict) -> dict:
     INTELLIGENCE_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
+    return snapshot
+
+
+def load_council_snapshot() -> dict:
+    if not COUNCIL_FILE.exists():
+        return {
+            "settings": {
+                "enabled": True,
+                "auto_commit_enabled": False,
+                "auto_push_enabled": False,
+                "poll_seconds": 45,
+                "test_command": 'py -m unittest discover -s tests -p "test_*.py"',
+                "model": "qwen2.5:7b-instruct-q4_K_M",
+                "auto_approve_threshold": 2,
+            },
+            "state": "idle",
+            "last_run_at": None,
+            "last_signature": "",
+            "last_error": None,
+            "git": {},
+            "tests": {},
+            "decision": {},
+            "transcript": [],
+            "votes": [],
+        }
+    try:
+        data = json.loads(COUNCIL_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return {
+        "settings": {
+            "enabled": True,
+            "auto_commit_enabled": False,
+            "auto_push_enabled": False,
+            "poll_seconds": 45,
+            "test_command": 'py -m unittest discover -s tests -p "test_*.py"',
+            "model": "qwen2.5:7b-instruct-q4_K_M",
+            "auto_approve_threshold": 2,
+        },
+        "state": "idle",
+        "last_run_at": None,
+        "last_signature": "",
+        "last_error": None,
+        "git": {},
+        "tests": {},
+        "decision": {},
+        "transcript": [],
+        "votes": [],
+    }
+
+
+def save_council_snapshot(snapshot: dict) -> dict:
+    COUNCIL_FILE.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True), encoding="utf-8")
     return snapshot
 
 

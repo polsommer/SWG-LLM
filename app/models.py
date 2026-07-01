@@ -44,6 +44,16 @@ class ConsensusRequest(BaseModel):
     commit_message: str = Field(default="Add consensus artifact")
 
 
+class CouncilSettingsRequest(BaseModel):
+    enabled: bool = True
+    auto_commit_enabled: bool = False
+    auto_push_enabled: bool = False
+    poll_seconds: int = Field(default=45, ge=10, le=3600)
+    test_command: str = Field(default='py -m unittest discover -s tests -p "test_*.py"', min_length=1)
+    model: str = Field(default="qwen2.5:7b-instruct-q4_K_M")
+    auto_approve_threshold: int = Field(default=2, ge=1, le=3)
+
+
 class FeedbackRequest(BaseModel):
     feedback: str = Field(min_length=1)
     successful: bool = True
