@@ -33,6 +33,24 @@ class BackgroundCouncilTests(unittest.TestCase):
         )
         self.assertFalse(failed["approved"])
 
+    def test_fallback_vote_approves_only_when_tests_pass(self) -> None:
+        council = BackgroundCouncil(generate_text=lambda *_: "{}")
+        approved = council._fallback_vote(
+            name="Reviewer",
+            git_status={"has_changes": True, "branch": "main"},
+            test_result={"success": True},
+            reason="ollama unavailable",
+        )
+        self.assertEqual(approved["vote"], "approve")
+
+        revise = council._fallback_vote(
+            name="Reviewer",
+            git_status={"has_changes": True, "branch": "main"},
+            test_result={"success": False},
+            reason="ollama unavailable",
+        )
+        self.assertEqual(revise["vote"], "revise")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -198,8 +198,11 @@ class BackgroundCouncil:
                 f"Test stderr tail:\n{stderr_tail or 'none'}\n\n"
                 "Decide whether this worktree should be auto-approved for commit and explain why."
             )
-            raw = self.generate_text(model, prompt)
-            parsed = self._parse_vote(raw)
+            try:
+                raw = self.generate_text(model, prompt)
+                parsed = self._parse_vote(raw)
+            except Exception as exc:
+                parsed = self._fallback_vote(name=name, git_status=git_status, test_result=test_result, reason=str(exc))
             votes.append({"speaker": name, **parsed})
             transcript.append(
                 {
@@ -211,6 +214,26 @@ class BackgroundCouncil:
                 }
             )
         return votes, transcript
+
+    def _fallback_vote(self, *, name: str, git_status: dict[str, Any], test_result: dict[str, Any], reason: str) -> dict[str, Any]:
+        tests_passed = bool(test_result.get("success"))
+        has_changes = bool(git_status.get("has_changes"))
+        branch = str(git_status.get("branch", "unknown"))
+        if not has_changes:
+            vote = "revise"
+            rationale = f"{name} fallback review: there are no current worktree changes to approve on branch {branch}. Model call failed with: {reason}"
+        elif tests_passed:
+            vote = "approve"
+            rationale = f"{name} fallback review: tests passed and the worktree has changes, so this looks shippable pending deeper model review. Model call failed with: {reason}"
+        else:
+            vote = "revise"
+            rationale = f"{name} fallback review: tests failed, so the worktree should not auto-ship yet. Model call failed with: {reason}"
+        return {
+            "vote": vote,
+            "confidence": 0.35 if tests_passed else 0.2,
+            "rationale": rationale[:800],
+            "commit_message": "Ship reviewed worktree changes",
+        }
 
     def _parse_vote(self, raw: str) -> dict[str, Any]:
         try:

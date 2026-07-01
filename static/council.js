@@ -22,6 +22,18 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
+function setCouncilStatus(state, message) {
+  const line = document.getElementById("councilStatusLine");
+  const detail = document.getElementById("councilStatusMessage");
+  if (line) {
+    line.className = `backend-status backend-status-${state}`;
+    line.textContent = message;
+  }
+  if (detail) {
+    detail.textContent = message;
+  }
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -118,32 +130,58 @@ function renderCouncil(snapshot) {
 }
 
 async function refreshCouncil() {
-  const data = await fetchJson("/api/council");
-  renderCouncil(data.background_council || {});
+  try {
+    const data = await fetchJson("/api/council");
+    renderCouncil(data.background_council || {});
+    const snapshot = data.background_council || {};
+    if (snapshot.last_error) {
+      setCouncilStatus("offline", `Council error: ${snapshot.last_error}`);
+    } else {
+      setCouncilStatus("online", `Council ${snapshot.state || "idle"}${snapshot.last_run_at ? ` | last run ${snapshot.last_run_at}` : ""}`);
+    }
+  } catch (error) {
+    setCouncilStatus("offline", error.message || "Failed to load council status.");
+  }
 }
 
 document.getElementById("saveCouncilSettingsBtn").addEventListener("click", async () => {
-  await fetchJson("/api/council/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      enabled: document.getElementById("councilEnabled").checked,
-      auto_commit_enabled: document.getElementById("councilAutoCommit").checked,
-      auto_push_enabled: document.getElementById("councilAutoPush").checked,
-      poll_seconds: Number(document.getElementById("councilPollSeconds").value || 45),
-      auto_approve_threshold: Number(document.getElementById("councilThreshold").value || 2),
-      model: document.getElementById("councilModel").value,
-      test_command: document.getElementById("councilTestCommand").value,
-    }),
-  });
-  await refreshCouncil();
+  setCouncilStatus("pending", "Saving council settings...");
+  try {
+    await fetchJson("/api/council/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        enabled: document.getElementById("councilEnabled").checked,
+        auto_commit_enabled: document.getElementById("councilAutoCommit").checked,
+        auto_push_enabled: document.getElementById("councilAutoPush").checked,
+        poll_seconds: Number(document.getElementById("councilPollSeconds").value || 45),
+        auto_approve_threshold: Number(document.getElementById("councilThreshold").value || 2),
+        model: document.getElementById("councilModel").value,
+        test_command: document.getElementById("councilTestCommand").value,
+      }),
+    });
+    setCouncilStatus("online", "Council settings saved.");
+    await refreshCouncil();
+  } catch (error) {
+    setCouncilStatus("offline", error.message || "Saving council settings failed.");
+  }
 });
 
 document.getElementById("runCouncilBtn").addEventListener("click", async () => {
-  await fetchJson("/api/council/run", {
-    method: "POST",
-  });
-  await refreshCouncil();
+  const runBtn = document.getElementById("runCouncilBtn");
+  runBtn.disabled = true;
+  setCouncilStatus("pending", "Running council now. Tests and debate may take a little while...");
+  try {
+    await fetchJson("/api/council/run", {
+      method: "POST",
+    });
+    setCouncilStatus("online", "Council run completed.");
+    await refreshCouncil();
+  } catch (error) {
+    setCouncilStatus("offline", error.message || "Council run failed.");
+  } finally {
+    runBtn.disabled = false;
+  }
 });
 
 refreshCouncil();
