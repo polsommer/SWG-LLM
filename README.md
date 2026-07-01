@@ -1,213 +1,218 @@
-# SWG-LLM Cluster Scaffold
+# LocalAgent 1660
 
-This repository provides a starter scaffold for a multi-node LLM workflow that coordinates ingestion, agent execution, consensus, and publication to a target Git repository.
+LocalAgent 1660 is a local AI workspace for the Star Wars Galaxies codebase. It now leans closer to an Odysseus-style self-hosted workspace experience while staying lightweight enough for local use on a GTX 1660 Super:
 
-## Project Layout
+- chat with a local model
+- upload files into a workspace
+- search and summarize uploaded content
+- generate new files automatically
+- keep persistent lessons and auto-captured knowledge notes
+- continuously index and re-learn the SWG repo structure
 
-- `orchestrator/` - runtime coordination logic for stage ordering, retries, and state transitions.
-- `agents/` - node-specific agent behavior (`agent_192_168_88_5`, `agent_192_168_88_10`).
-- `ingestion/` - repository cloning, parsing, embedding, and indexing pipeline hooks.
-- `consensus/` - debate/refinement orchestration and disagreement resolution flow.
-- `sync/` - output publishing and synchronization with a target Git repository.
-- `domain_adaptation/` - supervised fine-tune/LoRA data curation, benchmark comparison, canary rollout, and refresh pipeline utilities.
-- `config/cluster.yaml` - cluster topology, roles, retry policy, and debate rounds.
+It is designed to run on a GTX 1660 Super by using a quantized 7B-class model through Ollama.
 
-## Startup
+## What it can do
 
-1. Duplicate and edit `config/cluster.yaml` as needed for your environment.
-2. Export required environment variables.
-3. Start orchestration entrypoint (placeholder in this scaffold):
+- Ingest `.txt`, `.md`, `.py`, `.js`, `.json`, `.html`, `.css`, `.csv`, and other text-like files
+- Store uploaded files in a workspace
+- Build simple searchable file context
+- Generate documents or code files into the workspace
+- Maintain a lightweight reflection memory based on previous runs and user feedback
+- Use a small autonomous tool loop for listing files, reading files, and writing generated outputs
+- Run small Python tasks in a local sandbox with time limits and output isolation
+- Automatically ingest `swg-main/src` and `swg-main/dsrc` into a local project index
+- Poll project roots in the background and auto-reindex when source files change
+- Extract richer code structure such as imports, inheritance, function signatures, and call hints
+- Use repo-aware answer planning so codebase questions search first, inspect likely files, then answer with clearer evidence
+- Build a cross-file code graph so symbols can be traced across definitions, references, calls, and inheritance
+- Use lightweight semantic retrieval so conceptually related code can still be found even when exact names differ
+- Show an Odysseus-inspired workspace UI with model status, memory deck, research output, and repo intelligence panels
+- Auto-capture lightweight knowledge notes from successful runs so the workspace accumulates reusable context
 
-```bash
-python -m orchestrator
+## What "self improving" means here
+
+This project does **not** let the AI silently rewrite its own code. Instead, it improves safely by:
+
+- saving successful patterns and lessons
+- recording user feedback
+- using recent lessons in later prompts
+- tracking which generated files were created and why
+- storing simple timestamped knowledge observations from successful research and generation runs
+
+That gives you practical improvement without unsafe autonomous behavior.
+
+## Autonomous tool use
+
+The chat agent can now choose from a small safe toolset during a request:
+
+- `list_files`
+- `read_file`
+- `write_file`
+- `run_python`
+- `run_python_script`
+- `index_project`
+- `search_project`
+- `read_project_file`
+
+The loop is intentionally narrow:
+
+- it can only read from `uploads/` and `generated/`
+- it can only write into `generated/`
+- it executes at most a few tool steps per request
+- tool activity is shown in the UI so you can see what happened
+
+## Code execution sandbox
+
+The project now includes a guarded local Python runner for small tasks such as:
+
+- reading uploaded text or CSV-like files copied into the sandbox
+- generating derived output files
+- testing tiny scripts before saving results
+
+Current guardrails:
+
+- execution uses an isolated run folder under `data/sandboxes/`
+- reads are limited to sandbox-local files during execution
+- writes are limited to the sandbox `output/` folder
+- output files are copied into `data/generated/sandbox_runs/...`
+- each run has a short timeout
+- imports are limited to a small allowlist of data-oriented standard-library modules
+- obviously risky calls such as process spawning and socket access are rejected before execution
+- only Python execution is supported right now
+
+Important note:
+
+This is a practical local safety layer with best-effort restrictions, not a hardened security boundary against hostile code. It is appropriate for your own trusted tasks, prototypes, and agent workflows on a personal machine.
+
+If you need to execute untrusted code, the next step is a stronger boundary such as VM-, container-, or OS-isolated execution outside this in-process app model.
+
+## Project inference
+
+The agent now auto-ingests these code roots:
+
+- `swg-main/src`
+- `swg-main/dsrc`
+
+It stores a local project index with:
+
+- file manifest data
+- code chunks
+- lightweight symbol extraction
+- imports and includes
+- inheritance hints
+- function signatures
+- simple call/reference hints
+- a cross-file symbol and file relationship graph
+- semantic chunk vectors for hybrid retrieval
+- searchable snippets for retrieval during chat
+
+That gives the model a much better chance of answering repo questions without loading the whole codebase into one prompt.
+
+## Background reindexing
+
+The app now runs a lightweight background monitor for:
+
+- `swg-main/src`
+- `swg-main/dsrc`
+
+It periodically checks for file path, size, or modification-time changes and automatically rebuilds the project index when it detects updates.
+
+The UI shows:
+
+- current monitor state
+- last scan time
+- last detected change
+- last automatic reindex time
+- any background error
+- current local model availability
+- memory counts and recent knowledge observations
+- whether the repo is using deep indexing or large-repo fast mode
+
+## Hardware target
+
+Recommended model choices for a GTX 1660 Super 6GB:
+
+- `qwen2.5:7b-instruct-q4_K_M`
+- `mistral:7b-instruct-q4_K_M`
+- `phi3:mini`
+
+Best default:
+
+- `qwen2.5:7b-instruct-q4_K_M`
+
+## Quick start
+
+1. Install Python 3.11+
+2. Install Ollama from [https://ollama.com](https://ollama.com)
+3. Pull a model:
+
+```powershell
+ollama pull qwen2.5:7b-instruct-q4_K_M
 ```
 
-> This scaffold provides structure and starter modules. Add concrete runtime integrations for your preferred model/runtime stack.
+4. Create a virtual environment and install dependencies:
 
-## Ubuntu / Debian Installation Guide
-
-The scaffold is pure Python, so setup is straightforward on both Ubuntu and Debian.
-
-### 1) Install system dependencies
-
-```bash
-sudo apt update
-sudo apt install -y git python3 python3-venv python3-pip
-```
-
-Optional but useful tools:
-
-```bash
-sudo apt install -y build-essential tree
-```
-
-### 2) Clone the repository
-
-```bash
-git clone https://github.com/polsommer/SWG-LLM.git SWG-LLM
-cd SWG-LLM
-```
-
-### 3) Create and activate a virtual environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-```
-
-### 4) Install Python dependencies
-
-Install dependencies from `requirements.txt`:
-
-```bash
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-`requirements.txt` currently contains only comments because this scaffold uses the Python standard library today. Add pinned third-party dependencies there as your implementation grows.
+5. Run the app:
 
-### 5) Configure runtime environment
-
-Copy and adapt the cluster config for your environment:
-
-```bash
-cp config/cluster.yaml config/cluster.local.yaml
+```powershell
+uvicorn app.main:app --reload
 ```
 
-Set environment variables (example):
+Or on this machine:
 
-```bash
-export SWG_CLUSTER_CONFIG=config/cluster.local.yaml
-export SWG_SOURCE_REPO=/path/to/source/repo
-export SWG_TARGET_REPO=/path/to/target/repo
-export SWG_WORKDIR=$PWD/.swg-workdir
-export SWG_LOG_LEVEL=INFO
+```powershell
+.\run_local_agent.ps1
 ```
 
-### 6) Run the scaffold
+To keep the local server alive in the background on Windows:
 
-```bash
-python -m orchestrator
+```powershell
+.\run_local_agent_background.ps1
 ```
 
-The orchestrator now runs continuously and renders a live console view with:
-- node health/status,
-- rolling conversation/telemetry output ("talk"), and
-- runtime metrics (success rate, task counts, events/min).
+6. Open:
 
-Useful runtime options:
-
-```bash
-export SWG_CONSOLE_REFRESH_SECONDS=2   # how often to refresh console
-export SWG_MAX_TICKS=0                 # 0 means run forever; set >0 for bounded runs/tests
+```text
+http://127.0.0.1:8000
 ```
 
-### 7) Run tests
+## Project structure
 
-```bash
-python -m unittest discover -s tests
+```text
+local_agent1660/
+  app/
+    main.py
+    agent.py
+    models.py
+    storage.py
+    prompts.py
+  static/
+    index.html
+    styles.css
+    app.js
+  data/
+    uploads/
+    generated/
+    memory/
 ```
 
-### Debian/Ubuntu troubleshooting tips
+## Notes
 
-- If `python` is not found, use `python3` in every command.
-- If `venv` creation fails, ensure `python3-venv` is installed.
-- If Git clone via SSH fails, test with HTTPS first and verify SSH keys separately.
-- Keep your virtual environment active (`source .venv/bin/activate`) when running commands.
+- The agent uses Ollama over HTTP at `http://127.0.0.1:11434`
+- Uploaded files are stored locally
+- Generated files are written to `data/generated/`
+- Reflection notes are stored in `data/memory/`
 
+## Next upgrades you can add
 
-## Full Guide: Data Ingestion + LLM Setup
-
-If you want an end-to-end, copy/paste walkthrough (ingest data, validate retrieval, and connect your LLM with a simple RAG flow), use:
-
-- `docs/GETTING_STARTED_INGESTION_AND_LLM.md`
-- `docs/FULLY_AUTOMATED_CLUSTER_GUIDE.md` (cluster mode + automatic ingest/review/learn/repeat runbook)
-
-Quick commands to start ingestion and learning context immediately:
-
-```bash
-python -m ingestion ingest
-python -m ingestion ask "How does orchestration and consensus work?" --top-k 3
-python -m ingestion auto-ingest --interval-seconds 300
-```
-
-Optional convenience targets:
-
-```bash
-make ingest
-make ask Q="How does orchestration and consensus work?"
-make auto-ingest INTERVAL=300
-```
-
-## Web Chat Deployment
-
-Use the lightweight web chat server to expose retrieval + LLM responses on your LAN:
-
-```bash
-python -m webapp
-```
-
-For a full deployment runbook (environment variables, LAN/firewall guidance, reverse proxy options, and health checks), see:
-
-- `docs/WEB_CHAT_DEPLOY.md`
-
-Convenience targets:
-
-```bash
-make web-chat
-make web-auto INTERVAL=60
-```
-
-`make web-auto` starts the auto-ingest loop in the background and then launches the web chat server in the foreground.
-
-## Environment Variables
-
-- `SWG_CLUSTER_CONFIG` - path to cluster config file (default: `config/cluster.yaml`).
-- `SWG_SOURCE_REPO` - source repository URL or local path for ingestion.
-- `SWG_TARGET_REPO` - target repository URL for sync publishing.
-- `SWG_WORKDIR` - local working directory for cloned repositories and intermediate artifacts.
-- `SWG_EMBEDDING_MODEL` - embedding model identifier for ingestion/indexing.
-- `SWG_MAX_RETRIES` - optional override for retry attempts.
-- `SWG_LOG_LEVEL` - logging verbosity (`DEBUG`, `INFO`, `WARN`, `ERROR`).
-
-## Failure Handling
-
-The scaffold is organized to make failures explicit and recoverable:
-
-- **Orchestrator-level retries:** use retry policy from cluster config to restart failed stages.
-- **Stage-level isolation:** ingestion, consensus, and sync live in separate modules to support targeted re-runs.
-- **Agent disagreement handling:** consensus module should record disagreements and gate sync until resolution criteria are met.
-- **Sync safeguards:** publish step should be idempotent and use branch/commit checks before forceful updates.
-- **Auditability:** each module should emit structured logs with run IDs to support root-cause analysis.
-
-Implement production-specific alerting, checkpointing, and rollback behavior as a next step.
-
-## Train and Ship a Domain-Adapted Variant
-
-Use the `domain_adaptation` module to execute an end-to-end workflow:
-
-1. Curate high-signal reviewed prompt/response pairs (`DatasetCurator`).
-2. Remove noisy/contradictory entries and standardize response prefix format (`Answer:`).
-3. Train a supervised variant (`FineTuneTrainer`) with `method="lora"` or full fine-tune metadata.
-4. Build benchmark suites for correctness, tone, policy adherence, and task completion (`BenchmarkSuite`).
-5. Compare base vs tuned variants offline and gate rollout on improvement (`OfflineComparator`).
-6. Deploy through canary routing plus rollback triggers (`CanaryDeploymentManager`).
-7. Periodically refresh training data from reviewed production interactions (`DataRefreshScheduler`).
-
-Run coverage for this flow:
-
-```bash
-python -m unittest tests/test_domain_adaptation_pipeline.py
-```
-
-### Closed-loop quality system (production -> training -> release gate)
-
-The `domain_adaptation.pipeline` module includes a reference closed-loop quality workflow:
-
-1. Track per-interaction core metrics: `answer_correctness`, `task_success`, `latency_ms`, `tool_success_rate`, and `user_satisfaction` via `InteractionQualityMetrics`.
-2. Apply standardized failure labels with `FailureTaxonomy`: `hallucination`, `missed_context`, `wrong_tool_choice`, and `incomplete_action`.
-3. Route only high-impact or low-confidence outputs to human review using `HumanReviewRouter`.
-4. Automatically route reviewed examples to both training and regression datasets with `ReviewedExampleRouter`.
-5. Run segmented nightly regression checks and block release on metric drops with `NightlyRegressionEvaluator`.
-6. Segment all reporting by `use_case` to avoid aggregate-only blind spots.
-7. Publish a shared quality snapshot with `QualityDashboardPublisher` for engineering and product teams.
+- better embeddings and semantic search
+- tool-use plugins
+- task queue and background workers
+- multi-agent planner
+- Git integration

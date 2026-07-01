@@ -1,0 +1,4 @@
+compat_profile	scope_overlay_mode	mag_overlay_mode	barrel_overlay_mode	decal_layer_profile	skin_layer_order	overlay_layer_order	decal_layer_order	normal_blend_mode	note
+s	s	s	s	s	i	i	i	s	s
+
+overlay_scope_mag_barrel_safe	preserve	preserve	preserve	decal_skin_layer_01	10	20	30	reoriented	Attachment overlays composite after skin base and before decals to prevent masking.

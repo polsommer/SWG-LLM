@@ -3,158 +3,295 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LocalAgent 1660</title>
+    <title>SWG Odyssey Workspace</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="backdrop-grid"></div>
-    <div class="backdrop-orb backdrop-orb-a"></div>
-    <div class="backdrop-orb backdrop-orb-b"></div>
-    <main class="shell">
-      <section class="hero">
-        <div class="hero-topline">
-          <p class="eyebrow">Autonomous Local Agent</p>
-          <div class="status-row">
-            <span class="status-pill">GTX 1660 Super Ready</span>
-            <span class="status-pill">Ollama Linked</span>
-            <span class="status-pill">Repo Inference</span>
-          </div>
+    <div class="nebula nebula-a"></div>
+    <div class="nebula nebula-b"></div>
+    <div class="grid-haze"></div>
+
+    <main class="workspace-shell">
+      <aside class="nav-rail panel-shell">
+        <div class="brand-lockup">
+          <p class="brand-kicker">Self-Hosted AI Workspace</p>
+          <h1>SWG Odyssey</h1>
+          <p class="brand-copy">
+            An Odysseus-style local workspace, tuned for the Star Wars Galaxies repo, local models,
+            persistent memory, and repo-aware research.
+          </p>
         </div>
-        <h1>LocalAgent 1660<span class="cursor">_</span></h1>
-        <p class="lede">
-          A cyber-agent command deck for local chat, codebase ingestion, generated
-          files, and structured agent reasoning on a GTX 1660 Super.
-        </p>
-        <p class="note">
-          Python execution uses a guarded local runner for trusted tasks. It is not a hardened boundary for untrusted code.
-        </p>
+
         <div id="backendStatus" class="backend-status backend-status-pending">
           Connecting to local backend...
         </div>
-        <div id="heroMetrics" class="hero-metrics">
-          <div class="metric-card">
-            <span class="metric-label">Session</span>
+
+        <section class="surface-stack">
+          <div class="surface-card active">
+            <span class="surface-icon">01</span>
+            <div>
+              <h2>Agent Studio</h2>
+              <p>Chat, plan, inspect, and generate artifacts against the SWG codebase.</p>
+            </div>
+          </div>
+          <div class="surface-card">
+            <span class="surface-icon">02</span>
+            <div>
+              <h2>Deep Repo Research</h2>
+              <p>Hybrid search, file inspection, graph-aware code tracing, and evidence-first answers.</p>
+            </div>
+          </div>
+          <div class="surface-card">
+            <span class="surface-icon">03</span>
+            <div>
+              <h2>Memory Deck</h2>
+              <p>Auto-captured lessons, research notes, and reusable observations from successful runs.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="rail-metrics">
+          <div class="rail-metric">
+            <span>Session</span>
             <strong id="heroSession">Booting</strong>
-            <p>Per-browser runtime state</p>
           </div>
-          <div class="metric-card">
-            <span class="metric-label">Project Index</span>
+          <div class="rail-metric">
+            <span>Repo Index</span>
             <strong id="heroIndex">Waiting</strong>
-            <p>Repo-aware retrieval status</p>
           </div>
-          <div class="metric-card">
-            <span class="metric-label">Execution</span>
+          <div class="rail-metric">
+            <span>Execution</span>
             <strong id="heroBoundary">Guarded</strong>
-            <p>Trusted local tasks only</p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="grid grid-main">
-        <div class="panel panel-console">
-          <div class="panel-head">
-            <h2>Agent Console</h2>
-            <span class="panel-tag">Live Prompt Channel</span>
+        <section class="rail-note">
+          <p>
+            Inspired by the workspace feel of
+            <a href="https://github.com/pewdiepie-archdaemon/odysseus" target="_blank" rel="noreferrer">Odysseus</a>,
+            but specialized around local SWG code intelligence and lightweight auto-learning.
+          </p>
+        </section>
+      </aside>
+
+      <section class="studio">
+        <header class="hero panel-shell">
+          <div class="hero-copy">
+            <p class="eyebrow">Star Wars Galaxies Intelligence Workspace</p>
+            <h2>Make the repo legible, searchable, and continuously learnable.</h2>
+            <p class="lede">
+              This workspace keeps one foot in local models and one foot in the actual SWG codebase.
+              Use it for repo forensics, notes, generated files, and durable understanding.
+            </p>
           </div>
-          <div class="composer-toolbar">
-            <label class="field field-inline">
-              <span>Model</span>
-              <input id="model" value="qwen2.5:7b-instruct-q4_K_M" />
+          <div class="hero-badges">
+            <span class="status-pill">Local Models</span>
+            <span class="status-pill">Repo Search</span>
+            <span class="status-pill">Persistent Memory</span>
+            <span class="status-pill">Guarded Execution</span>
+          </div>
+        </header>
+
+        <section class="top-grid">
+          <div class="panel-shell feature-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Workspace Modes</p>
+                <h3>Odyssey Surfaces</h3>
+              </div>
+              <span class="panel-badge">SWG Focus</span>
+            </div>
+            <div class="feature-grid">
+              <article class="feature-card">
+                <h4>Agent Chat</h4>
+                <p>Drive the model like a repo copilot with evidence and memory.</p>
+              </article>
+              <article class="feature-card">
+                <h4>Deep Research</h4>
+                <p>Search first, inspect the strongest files, and capture findings.</p>
+              </article>
+              <article class="feature-card">
+                <h4>Artifacts</h4>
+                <p>Turn findings into notes, docs, code drafts, and generated outputs.</p>
+              </article>
+              <article class="feature-card">
+                <h4>Auto Learning</h4>
+                <p>Persist useful lessons and knowledge traces across sessions.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="stack-column">
+            <div class="panel-shell compact-panel" id="modelStatusCard">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Model Deck</p>
+                  <h3>Ollama Status</h3>
+                </div>
+                <span class="panel-badge">Local</span>
+              </div>
+              <div class="compact-content" id="modelDeck">
+                <p>Checking local model availability...</p>
+              </div>
+            </div>
+
+            <div class="panel-shell compact-panel" id="memoryStatusCard">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Memory Deck</p>
+                  <h3>Auto Learning</h3>
+                </div>
+                <span class="panel-badge">Persistent</span>
+              </div>
+              <div class="compact-content" id="memoryDeck">
+                <p>Loading memory state...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="middle-grid">
+          <div class="panel-shell console-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Agent Studio</p>
+                <h3>Prompt The Workspace</h3>
+              </div>
+              <span class="panel-badge">Research + Generation</span>
+            </div>
+
+            <div class="composer-toolbar">
+              <label class="field field-inline">
+                <span>Model</span>
+                <input id="model" value="qwen2.5:7b-instruct-q4_K_M" />
+              </label>
+              <div class="composer-actions">
+                <button id="clearPromptBtn" class="button-secondary" type="button">Clear Prompt</button>
+                <button id="samplePromptBtn" class="button-ghost" type="button">Use SWG Sample</button>
+              </div>
+            </div>
+
+            <label class="field field-grow">
+              <span>Ask the workspace</span>
+              <textarea id="message" rows="10" placeholder="Trace the login flow, inspect the most relevant SWG files, and summarize what actually handles authentication."></textarea>
             </label>
-            <div class="composer-actions">
-              <button id="clearPromptBtn" class="button-secondary" type="button">Clear Prompt</button>
-              <button id="samplePromptBtn" class="button-ghost" type="button">Use Sample</button>
-            </div>
-          </div>
-          <label class="field field-grow">
-            <span>Ask the agent</span>
-            <textarea id="message" rows="9" placeholder="Create a landing page from my uploaded notes."></textarea>
-          </label>
-          <div class="inline-status-row">
-            <span id="promptHint" class="micro-pill">Repo-aware search available</span>
-            <span id="sessionHint" class="micro-pill">Session scoped</span>
-          </div>
-          <button id="chatBtn">Transmit To Agent</button>
-        </div>
 
-        <div class="panel panel-ops">
-          <div class="panel-head">
-            <h2>Operations</h2>
-            <span class="panel-tag">Ingest And Build</span>
-          </div>
-          <div class="ops-stack">
-            <section class="ops-card">
-              <div class="ops-card-head">
-                <h3 class="section-label">Upload Files</h3>
-                <span class="micro-pill">Context</span>
-              </div>
-              <p class="note">Add notes, code, and reference docs for grounded answers and generated artifacts.</p>
-              <input id="fileInput" type="file" multiple />
-              <button id="uploadBtn" class="button-secondary">Upload Assets</button>
-            </section>
-
-            <section class="ops-card">
-              <div class="ops-card-head">
-                <h3 class="section-label">Project Ingest</h3>
-                <span class="micro-pill">Index</span>
-              </div>
-              <p class="note">Indexes `swg-main/src` and `swg-main/dsrc` for repo-aware inference.</p>
-              <button id="reindexBtn" class="button-secondary">Rebuild Project Index</button>
-            </section>
-
-            <section class="ops-card">
-              <div class="ops-card-head">
-                <h3 class="section-label">Create File</h3>
-                <span class="micro-pill">Artifact</span>
-              </div>
-              <label class="field">
-                <span>Filename</span>
-                <input id="filename" value="drafts/output.md" />
-              </label>
-              <label class="field">
-                <span>Instruction</span>
-                <textarea id="instruction" rows="5" placeholder="Write a product brief using the uploaded files."></textarea>
-              </label>
-              <button id="generateBtn">Generate Artifact</button>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid grid-bottom">
-        <div class="panel panel-output">
-          <div class="panel-head">
-            <h2>Agent Output</h2>
-            <span class="panel-tag">Reasoning Trace</span>
-          </div>
-          <div class="output-toolbar">
             <div class="inline-status-row">
-              <span id="outputState" class="micro-pill">Idle</span>
-              <span id="outputMeta" class="micro-pill">Awaiting request</span>
+              <span id="promptHint" class="micro-pill">Repo-aware retrieval</span>
+              <span id="sessionHint" class="micro-pill">Persistent session memory</span>
+              <span class="micro-pill">Generated artifacts</span>
             </div>
-            <div class="toolbar-actions">
-              <button id="copyOutputBtn" class="button-ghost" type="button">Copy Output</button>
-              <button id="clearOutputBtn" class="button-secondary" type="button">Clear Output</button>
+
+            <button id="chatBtn">Run Agent Research</button>
+          </div>
+
+          <div class="panel-shell ops-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Operations</p>
+                <h3>Ingest, Index, Generate</h3>
+              </div>
+              <span class="panel-badge">Workspace Tools</span>
+            </div>
+
+            <div class="ops-stack">
+              <section class="ops-card">
+                <div class="ops-card-head">
+                  <h4>Upload Files</h4>
+                  <span class="micro-pill">Context</span>
+                </div>
+                <p class="note">Bring in notes, logs, plans, or snippets that should live beside the SWG repo context.</p>
+                <input id="fileInput" type="file" multiple />
+                <button id="uploadBtn" class="button-secondary">Upload Assets</button>
+              </section>
+
+              <section class="ops-card">
+                <div class="ops-card-head">
+                  <h4>Rebuild Index</h4>
+                  <span class="micro-pill">Repo Memory</span>
+                </div>
+                <p class="note">Refresh SWG repo understanding, including fast-mode indexing on large trees.</p>
+                <button id="reindexBtn" class="button-secondary">Rebuild Project Index</button>
+              </section>
+
+              <section class="ops-card">
+                <div class="ops-card-head">
+                  <h4>Create Artifact</h4>
+                  <span class="micro-pill">Documents</span>
+                </div>
+                <label class="field">
+                  <span>Filename</span>
+                  <input id="filename" value="research/swg-summary.md" />
+                </label>
+                <label class="field">
+                  <span>Instruction</span>
+                  <textarea id="instruction" rows="5" placeholder="Write a technical note from the latest repo findings."></textarea>
+                </label>
+                <button id="generateBtn">Generate Artifact</button>
+              </section>
             </div>
           </div>
-          <div id="trustPanel"></div>
-          <div class="output-shell">
-            <pre id="output">Waiting for your first prompt.</pre>
+        </section>
+
+        <section class="bottom-grid">
+          <div class="panel-shell output-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Research Output</p>
+                <h3>Conversation, Evidence, Trust</h3>
+              </div>
+              <span class="panel-badge">Live Trace</span>
+            </div>
+
+            <div class="output-toolbar">
+              <div class="inline-status-row">
+                <span id="outputState" class="micro-pill">Idle</span>
+                <span id="outputMeta" class="micro-pill">Awaiting request</span>
+              </div>
+              <div class="toolbar-actions">
+                <button id="copyOutputBtn" class="button-ghost" type="button">Copy Output</button>
+                <button id="clearOutputBtn" class="button-secondary" type="button">Clear Output</button>
+              </div>
+            </div>
+
+            <div id="trustPanel"></div>
+            <div class="output-shell">
+              <pre id="output">Waiting for your first prompt.</pre>
+            </div>
+            <div id="approvalBox"></div>
+            <div id="insights"></div>
           </div>
-          <div id="approvalBox"></div>
-          <div id="insights"></div>
-        </div>
-        <div class="panel panel-intel">
-          <div class="panel-head">
-            <h2>Workspace Intel</h2>
-            <span class="panel-tag">Index Monitor</span>
+
+          <div class="intel-column">
+            <div class="panel-shell intel-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Workspace Intel</p>
+                  <h3>Repo And Session State</h3>
+                </div>
+                <span class="panel-badge">Observed</span>
+              </div>
+              <div id="workspaceHighlights" class="workspace-highlights"></div>
+              <div id="files"></div>
+            </div>
+
+            <div class="panel-shell compact-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">Recent Learning</p>
+                  <h3>Odyssey Memory Feed</h3>
+                </div>
+                <span class="panel-badge">Knowledge</span>
+              </div>
+              <div class="compact-content" id="memoryFeed">
+                <p>Recent observations will appear here.</p>
+              </div>
+            </div>
           </div>
-          <div id="workspaceHighlights" class="workspace-highlights"></div>
-          <div id="files"></div>
-        </div>
+        </section>
       </section>
     </main>
 
     <script src="/static/app.js"></script>
   </body>
-  </html>
+</html>

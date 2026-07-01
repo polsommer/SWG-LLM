@@ -1,0 +1,14 @@
+map_id	event_dressing_enabled	sky_profile	flyover_profile	announcement_profile	start_time_utc	end_time_utc	sky_toggle	flyover_toggle	announcement_toggle	fallback_profile
+s	b[1]	s	s	s	s	s	b[1]	b[1]	b[1]	s
+corellia	1	stars_corellia_night	imp_patrol_low	city_pa_empire	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+naboo	1	stars_naboo_blue	celebration_ships	city_pa_republic	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+tatooine	1	stars_tatooine_deep	smuggler_run_low	city_pa_spaceport	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+dantooine	1	stars_dantooine_crisp	recon_flyby	city_pa_frontier	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+dathomir	1	stars_dathomir_red	shadow_flock	city_pa_witchlands	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+endor	1	stars_endor_mist	alliance_patrol_mid	city_pa_outpost	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+lok	1	stars_lok_amber	raider_flyby	city_pa_wastes	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+rori	1	stars_rori_silver	civic_flyby	city_pa_republic	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+talus	1	stars_talus_twilight	security_flyby	city_pa_frontier	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+yavin4	1	stars_yavin_emerald	temple_overflight	city_pa_expedition	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+kashyyyk	1	stars_kashyyyk_canopy	trader_flyby	city_pa_treecity	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default
+mustafar	1	stars_mustafar_ash	mining_convoy	city_pa_industrial	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1	1	1	baseline_default

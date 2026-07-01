@@ -1,0 +1,24 @@
+NAME	CATEGORY	AFFECTS	MAX_TIMES_APPLIED	COST	AFFECT_AMOUNT	REQUIRED_EXPERTISE
+s	s	s	i	i	i	s
+strength	attributes	strength_modified	10	1	15	
+constitution	attributes	constitution_modified	10	1	15	
+stamina	attributes	stamina_modified	10	1	15	
+precision	attributes	precision_modified	10	1	15	
+agility	attributes	agility_modified	10	1	15	
+luck	attributes	luck_modified	10	1	15	
+kinetic	resistances	expertise_innate_protection_kinetic	5	1	350	
+energy	resistances	expertise_innate_protection_energy	5	1	350	
+elemental	resistances	elemental_resistance	5	1	350	
+crafting	trade	crafting_assembly	5	2	2	
+crafting_success	trade	crafting_critical_success_bonus	2	5	2	
+hand_sampling	trade	expertise_resource_sampling_increase	5	2	3	harvest_faire  
+critical_hit	combat	expertise_critical_niche_all	1	3	4	
+critical_hit_defense	combat	expertise_critical_hit_reduction	1	3	4	
+dodge	combat	expertise_glancing_blow_all	1	3	4	
+action_cost_reduction	combat	expertise_action_all	1	3	6	
+healing	misc	expertise_dot_absorption_all	5	2	4	holism
+healer	misc	expertise_healing_all	5	2	3	holism
+reactive_go_with_the_flow	misc	movement_speed	5	2	6	go_with_the_flow 
+reactive_second_chance	misc	reactive_second_chance	4	2	3	second_chance
+harvest_faire	misc	expertise_harvester_collection_increase	5	2	2	harvest_faire  
+flush_with_success	misc	flush_with_success	5	2	4	flush_with_success  

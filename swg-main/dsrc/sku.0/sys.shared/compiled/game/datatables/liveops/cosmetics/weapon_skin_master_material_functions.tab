@@ -1,0 +1,5 @@
+function_id	edge_glow_fresnel_intensity	fresnel_falloff	gradient_sweep_speed	gradient_sweep_direction_u	gradient_sweep_direction_v	gradient_noise_texture	gradient_noise_strength	rarity_common_color	rarity_rare_color	rarity_epic_color	rarity_legendary_color	animation_quality_mode	instructions
+s	f	f	f	f	f	s	f	s	s	s	s	s	s
+
+mat_fn_weapon_skin_rebellion_master	2.15	4.75	0.21	1.00	0.08	tex_noise_weapon_skin_rebellion_01	0.18	#6A7A8C	#2DA7FF	#8E4BFF	#FFB547	high	fresnel_edge=(pow(1-dot(N,V),fresnel_falloff)*edge_glow_fresnel_intensity); gradient=sample(noise,uv+panner(time*gradient_sweep_speed))*gradient_noise_strength; emissive=(rarity_color+gradient)*fresnel_edge;
+mat_fn_weapon_skin_rebellion_fallback	1.30	3.40	0.08	1.00	0.00	tex_noise_weapon_skin_rebellion_01	0.05	#6A7A8C	#2DA7FF	#8E4BFF	#FFB547	low	uses single panner/noise sample for low+medium presets and clamps emissive at 0.75 to reduce animation instruction count.

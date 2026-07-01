@@ -20,6 +20,7 @@ class ChatResponse(BaseModel):
     requires_approval: bool = False
     approval_request: dict[str, Any] | None = None
     session: dict[str, Any] = Field(default_factory=dict)
+    memory: dict[str, Any] = Field(default_factory=dict)
 
 
 class GenerateRequest(BaseModel):

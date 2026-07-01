@@ -13,12 +13,14 @@ from .prompts import SYSTEM_PROMPT
 from .sandbox import PythonSandbox
 from .session_manager import SessionManager
 from .storage import (
+    KNOWLEDGE_FILE,
     LESSONS_FILE,
     OBSERVABILITY_FILE,
     RUN_LOG_FILE,
     append_json_row,
     collect_workspace_context,
     load_recent_lessons,
+    memory_stats,
     read_snippet,
     resolve_workspace_file,
     save_generated_file,
@@ -392,18 +394,123 @@ class LocalAgent:
         }
 
     def _ollama_generate(self, model: str, prompt: str) -> str:
-        response = requests.post(
-            self.ollama_url,
-            json={
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-            },
-            timeout=180,
-        )
-        response.raise_for_status()
-        payload: dict[str, Any] = response.json()
+        try:
+            response = requests.post(
+                self.ollama_url,
+                json={
+                    "model": model,
+                    "prompt": prompt,
+                    "stream": False,
+                },
+                timeout=180,
+            )
+        except requests.RequestException as exc:
+            raise RuntimeError(
+                "Could not reach Ollama at http://127.0.0.1:11434. Start Ollama first, then try again."
+            ) from exc
+
+        if response.status_code >= 400:
+            error_message = ""
+            try:
+                payload = response.json()
+                if isinstance(payload, dict):
+                    error_message = str(payload.get("error", "")).strip()
+            except ValueError:
+                error_message = response.text.strip()
+
+            if response.status_code == 404 and "not found" in error_message.lower():
+                raise RuntimeError(
+                    f"Ollama model '{model}' is not installed. Run `ollama pull {model}` and try again."
+                )
+            if error_message:
+                raise RuntimeError(f"Ollama request failed: {error_message}")
+            response.raise_for_status()
+
+        payload = response.json()
         return str(payload.get("response", "")).strip()
+
+    def get_model_status(self) -> dict[str, Any]:
+        try:
+            response = requests.get("http://127.0.0.1:11434/api/tags", timeout=5)
+            response.raise_for_status()
+            payload = response.json()
+            models = payload.get("models", [])
+            names = []
+            if isinstance(models, list):
+                for row in models[:24]:
+                    if isinstance(row, dict):
+                        name = str(row.get("name", "")).strip()
+                        if name:
+                            names.append(name)
+            return {
+                "connected": True,
+                "model_count": len(names),
+                "models": names,
+                "default_model_ready": "qwen2.5:7b-instruct-q4_K_M" in names,
+            }
+        except requests.RequestException as exc:
+            return {
+                "connected": False,
+                "model_count": 0,
+                "models": [],
+                "default_model_ready": False,
+                "error": str(exc),
+            }
+
+    def _record_auto_learning(
+        self,
+        *,
+        session_id: str,
+        message: str,
+        created_files: list[str],
+        tool_events: list[str],
+        figured_out: list[str],
+        reply: str,
+    ) -> None:
+        observations: list[tuple[str, str]] = []
+
+        if figured_out:
+            observations.append(("repo_finding", figured_out[0][:220]))
+
+        searched = []
+        for event in tool_events:
+            parsed = self._parse_tool_event(event)
+            if not parsed:
+                continue
+            _, details = parsed
+            if str(details["tool_name"]) == "search_project":
+                query = str(details["arguments"].get("query", "")).strip()
+                if query:
+                    searched.append(query)
+        if searched:
+            observations.append(("search_pattern", f"Searched SWG repo with query: {searched[0][:180]}"))
+
+        if created_files:
+            observations.append(("artifact", f"Generated files: {', '.join(created_files[:4])}"))
+
+        message_hint = message.strip().replace("\n", " ")
+        if message_hint:
+            observations.append(("request", f"Handled request: {message_hint[:180]}"))
+
+        reply_hint = reply.strip().replace("\n", " ")
+        if reply_hint:
+            observations.append(("response", f"Reply summary: {reply_hint[:180]}"))
+
+        seen: set[str] = set()
+        for kind, summary in observations[:4]:
+            key = f"{kind}:{summary}"
+            if key in seen:
+                continue
+            seen.add(key)
+            append_json_row(
+                KNOWLEDGE_FILE,
+                {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "session_id": session_id,
+                    "kind": kind,
+                    "summary": summary,
+                },
+            )
 
     def _try_parse_tool_json(self, candidate: str) -> dict[str, Any] | None:
         try:
@@ -711,6 +818,15 @@ class LocalAgent:
                     },
                 )
 
+            self._record_auto_learning(
+                session_id=session_id,
+                message=message,
+                created_files=created_files,
+                tool_events=tool_events,
+                figured_out=figured_out,
+                reply=cleaned_reply,
+            )
+
             return {
                 "reply": cleaned_reply,
                 "created_files": created_files,
@@ -731,6 +847,7 @@ class LocalAgent:
                 "requires_approval": loop_result["requires_approval"],
                 "approval_request": loop_result["approval_request"],
                 "session": self.sessions.snapshot(session_id),
+                "memory": memory_stats(),
             }
 
     def generate_file(self, instruction: str, filename: str, model: str, session_id: str) -> dict[str, Any]:
@@ -769,6 +886,7 @@ class LocalAgent:
                 "requires_approval": loop_result["requires_approval"],
                 "approval_request": loop_result["approval_request"],
                 "session": self.sessions.snapshot(session_id),
+                "memory": memory_stats(),
             }
 
     def get_pending_approval(self, session_id: str) -> dict[str, Any] | None:
@@ -793,6 +911,7 @@ class LocalAgent:
                     "requires_approval": False,
                     "approval_request": None,
                     "session": self.sessions.snapshot(session_id),
+                    "memory": memory_stats(),
                 }
 
             tool_events = list(pending.tool_events)
@@ -839,6 +958,7 @@ class LocalAgent:
                 "requires_approval": loop_result["requires_approval"],
                 "approval_request": loop_result["approval_request"],
                 "session": self.sessions.snapshot(session_id),
+                "memory": memory_stats(),
             }
 
     def reject_pending(self, session_id: str) -> dict[str, Any]:
@@ -857,6 +977,7 @@ class LocalAgent:
                     "requires_approval": False,
                     "approval_request": None,
                     "session": self.sessions.snapshot(session_id),
+                    "memory": memory_stats(),
                 }
 
             updates = ["Rejected a pending risky action before it ran."]
@@ -882,6 +1003,7 @@ class LocalAgent:
                 "requires_approval": False,
                 "approval_request": None,
                 "session": self.sessions.snapshot(session_id),
+                "memory": memory_stats(),
             }
 
     def record_feedback(self, feedback: str, successful: bool) -> None:

@@ -1,0 +1,95 @@
+package script.systems.gcw;
+
+import script.*;
+import script.library.gcw;
+import script.library.locations;
+import script.library.utils;
+
+public class flip_banner extends script.base_script {
+    
+    public flip_banner() {
+    }
+    
+    public int OnInitialize(obj_id self) throws InterruptedException {
+        messageTo(self, "checkBannerImpulse", null, 1.0f, false);
+        return SCRIPT_CONTINUE;
+    }
+    
+    public int OnAttach(obj_id self) throws InterruptedException {
+        messageTo(self, "checkBannerImpulse", null, 1.0f, false);
+        return SCRIPT_CONTINUE;
+    }
+    
+    public int OnDestroy(obj_id self) throws InterruptedException {
+        cleanupBanner(self);
+        return SCRIPT_CONTINUE;
+    }
+    
+    public int OnUnloadedFromMemory(obj_id self) throws InterruptedException {
+        cleanupBanner(self);
+        return SCRIPT_CONTINUE;
+    }
+    
+    public void cleanupBanner(obj_id self) throws InterruptedException {
+        if (utils.hasScriptVar(self, "banner")) {
+            obj_id banner = utils.getObjIdScriptVar(self, "banner");
+            if (isIdValid(banner)) {
+                destroyObject(banner);
+            }
+        }
+    }
+    
+    public int checkBannerImpulse(obj_id self, dictionary params) throws InterruptedException {
+        float imp_r = gcw.getImperialPercentileByRegion(self);
+        float reb_r = gcw.getRebelPercentileByRegion(self);
+        
+        cleanupBanner(self); // Clean up any existing banner
+        
+        if (imp_r > reb_r) {
+            utils.setScriptVar(self, "faction", 1);
+            spawnBanner(self, "imperial");
+        } else if (reb_r > imp_r) {
+            utils.setScriptVar(self, "faction", 2);
+            spawnBanner(self, "rebel");
+        }
+        
+        messageTo(self, "checkBannerImpulse", null, 3600.0f, false); // Check again in an hour
+        return SCRIPT_CONTINUE;
+    }
+    
+    public void spawnBanner(obj_id self, String faction) throws InterruptedException {
+        String empiredayRunning = getConfigSetting("GameServer", "empireday_ceremony");
+        if (empiredayRunning != null && (empiredayRunning.equals("true") || empiredayRunning.equals("1"))) {
+            location here = getLocation(self);
+            String city = locations.getCityName(here);
+            if (city == null) {
+                city = locations.getGuardSpawnerRegionName(here);
+            }
+            if (city != null && city.length() > 0) {
+                if (city.equals("coronet")) {
+                    faction = "rebel";
+                } else if (city.equals("theed")) {
+                    faction = "imperial";
+                } else if (city.equals("bestine")) {
+                    faction = "rebel"; // Adjust for Bestine
+                } else if (city.equals("mos_eisley")) {
+                    faction = "imperial"; // Adjust for Mos Eisley
+                }
+            }
+        }
+        
+        transform t = getTransform_o2w(self);
+        if (faction.equals("rebel")) {
+            t = t.move_l(new vector(0, 0, 2));
+        }
+        
+        obj_id banner = createObject("object/tangible/gcw/flip_banner_" + faction + ".iff", t, null);
+        if (banner == null || !isIdValid(banner)) {
+            return;
+        }
+        
+        setObjVar(banner, "spawner", self);
+        utils.setScriptVar(self, "banner", banner);
+    }
+}
+

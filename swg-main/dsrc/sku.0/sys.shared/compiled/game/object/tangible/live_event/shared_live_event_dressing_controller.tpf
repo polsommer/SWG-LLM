@@ -1,0 +1,19 @@
+// Live event dressing controller shared object
+
+@base object/tangible/base/shared_tangible_base.iff
+
+@class tangible_object_template 6
+
+@class object_template 7
+
+containerVolumeLimit=1
+
+objectName = "item_n"  "live_event_dressing_controller"
+
+detailedDescription = "item_d"  "live_event_dressing_controller"
+
+containerType = CT_none
+
+appearanceFilename = "appearance/mun_all_meteor_hunk.apt"
+
+portalLayoutFilename = ""

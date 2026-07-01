@@ -15,6 +15,7 @@ from .storage import (
     UPLOADS_DIR,
     ensure_dirs,
     load_recent_lessons,
+    memory_stats,
     save_uploaded_file,
 )
 
@@ -56,6 +57,8 @@ def health() -> dict:
         "ok": True,
         "uploads_dir": str(UPLOADS_DIR),
         "generated_dir": str(GENERATED_DIR),
+        "model_status": agent.get_model_status(),
+        "memory": memory_stats(),
         "project_index": indexer.get_status(),
         "background_reindex": background_indexer.get_status(),
     }
@@ -72,6 +75,8 @@ def list_files(request: Request) -> dict:
         "lessons": load_recent_lessons(),
         "project_index": indexer.get_status(),
         "background_reindex": background_indexer.get_status(),
+        "model_status": agent.get_model_status(),
+        "memory": memory_stats(),
         "approval_request": agent.get_pending_approval(session_id),
         "session": agent.get_session_snapshot(session_id),
         "execution_boundary": {
@@ -87,6 +92,8 @@ def get_project_index() -> dict:
     return {
         "project_index": indexer.get_status(),
         "background_reindex": background_indexer.get_status(),
+        "model_status": agent.get_model_status(),
+        "memory": memory_stats(),
     }
 
 

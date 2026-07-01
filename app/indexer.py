@@ -17,6 +17,18 @@ GRAPH_FILE = PROJECT_INDEX_DIR / "graph.json"
 SEMANTIC_FILE = PROJECT_INDEX_DIR / "semantic.json"
 STATUS_FILE = PROJECT_INDEX_DIR / "status.json"
 
+MAX_TEXT_CHARS_PER_FILE = 24000
+MAX_CHUNKS_PER_FILE = 4
+MAX_SYMBOLS_PER_FILE = 20
+MAX_IMPORTS_PER_FILE = 20
+MAX_INHERITS_PER_FILE = 12
+MAX_FUNCTIONS_PER_FILE = 20
+MAX_CALLS_PER_FILE = 20
+FAST_INDEX_FILE_THRESHOLD = 2500
+FAST_INDEX_TEXT_CHARS_PER_FILE = 6000
+FAST_INDEX_CHUNK_CHARS = 1200
+FAST_INDEX_CHUNKS_PER_FILE = 1
+
 CODE_EXTENSIONS = {
     ".c",
     ".cc",
@@ -589,29 +601,39 @@ class ProjectIndexer:
             files = self._iter_project_files()
             manifest: list[dict] = []
             all_chunks: list[dict] = []
+            truncated_file_count = 0
+            fast_mode = len(files) > FAST_INDEX_FILE_THRESHOLD
+            max_text_chars = FAST_INDEX_TEXT_CHARS_PER_FILE if fast_mode else MAX_TEXT_CHARS_PER_FILE
+            max_chunks_per_file = FAST_INDEX_CHUNKS_PER_FILE if fast_mode else MAX_CHUNKS_PER_FILE
+            chunk_chars = FAST_INDEX_CHUNK_CHARS if fast_mode else 1800
 
             for path in files:
-                text = read_text_file(path)
+                stat = path.stat()
+                text = read_text_file(path, max_chars=max_text_chars)
                 relative = self._project_relative(path)
+                was_truncated = len(text) >= max_text_chars
+                if was_truncated:
+                    truncated_file_count += 1
                 symbols = self._extract_symbols(text)
                 imports = self._extract_imports(text)
                 inherits = self._extract_inheritance(text)
                 function_signatures = self._extract_function_signatures(text)
                 symbol_kinds = self._extract_symbol_kinds(text)
                 calls = self._extract_calls(text)
-                chunks = self._chunk_text(relative, text)
+                chunks = self._chunk_text(relative, text, max_chars=chunk_chars)[:max_chunks_per_file]
                 manifest.append(
                     {
                         "path": relative,
-                        "size": path.stat().st_size,
-                        "mtime": path.stat().st_mtime,
-                        "symbols": symbols[:20],
-                        "imports": imports[:20],
-                        "inherits": inherits[:12],
-                        "function_signatures": function_signatures[:20],
+                        "size": stat.st_size,
+                        "mtime": stat.st_mtime,
+                        "symbols": symbols[:MAX_SYMBOLS_PER_FILE],
+                        "imports": imports[:MAX_IMPORTS_PER_FILE],
+                        "inherits": inherits[:MAX_INHERITS_PER_FILE],
+                        "function_signatures": function_signatures[:MAX_FUNCTIONS_PER_FILE],
                         "symbol_kinds": symbol_kinds,
-                        "top_calls": calls[:20],
+                        "top_calls": calls[:MAX_CALLS_PER_FILE],
                         "chunk_count": len(chunks),
+                        "truncated_for_index": was_truncated,
                     }
                 )
                 all_chunks.extend(
@@ -627,8 +649,27 @@ class ProjectIndexer:
                     for chunk in chunks
                 )
 
-            graph = self._build_code_graph(manifest)
-            semantic = self._build_semantic_index(all_chunks)
+            if fast_mode:
+                graph = {
+                    "files": {},
+                    "symbols": {},
+                    "summary": {
+                        "file_count": len(manifest),
+                        "symbol_count": 0,
+                        "edge_count": 0,
+                        "top_connected_symbols": [],
+                    },
+                }
+                semantic = {
+                    "doc_count": len(all_chunks),
+                    "vocab_size": 0,
+                    "idf": {},
+                    "rows": [],
+                    "top_terms": [],
+                }
+            else:
+                graph = self._build_code_graph(manifest)
+                semantic = self._build_semantic_index(all_chunks)
             save_json_list(MANIFEST_FILE, manifest)
             save_json_list(CHUNKS_FILE, all_chunks)
             GRAPH_FILE.write_text(json.dumps(graph, indent=2, ensure_ascii=True), encoding="utf-8")
@@ -637,6 +678,8 @@ class ProjectIndexer:
                 "indexed_at": datetime.now(UTC).isoformat(),
                 "file_count": len(manifest),
                 "chunk_count": len(all_chunks),
+                "truncated_file_count": truncated_file_count,
+                "index_mode": "fast" if fast_mode else "deep",
                 "roots": [str(root) for root in self.project_roots],
                 "summary": self.summarize_index(manifest, all_chunks),
                 "graph": graph.get("summary", {}),
@@ -644,6 +687,11 @@ class ProjectIndexer:
                     "doc_count": semantic.get("doc_count", 0),
                     "vocab_size": semantic.get("vocab_size", 0),
                     "top_terms": semantic.get("top_terms", [])[:8],
+                },
+                "index_limits": {
+                    "max_text_chars_per_file": max_text_chars,
+                    "max_chunks_per_file": max_chunks_per_file,
+                    "chunk_chars": chunk_chars,
                 },
             }
             STATUS_FILE.write_text(json.dumps(status, indent=2, ensure_ascii=True), encoding="utf-8")
@@ -655,6 +703,8 @@ class ProjectIndexer:
                 "indexed_at": None,
                 "file_count": 0,
                 "chunk_count": 0,
+                "truncated_file_count": 0,
+                "index_mode": "deep",
                 "roots": [str(root) for root in self.project_roots],
                 "summary": self.summarize_index([], []),
                 "graph": self.load_graph().get("summary", {}),
@@ -662,6 +712,11 @@ class ProjectIndexer:
                     "doc_count": 0,
                     "vocab_size": 0,
                     "top_terms": [],
+                },
+                "index_limits": {
+                    "max_text_chars_per_file": MAX_TEXT_CHARS_PER_FILE,
+                    "max_chunks_per_file": MAX_CHUNKS_PER_FILE,
+                    "chunk_chars": 1800,
                 },
             }
         try:
@@ -677,12 +732,24 @@ class ProjectIndexer:
                     "vocab_size": semantic.get("vocab_size", 0),
                     "top_terms": semantic.get("top_terms", [])[:8],
                 }
+            if "truncated_file_count" not in status:
+                status["truncated_file_count"] = 0
+            if "index_mode" not in status:
+                status["index_mode"] = "deep"
+            if "index_limits" not in status:
+                status["index_limits"] = {
+                    "max_text_chars_per_file": MAX_TEXT_CHARS_PER_FILE,
+                    "max_chunks_per_file": MAX_CHUNKS_PER_FILE,
+                    "chunk_chars": 1800,
+                }
             return status
         except json.JSONDecodeError:
             return {
                 "indexed_at": None,
                 "file_count": 0,
                 "chunk_count": 0,
+                "truncated_file_count": 0,
+                "index_mode": "deep",
                 "roots": [str(root) for root in self.project_roots],
                 "summary": self.summarize_index([], []),
                 "graph": self.load_graph().get("summary", {}),
@@ -690,6 +757,11 @@ class ProjectIndexer:
                     "doc_count": 0,
                     "vocab_size": 0,
                     "top_terms": [],
+                },
+                "index_limits": {
+                    "max_text_chars_per_file": MAX_TEXT_CHARS_PER_FILE,
+                    "max_chunks_per_file": MAX_CHUNKS_PER_FILE,
+                    "chunk_chars": 1800,
                 },
             }
 

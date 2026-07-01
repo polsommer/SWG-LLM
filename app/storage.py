@@ -13,6 +13,7 @@ MEMORY_DIR = DATA_DIR / "memory"
 SANDBOXES_DIR = DATA_DIR / "sandboxes"
 PROJECT_INDEX_DIR = DATA_DIR / "project_index"
 LESSONS_FILE = MEMORY_DIR / "lessons.json"
+KNOWLEDGE_FILE = MEMORY_DIR / "knowledge.json"
 RUN_LOG_FILE = MEMORY_DIR / "runs.json"
 OBSERVABILITY_FILE = MEMORY_DIR / "observability.json"
 SWG_MAIN_DIR = BASE_DIR / "swg-main"
@@ -22,7 +23,7 @@ PROJECT_ROOTS = [SWG_MAIN_DIR / "src", SWG_MAIN_DIR / "dsrc"]
 def ensure_dirs() -> None:
     for path in (UPLOADS_DIR, GENERATED_DIR, MEMORY_DIR, SANDBOXES_DIR, PROJECT_INDEX_DIR):
         path.mkdir(parents=True, exist_ok=True)
-    for file_path in (LESSONS_FILE, RUN_LOG_FILE, OBSERVABILITY_FILE):
+    for file_path in (LESSONS_FILE, KNOWLEDGE_FILE, RUN_LOG_FILE, OBSERVABILITY_FILE):
         if not file_path.exists():
             file_path.write_text("[]", encoding="utf-8")
 
@@ -80,9 +81,10 @@ def read_snippet(path: Path, max_chars: int = 2500) -> str:
     return text[:max_chars] + "\n...[truncated]"
 
 
-def read_text_file(path: Path) -> str:
+def read_text_file(path: Path, max_chars: int | None = None) -> str:
     try:
-        return path.read_text(encoding="utf-8", errors="ignore")
+        with path.open("r", encoding="utf-8", errors="ignore") as handle:
+            return handle.read() if max_chars is None else handle.read(max_chars)
     except OSError:
         return ""
 
@@ -108,6 +110,33 @@ def load_recent_lessons(limit: int = 5) -> list[str]:
     lessons = load_json_list(LESSONS_FILE)
     values = [row.get("lesson", "").strip() for row in lessons if row.get("lesson")]
     return values[-limit:]
+
+
+def load_recent_knowledge(limit: int = 8) -> list[dict]:
+    rows = load_json_list(KNOWLEDGE_FILE)
+    cleaned: list[dict] = []
+    for row in rows[-limit:]:
+        summary = str(row.get("summary", "")).strip()
+        if not summary:
+            continue
+        cleaned.append(
+            {
+                "timestamp": row.get("timestamp"),
+                "summary": summary,
+                "kind": str(row.get("kind", "observation")).strip() or "observation",
+            }
+        )
+    return cleaned
+
+
+def memory_stats() -> dict:
+    return {
+        "lesson_count": len(load_json_list(LESSONS_FILE)),
+        "knowledge_count": len(load_json_list(KNOWLEDGE_FILE)),
+        "run_count": len(load_json_list(RUN_LOG_FILE)),
+        "recent_knowledge": load_recent_knowledge(),
+        "recent_lessons": load_recent_lessons(),
+    }
 
 
 def save_uploaded_file(name: str, content: bytes) -> Path:

@@ -1,0 +1,4 @@
+profile_key	menu_background_asset	menu_music_asset
+s	s	s
+default	texture/ui/login/default_menu_background.dds	sound/music_login_main.snd
+event_hub	texture/ui/login/event_hub_menu_background.dds	sound/music_event_hub_theme.snd

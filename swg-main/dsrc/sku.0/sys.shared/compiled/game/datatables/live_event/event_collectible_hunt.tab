@@ -1,0 +1,14 @@
+map_id	collectible_id	collectible_template	spawn_hint	unlock_progress_index	reward_title	reward_emote	active_start_utc	active_end_utc	enabled
+s	s	s	s	i	s	s	s	s	b[1]
+corellia	egg_corellia_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Near the Coronet starport service gantry.	1			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+naboo	egg_naboo_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	On a Theed balcony overlooking the plaza.	2			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+tatooine	egg_tatooine_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	By a Mos Eisley docking light tower.	3			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+dantooine	egg_dantooine_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Hidden beside an abandoned irrigation rig.	4			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+dathomir	egg_dathomir_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	At the edge of a misted ritual clearing.	5			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+endor	egg_endor_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Between roots near a rebel bunker trail.	6			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+lok	egg_lok_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Inside a rusted wreck half-buried in dust.	7			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+rori	egg_rori_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Below a bridge near Narmle gardens.	8			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+talus	egg_talus_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	By a power relay on Dearic's outer wall.	9			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+yavin4	egg_yavin4_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	In temple ruins behind the main path.	10			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+kashyyyk	egg_kashyyyk_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Secured under a lower-shadow platform.	11			2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1
+mustafar	egg_mustafar_01	object/tangible/live_event/shared_live_event_collectible_cache.iff	Near a cooling vent above the lava shelf.	12	title_live_event_starchaser	emote_live_event_constellation	2026-05-01T00:00:00Z	2026-05-31T23:59:59Z	1

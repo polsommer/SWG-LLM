@@ -60,12 +60,81 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function renderModelStatus(data) {
+  const container = document.getElementById("modelDeck");
+  if (!container) {
+    return;
+  }
+  const modelStatus = data.model_status || {};
+  const models = (modelStatus.models || []).map((name) => `<li>${escapeHtml(name)}</li>`).join("");
+  const stateLabel = modelStatus.connected
+    ? (modelStatus.default_model_ready ? "Ready" : "Connected")
+    : "Offline";
+
+  container.innerHTML = `
+    <div class="memory-item">
+      <span>Status</span>
+      <strong>${escapeHtml(stateLabel)}</strong>
+      <p>${modelStatus.connected ? `${modelStatus.model_count || 0} local model(s) detected.` : "Could not reach Ollama on 127.0.0.1:11434."}</p>
+    </div>
+    <div class="memory-item">
+      <span>Default Model</span>
+      <strong>${modelStatus.default_model_ready ? "Installed" : "Missing"}</strong>
+      <p>${modelStatus.default_model_ready ? "The default SWG workspace model is available." : "Install qwen2.5:7b-instruct-q4_K_M to fully enable chat and generation."}</p>
+    </div>
+    <div class="memory-item">
+      <span>Model List</span>
+      <strong>${modelStatus.model_count || 0} registered</strong>
+      <ul>${models || "<li>No Ollama models installed yet</li>"}</ul>
+    </div>
+  `;
+}
+
+function renderMemoryDeck(data) {
+  const memory = data.memory || {};
+  const deck = document.getElementById("memoryDeck");
+  const feed = document.getElementById("memoryFeed");
+  if (!deck || !feed) {
+    return;
+  }
+
+  const recentKnowledge = (memory.recent_knowledge || []).map((item) => `
+    <div class="memory-item">
+      <span>${escapeHtml(item.kind || "observation")}</span>
+      <strong>${escapeHtml(item.summary || "No summary")}</strong>
+    </div>
+  `).join("");
+
+  const lessonItems = (memory.recent_lessons || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+
+  deck.innerHTML = `
+    <div class="memory-item">
+      <span>Knowledge Rows</span>
+      <strong>${memory.knowledge_count || 0}</strong>
+      <p>Auto-captured observations from successful agent work.</p>
+    </div>
+    <div class="memory-item">
+      <span>Lessons</span>
+      <strong>${memory.lesson_count || 0}</strong>
+      <p>${memory.run_count || 0} total recorded run(s).</p>
+    </div>
+    <div class="memory-item">
+      <span>Recent Lessons</span>
+      <ul>${lessonItems || "<li>No lessons stored yet</li>"}</ul>
+    </div>
+  `;
+
+  feed.innerHTML = recentKnowledge || "<p>No persistent knowledge notes captured yet.</p>";
+}
+
 function renderWorkspaceHighlights(data) {
   const highlights = document.getElementById("workspaceHighlights");
   const projectIndex = data.project_index || {};
   const session = data.session || {};
   const executionBoundary = data.execution_boundary || {};
   const pendingApproval = data.approval_request || null;
+  const modelStatus = data.model_status || {};
+  const memory = data.memory || {};
 
   highlights.innerHTML = `
     <div class="highlight-card">
@@ -79,14 +148,14 @@ function renderWorkspaceHighlights(data) {
       <p>${session.active_requests || 0} active, ${session.approval_count || 0} approvals</p>
     </div>
     <div class="highlight-card">
-      <span class="metric-label">Execution Policy</span>
-      <strong>${escapeHtml(executionBoundary.mode || "unknown")}</strong>
-      <p>${executionBoundary.trusted_code_only ? "Trusted tasks only" : "Expanded execution mode"}</p>
+      <span class="metric-label">Model Deck</span>
+      <strong>${modelStatus.model_count || 0}</strong>
+      <p>${modelStatus.default_model_ready ? "Default local model is ready" : "Default local model is not installed"}</p>
     </div>
     <div class="highlight-card">
-      <span class="metric-label">Approval Queue</span>
-      <strong>${pendingApproval ? "Waiting" : "Clear"}</strong>
-      <p>${pendingApproval ? escapeHtml(pendingApproval.tool_name || "Pending tool") : "No risky action is waiting"}</p>
+      <span class="metric-label">Memory Deck</span>
+      <strong>${memory.knowledge_count || 0}</strong>
+      <p>${pendingApproval ? `Approval waiting for ${escapeHtml(pendingApproval.tool_name || "tool")}` : `${executionBoundary.mode || "guarded-local"} execution`}</p>
     </div>
   `;
 
@@ -110,6 +179,9 @@ function renderFiles(data) {
   const projectIndex = data.project_index || {};
   const backgroundReindex = data.background_reindex || {};
   const indexedAt = projectIndex.indexed_at || "Not indexed yet";
+  const indexMode = projectIndex.index_mode || "deep";
+  const truncatedFileCount = projectIndex.truncated_file_count || 0;
+  const indexLimits = projectIndex.index_limits || {};
   const roots = (projectIndex.roots || []).map((root) => `<li>${escapeHtml(root)}</li>`).join("");
   const summary = projectIndex.summary || {};
   const topSymbols = (summary.top_symbols || []).map((item) => `<li>${escapeHtml(item.name)} (${item.count})</li>`).join("");
@@ -125,6 +197,8 @@ function renderFiles(data) {
   const executionBoundary = data.execution_boundary || {};
 
   renderWorkspaceHighlights(data);
+  renderModelStatus(data);
+  renderMemoryDeck(data);
 
   files.innerHTML = `
     <h3>Session</h3>
@@ -148,6 +222,9 @@ function renderFiles(data) {
       <li>Indexed at: ${escapeHtml(indexedAt)}</li>
       <li>Files: ${projectIndex.file_count || 0}</li>
       <li>Chunks: ${projectIndex.chunk_count || 0}</li>
+      <li>Mode: ${escapeHtml(indexMode)}</li>
+      <li>Truncated for speed: ${truncatedFileCount}</li>
+      <li>Per-file text cap: ${indexLimits.max_text_chars_per_file || 0}</li>
       <li>Average chunk size: ${summary.avg_chunk_size || 0}</li>
     </ul>
     <h3>Background Reindex</h3>
@@ -250,7 +327,7 @@ function renderTrust(data) {
         <div>
           <p class="trust-label">Trust Report</p>
           <h3>${escapeHtml(confidenceLabel)} confidence</h3>
-          <p class="trust-mode">${escapeHtml(planningMode)} mode · ${escapeHtml(repoStrategy)} strategy</p>
+          <p class="trust-mode">${escapeHtml(planningMode)} mode | ${escapeHtml(repoStrategy)} strategy</p>
         </div>
         <div class="trust-meter">
           <div class="trust-meter-bar"><span style="width: ${Math.max(6, Math.min(100, confidenceScore))}%"></span></div>
@@ -510,6 +587,12 @@ document.getElementById("reindexBtn").addEventListener("click", async () => {
       method: "POST",
     });
     output.textContent = `Project index rebuilt.\n\nFiles: ${data.file_count}\nChunks: ${data.chunk_count}\nIndexed at: ${data.indexed_at}`;
+    if (data.index_mode) {
+      output.textContent += `\nMode: ${data.index_mode}`;
+    }
+    if (data.truncated_file_count) {
+      output.textContent += `\nTruncated for speed: ${data.truncated_file_count}`;
+    }
     renderTrust({
       trust_report: {
         confidence_score: 72,

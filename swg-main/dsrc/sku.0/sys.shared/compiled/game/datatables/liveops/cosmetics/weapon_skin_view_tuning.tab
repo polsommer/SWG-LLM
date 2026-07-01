@@ -1,0 +1,13 @@
+tuning_id	weapon_class	camera_mode	emissive_multiplier	bloom_clamp	exposure_compensation	ads_transition_multiplier	note
+s	s	s	f	f	f	f	s
+
+fp_rebellion_saber	saber	first_person	0.72	1.10	-0.12	1.00	Reduces close-view bloom on blade guard.
+ads_rebellion_saber	saber	ads	0.66	0.95	-0.20	0.85	Aggressive clamp to keep reticle legible.
+fp_rebellion_carbine	carbine	first_person	0.80	1.00	-0.08	1.00	Balances emissive near receiver while sprinting.
+ads_rebellion_carbine	carbine	ads	0.70	0.88	-0.18	0.82	Avoids bloom veil over optic.
+fp_rebellion_rifle	rifle	first_person	0.82	1.02	-0.09	1.00	Preserves decal read at long barrel length.
+ads_rebellion_rifle	rifle	ads	0.71	0.90	-0.17	0.84	Keeps barrel glow from clipping at eye adaptation peak.
+fp_rebellion_pistol	pistol	first_person	0.76	0.96	-0.10	1.00	Limits bloom from muzzle crest.
+ads_rebellion_pistol	pistol	ads	0.67	0.86	-0.19	0.80	Prioritizes front-sight contrast.
+fp_rebellion_heavy	heavy	first_person	0.74	1.04	-0.11	1.00	Prevents overpowering bloom during sustained fire VFX.
+ads_rebellion_heavy	heavy	ads	0.64	0.84	-0.22	0.78	Strongest clamp for zoomed heavy profile.

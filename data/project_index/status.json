@@ -1,9 +1,206 @@
 {
-  "indexed_at": "2026-06-27T10:22:24.367389+00:00",
-  "file_count": 0,
-  "chunk_count": 0,
+  "indexed_at": "2026-07-01T11:04:48.019825+00:00",
+  "file_count": 5821,
+  "chunk_count": 5821,
+  "truncated_file_count": 2484,
+  "index_mode": "fast",
   "roots": [
     "C:\\Users\\swg\\Documents\\Codex\\2026-06-27\\mak\\local_agent1660\\swg-main\\src",
     "C:\\Users\\swg\\Documents\\Codex\\2026-06-27\\mak\\local_agent1660\\swg-main\\dsrc"
-  ]
+  ],
+  "summary": {
+    "top_extensions": [
+      {
+        "name": ".java",
+        "count": 5821
+      }
+    ],
+    "top_symbols": [
+      {
+        "name": "string_id",
+        "count": 2468
+      },
+      {
+        "name": "OnAttach",
+        "count": 1352
+      },
+      {
+        "name": "OnInitialize",
+        "count": 1213
+      },
+      {
+        "name": "OnObjectMenuRequest",
+        "count": 1146
+      },
+      {
+        "name": "OnObjectMenuSelect",
+        "count": 731
+      },
+      {
+        "name": "if",
+        "count": 666
+      },
+      {
+        "name": "dictionary",
+        "count": 641
+      },
+      {
+        "name": "OnIncapacitated",
+        "count": 545
+      }
+    ],
+    "top_imports": [
+      {
+        "name": "script.obj_id",
+        "count": 3143
+      },
+      {
+        "name": "script.",
+        "count": 2257
+      },
+      {
+        "name": "script.library.utils",
+        "count": 2037
+      },
+      {
+        "name": "script.dictionary",
+        "count": 1759
+      },
+      {
+        "name": "script.library.ai_lib",
+        "count": 1509
+      },
+      {
+        "name": "script.library.chat",
+        "count": 1101
+      },
+      {
+        "name": "script.library.",
+        "count": 941
+      },
+      {
+        "name": "script.location",
+        "count": 822
+      }
+    ],
+    "top_inheritance": [
+      {
+        "name": "script.base_script",
+        "count": 4576
+      },
+      {
+        "name": "script.systems.crafting.crafting_base",
+        "count": 166
+      },
+      {
+        "name": "script.theme_park.poi.base",
+        "count": 106
+      },
+      {
+        "name": "script.systems.crafting.bio_engineer.crafting_base_creature",
+        "count": 69
+      },
+      {
+        "name": "script.systems.crafting.clothing.crafting_base_clothing",
+        "count": 41
+      },
+      {
+        "name": "script.systems.missions.base.mission_dynamic_base",
+        "count": 39
+      },
+      {
+        "name": "script.theme_park.newbie_tutorial.tutorial_base",
+        "count": 39
+      },
+      {
+        "name": "script.systems.crafting.bio_engineer.crafting_base_dna_template",
+        "count": 35
+      }
+    ],
+    "top_functions": [
+      {
+        "name": "if",
+        "count": 33969
+      },
+      {
+        "name": "for",
+        "count": 1973
+      },
+      {
+        "name": "switch",
+        "count": 422
+      },
+      {
+        "name": "while",
+        "count": 145
+      },
+      {
+        "name": "catch",
+        "count": 50
+      },
+      {
+        "name": "toString",
+        "count": 16
+      },
+      {
+        "name": "equals",
+        "count": 14
+      },
+      {
+        "name": "obj_var",
+        "count": 13
+      }
+    ],
+    "graph_symbol_count": 0,
+    "graph_file_count": 5821,
+    "graph_edge_count": 0,
+    "top_connected_symbols": [],
+    "semantic_doc_count": 5821,
+    "semantic_vocab_size": 0,
+    "semantic_top_terms": [],
+    "largest_files": [
+      {
+        "path": "script/conversation/computer_console_level_01.java",
+        "size": 3602057,
+        "chunk_count": 1
+      },
+      {
+        "path": "script/conversation/emp_day_jedi_prisoner.java",
+        "size": 2202214,
+        "chunk_count": 1
+      },
+      {
+        "path": "script/conversation/emp_day_reb_imp_convert.java",
+        "size": 1635066,
+        "chunk_count": 1
+      },
+      {
+        "path": "script/conversation/house_packup_reward_npc.java",
+        "size": 1279361,
+        "chunk_count": 1
+      },
+      {
+        "path": "game/script/base_class.java",
+        "size": 1204970,
+        "chunk_count": 1
+      }
+    ],
+    "avg_chunk_size": 1156
+  },
+  "graph": {
+    "file_count": 5821,
+    "symbol_count": 0,
+    "edge_count": 0,
+    "top_connected_symbols": []
+  },
+  "semantic": {
+    "doc_count": 5821,
+    "vocab_size": 0,
+    "top_terms": []
+  },
+  "index_limits": {
+    "max_text_chars_per_file": 6000,
+    "max_chunks_per_file": 1,
+    "chunk_chars": 1200
+  }
 }
