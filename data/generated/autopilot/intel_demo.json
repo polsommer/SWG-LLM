@@ -45,62 +45,17 @@
       "stderr_tail": ""
     },
     "diff": {
-      "total_lines": 568,
+      "total_lines": 18,
       "files": [
         {
-          "path": "app/background_council.py",
-          "added": 33,
-          "deleted": 2
+          "path": "app/background_autopilot.py",
+          "added": 2,
+          "deleted": 3
         },
         {
-          "path": "app/background_intelligence.py",
-          "added": 37,
-          "deleted": 2
-        },
-        {
-          "path": "app/background_workspace_learning.py",
-          "added": 123,
-          "deleted": 2
-        },
-        {
-          "path": "app/main.py",
-          "added": 9,
+          "path": "tests/test_background_autopilot.py",
+          "added": 13,
           "deleted": 0
-        },
-        {
-          "path": "app/storage.py",
-          "added": 163,
-          "deleted": 0
-        },
-        {
-          "path": "data/memory/intelligence.json",
-          "added": 60,
-          "deleted": 1
-        },
-        {
-          "path": "data/memory/knowledge.json",
-          "added": 24,
-          "deleted": 0
-        },
-        {
-          "path": "static/council.html",
-          "added": 33,
-          "deleted": 0
-        },
-        {
-          "path": "static/council.js",
-          "added": 62,
-          "deleted": 0
-        },
-        {
-          "path": "tests/test_background_intelligence.py",
-          "added": 5,
-          "deleted": 1
-        },
-        {
-          "path": "tests/test_background_workspace_learning.py",
-          "added": 7,
-          "deleted": 4
         }
       ]
     }
@@ -109,32 +64,17 @@
     "approved": false,
     "scope_ok": false,
     "relevant_tests_ok": false,
-    "large_diff_blocked": true,
-    "too_many_files_blocked": true,
-    "risky_paths": [
-      "data/memory/intelligence.json",
-      "data/memory/knowledge.json"
-    ],
+    "large_diff_blocked": false,
+    "too_many_files_blocked": false,
+    "risky_paths": [],
     "reasons": [
       "Changed files drifted outside the proposal scope.",
-      "No clearly relevant tests were selected for the touched files.",
-      "Diff size exceeded the autopilot safety limit.",
-      "Too many files changed for a narrow autopilot pass.",
-      "Risky paths were touched and require manual approval."
+      "No clearly relevant tests were selected for the touched files."
     ],
     "changed_paths": [
-      "app/background_council.py",
-      "app/background_intelligence.py",
-      "app/background_workspace_learning.py",
-      "app/main.py",
-      "app/storage.py",
-      "data/memory/intelligence.json",
-      "data/memory/knowledge.json",
-      "static/council.html",
-      "static/council.js",
-      "tests/test_background_intelligence.py",
-      "tests/test_background_workspace_learning.py"
+      "app/background_autopilot.py",
+      "tests/test_background_autopilot.py"
     ],
-    "total_changed_lines": 568
+    "total_changed_lines": 18
   }
 }

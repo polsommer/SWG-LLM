@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -58,6 +59,18 @@ class BackgroundAutopilotTests(unittest.TestCase):
         self.assertEqual(result["state"], "ready")
         self.assertEqual(result["execution"]["changed_files"], ["src/demo.py"])
         self.assertIn("artifact_path", result["execution"])
+
+    def test_run_loop_does_not_hold_status_lock_while_running(self) -> None:
+        autopilot = BackgroundAutopilot(generate_text=lambda *_: "{}", indexer=FakeIndexer(Path("D:/SWG-LLM")), poll_seconds=1)
+        autopilot._stop_event = threading.Event()
+
+        with patch("app.background_autopilot.load_autopilot_snapshot", return_value={"settings": {"poll_seconds": 1}}):
+            with patch.object(autopilot, "run_once", side_effect=lambda manual=False: autopilot._stop_event.set() or {"state": "ready"}):
+                worker = threading.Thread(target=autopilot._run_loop, daemon=True)
+                worker.start()
+                worker.join(timeout=2)
+
+        self.assertFalse(worker.is_alive())
 
 
 if __name__ == "__main__":

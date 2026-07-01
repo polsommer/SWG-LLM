@@ -384,9 +384,8 @@ class BackgroundAutopilot:
 
     def _run_loop(self) -> None:
         while not self._stop_event.is_set():
-            with self._lock:
-                snapshot = load_autopilot_snapshot()
-                poll_seconds = int(snapshot.get("settings", {}).get("poll_seconds", self.poll_seconds) or self.poll_seconds)
+            snapshot = load_autopilot_snapshot()
+            poll_seconds = int(snapshot.get("settings", {}).get("poll_seconds", self.poll_seconds) or self.poll_seconds)
             try:
                 self.run_once(manual=False)
             except Exception:
